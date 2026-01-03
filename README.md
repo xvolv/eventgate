@@ -10,10 +10,10 @@ The goal is simple: remove confusion, enforce policy, and make event approvals t
 
 In many organizations, event requests are handled manually through emails or informal messaging. This often results in:
 
-- Late or last-minute requests  
-- Unclear approval authority  
-- Lost or ignored proposals  
-- No visibility into approval status  
+- Late or last-minute requests
+- Unclear approval authority
+- Lost or ignored proposals
+- No visibility into approval status
 
 EventGate solves this by providing a centralized, enforceable, and auditable approval system.
 
@@ -21,14 +21,14 @@ EventGate solves this by providing a centralized, enforceable, and auditable app
 
 ## Key Features
 
-- Event proposal submission with mandatory details  
-- Deadline enforcement (minimum one-week advance submission)  
-- Role-based access control (requester, reviewer, approver, admin)  
-- Multi-stage approval workflow  
-- Approval and rejection with remarks  
-- Real-time status tracking  
-- Audit trail with timestamps and decision history  
-- Centralized dashboard for all event requests  
+- Event proposal submission with mandatory details
+- Deadline enforcement (minimum one-week advance submission)
+- Role-based access control (requester, reviewer, approver, admin)
+- Multi-stage approval workflow
+- Approval and rejection with remarks
+- Real-time status tracking
+- Audit trail with timestamps and decision history
+- Centralized dashboard for all event requests
 
 ---
 
@@ -69,3 +69,4 @@ components/
 lib/
 types/
 utils/
+```
