@@ -25,8 +25,16 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const passwordsMatch = password.length > 0 && password === repeatPassword;
+  const showMismatch = repeatPassword.length > 0 && !passwordsMatch;
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!passwordsMatch) {
+      setError("Passwords do not match");
+      return;
+    }
+    setError(null);
+    setIsLoading(true);
     try {
       const res = await fetch("/api/auth/sign-up", {
         method: "POST",
@@ -40,6 +48,8 @@ export default function SignUpPage() {
       router.push("/login");
     } catch (err) {
       router.push("/login");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,6 +112,14 @@ export default function SignUpPage() {
                   onChange={(e) => setRepeatPassword(e.target.value)}
                   className="focus-visible:ring-0 rounded-none shadow-none"
                 />
+                {showMismatch && (
+                  <p className="text-xs text-destructive">
+                    Passwords do not match.
+                  </p>
+                )}
+                {passwordsMatch && repeatPassword.length > 0 && (
+                  <p className="text-xs text-emerald-600">Passwords match.</p>
+                )}
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
