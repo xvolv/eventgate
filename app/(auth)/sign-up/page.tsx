@@ -1,9 +1,9 @@
 "use client";
 
 import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import Router from "next/router";
+import { signUp } from "@/lib/auth-client";
 import {
   Card,
   CardContent,
@@ -35,21 +35,31 @@ export default function SignUpPage() {
     }
     setError(null);
     setIsLoading(true);
+    // try {
+    //   const res = await fetch("/api/auth/sign-up", {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({ email, password, fullName }),
+    //   });
+    //   const data = await res.json();
+    //   if (!res.ok) throw new Error(data.message || "something went wrong");
+    //   router.push("/login");
+    // } catch (err) {
+    //   router.push("/login");
+    // } finally {
+    //   setIsLoading(false);
+    // }
     try {
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, fullName }),
+      await signUp.email({
+        email,
+        password,
+        name: fullName,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "something went wrong");
       router.push("/login");
-    } catch (err) {
-      router.push("/login");
-    } finally {
-      setIsLoading(false);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
     }
   };
 

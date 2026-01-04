@@ -11,12 +11,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState } from "react";
+import { signIn } from "@/lib/auth-client";
+import { sign } from "crypto";
+import { router } from "better-auth/api";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      signIn.email({
+        email,
+        password,
+      });
+      // Redirect or update UI after successful sign-in
+      alert("here we are")
+    } catch (err) {
+      setError("Failed to sign in");
+    }
+  };
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6">
@@ -31,7 +48,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
