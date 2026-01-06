@@ -132,7 +132,7 @@ export default function SignUpPage() {
                 )}
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
               <div className="text-center text-sm text-muted-foreground">
