@@ -37,6 +37,24 @@ export default function LoginPage() {
   // No auto-redirect on visit; redirects are handled after explicit login
   const { data: session, isPending } = useSession();
 
+  const getSystemRolesWithRetry = async () => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const rolesRes = await fetch("/api/roles", { cache: "no-store" });
+        if (!rolesRes.ok) throw new Error("roles fetch failed");
+        const roles = await rolesRes.json();
+        const systemRoles: string[] = Array.isArray(roles?.systemRoles)
+          ? roles.systemRoles
+          : [];
+        return systemRoles;
+      } catch {
+        // Small backoff in case session cookie/roles query lags behind.
+        await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+      }
+    }
+    return [] as string[];
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -74,22 +92,27 @@ export default function LoginPage() {
       const user = (data as any)?.user ?? (data as any)?.session?.user;
 
       if (user?.emailVerified) {
+        const systemRoles = await getSystemRolesWithRetry();
+
+        if (systemRoles.includes("ADMIN")) {
+          router.push("/admin");
+          return;
+        }
+
+        if (systemRoles.includes("STUDENT_UNION")) {
+          router.push("/student-union");
+          return;
+        }
+
+        if (systemRoles.includes("DIRECTOR")) {
+          router.push("/director");
+          return;
+        }
+
         if (redirectParam) {
           router.push(redirectParam);
           return;
         }
-
-        try {
-          const rolesRes = await fetch("/api/roles", { cache: "no-store" });
-          const roles = await rolesRes.json();
-          if (
-            Array.isArray(roles.systemRoles) &&
-            roles.systemRoles.includes("ADMIN")
-          ) {
-            router.push("/admin");
-            return;
-          }
-        } catch {}
 
         router.push("/proposals/new");
       } else if (user) {

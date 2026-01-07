@@ -52,8 +52,35 @@ export default function NewProposalPage() {
       return;
     }
 
-    // User is authenticated and verified
-    setIsChecking(false);
+    // User is authenticated and verified; route away if this isn't their dashboard.
+    (async () => {
+      try {
+        const rolesRes = await fetch("/api/roles", { cache: "no-store" });
+        if (rolesRes.ok) {
+          const rolesJson = await rolesRes.json();
+          const roles: string[] = Array.isArray(rolesJson?.systemRoles)
+            ? rolesJson.systemRoles
+            : [];
+
+          if (roles.includes("ADMIN")) {
+            router.replace("/admin");
+            return;
+          }
+
+          if (roles.includes("STUDENT_UNION")) {
+            router.replace("/student-union");
+            return;
+          }
+
+          if (roles.includes("DIRECTOR")) {
+            router.replace("/director");
+            return;
+          }
+        }
+      } finally {
+        setIsChecking(false);
+      }
+    })();
   }, [data, isPending, router]);
 
   const validate = () => {

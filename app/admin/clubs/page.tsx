@@ -81,7 +81,9 @@ export default function AdminClubsPage() {
     setPresidentEmail(
       (club.roleGrants || []).find((g) => g.role === "PRESIDENT")?.email || ""
     );
-    setVpEmail((club.roleGrants || []).find((g) => g.role === "VP")?.email || "");
+    setVpEmail(
+      (club.roleGrants || []).find((g) => g.role === "VP")?.email || ""
+    );
     setSecretaryEmail(
       (club.roleGrants || []).find((g) => g.role === "SECRETARY")?.email || ""
     );
@@ -166,9 +168,7 @@ export default function AdminClubsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {editError && (
-            <p className="text-sm text-destructive">{editError}</p>
-          )}
+          {editError && <p className="text-sm text-destructive">{editError}</p>}
 
           <div className="grid gap-4">
             <div className="grid gap-2">
@@ -183,7 +183,9 @@ export default function AdminClubsPage() {
 
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="presidentEmail">President Email (optional)</Label>
+                <Label htmlFor="presidentEmail">
+                  President Email (optional)
+                </Label>
                 <Input
                   id="presidentEmail"
                   type="email"
@@ -205,7 +207,9 @@ export default function AdminClubsPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="secretaryEmail">Secretary Email (optional)</Label>
+                <Label htmlFor="secretaryEmail">
+                  Secretary Email (optional)
+                </Label>
                 <Input
                   id="secretaryEmail"
                   type="email"

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 export default function Nav() {
   const { data, isPending } = useSession();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [dashboardHref, setDashboardHref] = useState("/proposals/new");
 
   const handleSignOut = async () => {
     try {
@@ -27,7 +27,7 @@ export default function Nav() {
     let cancelled = false;
 
     if (!isVerified) {
-      setIsAdmin(false);
+      setDashboardHref("/proposals/new");
       return;
     }
 
@@ -36,11 +36,19 @@ export default function Nav() {
         const res = await fetch("/api/roles", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
-        const admin =
-          Array.isArray(json?.systemRoles) && json.systemRoles.includes("ADMIN");
-        if (!cancelled) setIsAdmin(admin);
+        const roles: string[] = Array.isArray(json?.systemRoles)
+          ? json.systemRoles
+          : [];
+        const nextHref = roles.includes("ADMIN")
+          ? "/admin/clubs/new"
+          : roles.includes("STUDENT_UNION")
+            ? "/student-union"
+            : roles.includes("DIRECTOR")
+              ? "/director"
+              : "/proposals/new";
+        if (!cancelled) setDashboardHref(nextHref);
       } catch {
-        if (!cancelled) setIsAdmin(false);
+        if (!cancelled) setDashboardHref("/proposals/new");
       }
     })();
 
@@ -48,8 +56,6 @@ export default function Nav() {
       cancelled = true;
     };
   }, [isVerified]);
-
-  const dashboardHref = isAdmin ? "/admin/clubs/new" : "/proposals/new";
 
   return (
     <header className="border-b border-border bg-background/60 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -73,6 +79,9 @@ export default function Nav() {
                   </Button>
                 </Link>
               )}
+              <span className="hidden md:inline text-sm text-muted-foreground">
+                {user?.email}
+              </span>
               <Button onClick={handleSignOut} className="rounded-none">
                 Sign Out
               </Button>

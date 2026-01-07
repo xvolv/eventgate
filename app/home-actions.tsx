@@ -10,13 +10,13 @@ export function HomeActions() {
   const user = data?.user;
   const isAuthed = Boolean(user);
   const isVerified = Boolean(user?.emailVerified);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [dashboardHref, setDashboardHref] = useState("/proposals/new");
 
   useEffect(() => {
     let cancelled = false;
 
     if (!isVerified) {
-      setIsAdmin(false);
+      setDashboardHref("/proposals/new");
       return;
     }
 
@@ -25,11 +25,19 @@ export function HomeActions() {
         const res = await fetch("/api/roles", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
-        const admin =
-          Array.isArray(json?.systemRoles) && json.systemRoles.includes("ADMIN");
-        if (!cancelled) setIsAdmin(admin);
+        const roles: string[] = Array.isArray(json?.systemRoles)
+          ? json.systemRoles
+          : [];
+        const nextHref = roles.includes("ADMIN")
+          ? "/admin/clubs/new"
+          : roles.includes("STUDENT_UNION")
+            ? "/student-union"
+            : roles.includes("DIRECTOR")
+              ? "/director"
+              : "/proposals/new";
+        if (!cancelled) setDashboardHref(nextHref);
       } catch {
-        if (!cancelled) setIsAdmin(false);
+        if (!cancelled) setDashboardHref("/proposals/new");
       }
     })();
 
@@ -55,10 +63,9 @@ export function HomeActions() {
   }
 
   if (isAuthed && isVerified) {
-    const href = isAdmin ? "/admin/clubs/new" : "/proposals/new";
     return (
       <div className="flex gap-3 mb-12">
-        <Link href={href}>
+        <Link href={dashboardHref}>
           <Button size="lg" className="rounded-none hover:cursor-pointer">
             Go to Dashboard
           </Button>
