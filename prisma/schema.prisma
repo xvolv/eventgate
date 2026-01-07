@@ -8,28 +8,56 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String
-  sessions  Session[]  // Relation to Session
-  accounts  Account[]  // Add this relation
+  id            String              @id @default(cuid())
+  email         String              @unique
+  emailVerified Boolean             @default(false)
+  name          String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  verification  VerificationToken[]
 }
 
 model Session {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
   expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
-  id                Int      @id @default(autoincrement())
-  user              User     @relation(fields: [userId], references: [id])
-  userId            Int
-  provider          String
-  providerAccountId String
-  
-  // Add unique constraint for provider combination
-  @@unique([provider, providerAccountId])
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  providerId    String
+  accountId     String
+  password      String?
+  refresh_token String?
+  access_token  String?
+  expires_at    Int?
+  token_type    String?
+  scope         String?
+  id_token      String?
+  session_state String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String?
+
+  @@unique([identifier, token])
 }

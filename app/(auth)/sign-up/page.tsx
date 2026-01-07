@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import type React from "react";
 import { Button } from "@/components/ui/button";
-import Router from "next/router";
-import { signUp } from "@/lib/auth-client";
+import { signUp, getSession, signOut, useSession } from "@/lib/auth-client";
 import {
   Card,
   CardContent,
@@ -15,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { prisma } from "@/lib/prisma";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -26,40 +26,105 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const passwordsMatch = password.length > 0 && password === repeatPassword;
+  const passwordTooShort = password.length > 0 && password.length < 8;
   const showMismatch = repeatPassword.length > 0 && !passwordsMatch;
+
+  // Do not auto-redirect away from sign-up; middleware protects private routes
+  const { data: session, isPending } = useSession();
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (passwordTooShort) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
     if (!passwordsMatch) {
       setError("Passwords do not match");
       return;
     }
     setError(null);
     setIsLoading(true);
-    // try {
-    //   const res = await fetch("/api/auth/sign-up", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({ email, password, fullName }),
-    //   });
-    //   const data = await res.json();
-    //   if (!res.ok) throw new Error(data.message || "something went wrong");
-    //   router.push("/login");
-    // } catch (err) {
-    //   router.push("/login");
-    // } finally {
-    //   setIsLoading(false);
-    // }
     try {
-      await signUp.email({
-        email,
-        password,
-        name: fullName,
-      });
-      router.push("/login");
+      // If a session exists, sign out before creating a new account (avoids 422)
+      const existing = await getSession();
+      const existingData = "data" in existing ? existing.data : null;
+      if (existingData?.user) {
+        await signOut();
+      }
+
+      const result = await signUp.email({ email, password, name: fullName });
+
+      // Check if signup failed or returned an error
+      if (result.error) {
+        const errorMessage = result.error.message || "Something went wrong";
+        if (/already|exists|registered|duplicate/i.test(errorMessage)) {
+          // Check if user is verified or not via API
+          try {
+            const checkRes = await fetch("/api/auth/check-user", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email }),
+            });
+            const checkData = await checkRes.json();
+            
+            if (checkData.exists && !checkData.verified) {
+              // User exists but not verified - redirect to verify page
+              router.push("/verify?email=" + encodeURIComponent(email));
+              return;
+            }
+          } catch {}
+          
+          // User exists and is verified
+          setError("An account with this email already exists. Please sign in instead.");
+          return;
+        }
+        setError(errorMessage);
+        return;
+      }
+
+      // Immediately clear any session created by sign-up; verification required first
+      try {
+        await signOut();
+      } catch {}
+
+      // Trigger verification email
+      try {
+        await fetch("/api/verify/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+      } catch {}
+
+      // Redirect to verification page
+      router.push("/verify?email=" + encodeURIComponent(email));
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      // Surface better-auth error response when available
+      const message =
+        err?.data?.message || err?.message || "Something went wrong";
+      if (/already|exists|registered|duplicate/i.test(message)) {
+        // Check if user is verified or not
+        try {
+          const checkRes = await fetch("/api/auth/check-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const checkData = await checkRes.json();
+          
+          if (checkData.exists && !checkData.verified) {
+            // User exists but not verified - redirect to verify page
+            router.push("/verify?email=" + encodeURIComponent(email));
+            return;
+          }
+        } catch {}
+        
+        setError("An account with this email already exists. Please sign in instead.");
+      } else {
+        setError(message);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -107,10 +172,16 @@ export default function SignUpPage() {
                   id="password"
                   type="password"
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="focus-visible:ring-0 rounded-none shadow-none"
                 />
+                {passwordTooShort && (
+                  <p className="text-xs text-destructive">
+                    Password must be at least 8 characters.
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="repeat-password">Confirm Password</Label>
@@ -132,7 +203,11 @@ export default function SignUpPage() {
                 )}
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full cursor-pointer"
+                disabled={isLoading}
+              >
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
               <div className="text-center text-sm text-muted-foreground">

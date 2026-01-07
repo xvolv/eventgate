@@ -4,17 +4,6 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   return (
     <div className="min-h-svh bg-background">
-      <div className="border-b border-border">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-semibold font-serif text-gray-600">
-            EventGate
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Event Proposal & Approval System
-          </p>
-        </div>
-      </div>
-
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="max-w-2xl">
           <h2 className="text-4xl font-semibold mb-4 text-balance">

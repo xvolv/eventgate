@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,28 +10,99 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
-import { signIn } from "@/lib/auth-client";
-import { sign } from "crypto";
-import { router } from "better-auth/api";
-
+import { useEffect, useState } from "react";
+import { signIn, useSession, getSession, signOut } from "@/lib/auth-client";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/proposals/new";
+  const verified = searchParams.get("verified");
+
+  // Show verification success/failure message
+  useEffect(() => {
+    if (verified === "1") {
+      setSuccessMessage("Email verified successfully! You can now sign in.");
+    } else if (verified === "0") {
+      setError("Verification failed or link expired. Please try again.");
+    }
+  }, [verified]);
+
+  // No auto-redirect on visit; redirects are handled after explicit login
+  const { data: session, isPending } = useSession();
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
     try {
-      signIn.email({
-        email,
-        password,
-      });
-      // Redirect or update UI after successful sign-in
-      alert("here we are")
-    } catch (err) {
-      setError("Failed to sign in");
+      const result = await signIn.email({ email, password });
+
+      // Check for errors in the result
+      if (result.error) {
+        // Check if user exists but is unverified
+        try {
+          const checkRes = await fetch("/api/auth/check-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const checkData = await checkRes.json();
+          
+          if (checkData.exists && !checkData.verified) {
+            // User exists but not verified - redirect to verify page
+            await signOut().catch(() => {});
+            router.push("/verify?email=" + encodeURIComponent(email));
+            return;
+          }
+        } catch {}
+        
+        setError("Invalid email or password.");
+        return;
+      }
+
+      // Check session to decide where to go
+      const res = await getSession();
+      const data = "data" in res ? res.data : null;
+      const user = (data as any)?.user ?? (data as any)?.session?.user;
+
+      if (user?.emailVerified) {
+        router.push(redirectTo);
+      } else if (user) {
+        await signOut();
+        router.push("/verify?email=" + encodeURIComponent(email));
+      } else {
+        setError("Invalid email or password.");
+      }
+    } catch (err: any) {
+      // Check if user exists but is unverified
+      try {
+        const checkRes = await fetch("/api/auth/check-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const checkData = await checkRes.json();
+        
+        if (checkData.exists && !checkData.verified) {
+          // User exists but not verified - redirect to verify page
+          await signOut().catch(() => {});
+          router.push("/verify?email=" + encodeURIComponent(email));
+          return;
+        }
+      } catch {}
+      
+      // Use a generic error to avoid revealing whether the user exists
+      setError("Invalid email or password.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,7 +147,14 @@ export default function LoginPage() {
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+              {successMessage && (
+                <p className="text-sm text-emerald-600">{successMessage}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full cursor-pointer"
+                disabled={isLoading}
+              >
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
               <div className="text-center text-sm text-muted-foreground">
