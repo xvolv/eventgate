@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { HomeActions } from "./home-actions";
 
 export default function Home() {
   return (
@@ -16,22 +17,7 @@ export default function Home() {
             place.
           </p>
 
-          <div className="flex gap-3 mb-12">
-            <Link href="/sign-up">
-              <Button size="lg" className="rounded-none hover:cursor-pointer">
-                Create Account
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button
-                size="lg"
-                variant="outline"
-                className="rounded-none hover:cursor-pointer"
-              >
-                Sign In
-              </Button>
-            </Link>
-          </div>
+          <HomeActions />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
             <div>

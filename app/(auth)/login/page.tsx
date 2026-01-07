@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/proposals/new";
+  const redirectParam = searchParams.get("redirect");
   const verified = searchParams.get("verified");
 
   // Show verification success/failure message
@@ -55,7 +55,7 @@ export default function LoginPage() {
             body: JSON.stringify({ email }),
           });
           const checkData = await checkRes.json();
-          
+
           if (checkData.exists && !checkData.verified) {
             // User exists but not verified - redirect to verify page
             await signOut().catch(() => {});
@@ -63,7 +63,7 @@ export default function LoginPage() {
             return;
           }
         } catch {}
-        
+
         setError("Invalid email or password.");
         return;
       }
@@ -74,7 +74,24 @@ export default function LoginPage() {
       const user = (data as any)?.user ?? (data as any)?.session?.user;
 
       if (user?.emailVerified) {
-        router.push(redirectTo);
+        if (redirectParam) {
+          router.push(redirectParam);
+          return;
+        }
+
+        try {
+          const rolesRes = await fetch("/api/roles", { cache: "no-store" });
+          const roles = await rolesRes.json();
+          if (
+            Array.isArray(roles.systemRoles) &&
+            roles.systemRoles.includes("ADMIN")
+          ) {
+            router.push("/admin");
+            return;
+          }
+        } catch {}
+
+        router.push("/proposals/new");
       } else if (user) {
         await signOut();
         router.push("/verify?email=" + encodeURIComponent(email));
@@ -90,7 +107,7 @@ export default function LoginPage() {
           body: JSON.stringify({ email }),
         });
         const checkData = await checkRes.json();
-        
+
         if (checkData.exists && !checkData.verified) {
           // User exists but not verified - redirect to verify page
           await signOut().catch(() => {});
@@ -98,7 +115,7 @@ export default function LoginPage() {
           return;
         }
       } catch {}
-      
+
       // Use a generic error to avoid revealing whether the user exists
       setError("Invalid email or password.");
     } finally {

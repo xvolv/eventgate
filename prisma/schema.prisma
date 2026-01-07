@@ -61,3 +61,47 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+enum SystemRole {
+  ADMIN
+  DIRECTOR
+  STUDENT_UNION
+}
+
+model SystemRoleGrant {
+  id        String     @id @default(cuid())
+  email     String
+  role      SystemRole
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([email, role])
+}
+
+model Club {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roleGrants ClubRoleGrant[]
+}
+
+enum ClubRole {
+  PRESIDENT
+  VP
+  SECRETARY
+}
+
+model ClubRoleGrant {
+  id        String   @id @default(cuid())
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId    String
+  email     String
+  role      ClubRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clubId, role])
+  @@unique([clubId, email, role])
+}
