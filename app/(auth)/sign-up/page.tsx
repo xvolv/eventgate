@@ -23,6 +23,12 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<"club_lead" | "reviewer">("club_lead");
+  const [clubs, setClubs] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedClubId, setSelectedClubId] = useState("");
+  const [selectedRole, setSelectedRole] = useState<
+    "PRESIDENT" | "VP" | "SECRETARY" | ""
+  >("");
   const router = useRouter();
   const rawSignupContact = process.env.NEXT_PUBLIC_SIGNUP_CONTACT;
   const signupContact = rawSignupContact
@@ -37,6 +43,30 @@ export default function SignUpPage() {
 
   // Do not auto-redirect away from sign-up; middleware protects private routes
   const { data: session, isPending } = useSession();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/public/clubs", {
+          method: "GET",
+          signal: controller.signal,
+        });
+        const data = await res.json().catch(() => null);
+        const list = Array.isArray(data?.clubs) ? data.clubs : [];
+        setClubs(list);
+        setSelectedClubId((prev) => prev || list[0]?.id || "");
+        setSelectedRole((prev) => prev || "PRESIDENT");
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+        setClubs([]);
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -58,12 +88,37 @@ export default function SignUpPage() {
         await signOut();
       }
 
-      const result = await signUp.email({ email, password, name: fullName });
+      if (mode === "club_lead") {
+        if (!selectedClubId) {
+          setError("Please select your club.");
+          return;
+        }
+        if (!selectedRole) {
+          setError("Please select your role.");
+          return;
+        }
+      }
+
+      const result = await (signUp.email as any)({
+        email,
+        password,
+        name: fullName,
+        ...(mode === "club_lead"
+          ? {
+              clubId: selectedClubId,
+              clubRole: selectedRole,
+            }
+          : {}),
+      });
 
       // Check if signup failed or returned an error
       if (result.error) {
         const errorMessage = result.error.message || "Something went wrong";
-        if (/restricted|not registered|not allowed/i.test(errorMessage)) {
+        if (
+          /restricted|not registered|not allowed|club leads must select|does not match|select their club/i.test(
+            errorMessage
+          )
+        ) {
           setError(
             signupContact ? `${errorMessage} ${signupContact}` : errorMessage
           );
@@ -116,7 +171,11 @@ export default function SignUpPage() {
       // Surface better-auth error response when available
       const message =
         err?.data?.message || err?.message || "Something went wrong";
-      if (/restricted|not registered|not allowed/i.test(message)) {
+      if (
+        /restricted|not registered|not allowed|club leads must select|does not match|select their club/i.test(
+          message
+        )
+      ) {
         setError(signupContact ? `${message} ${signupContact}` : message);
         return;
       }
@@ -219,10 +278,93 @@ export default function SignUpPage() {
                   </p>
                 )}
                 {passwordsMatch && repeatPassword.length > 0 && (
-                  <p className="text-xs text-emerald-600">Passwords match.</p>
+                  <p className="text-xs text-emerald-600"></p>
                 )}
               </div>
+
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 border-b border-border">
+                  <button
+                    type="button"
+                    onClick={() => setMode("club_lead")}
+                    className={
+                      mode === "club_lead"
+                        ? "h-10 text-sm font-medium text-foreground border-b-2 border-foreground"
+                        : "h-10 text-sm text-muted-foreground"
+                    }
+                  >
+                    Club Lead
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMode("reviewer")}
+                    className={
+                      mode === "reviewer"
+                        ? "h-10 text-sm font-medium text-foreground border-b-2 border-foreground"
+                        : "h-10 text-sm text-muted-foreground"
+                    }
+                  >
+                    Reviewer
+                  </button>
+                </div>
+
+                <div className="min-h-[5.25rem]">
+                  <div
+                    className={mode === "club_lead" ? "grid gap-3" : "hidden"}
+                  >
+                    <div className="grid gap-2">
+                      <Label htmlFor="clubId">Club</Label>
+                      <select
+                        id="clubId"
+                        required={mode === "club_lead"}
+                        disabled={mode !== "club_lead"}
+                        value={selectedClubId}
+                        onChange={(e) => setSelectedClubId(e.target.value)}
+                        className="h-9 w-full border border-border bg-background px-3 text-sm rounded-none focus-visible:outline-none focus-visible:ring-0"
+                      >
+                        {clubs.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="clubRole">Role</Label>
+                      <select
+                        id="clubRole"
+                        required={mode === "club_lead"}
+                        disabled={mode !== "club_lead"}
+                        value={selectedRole}
+                        onChange={(e) =>
+                          setSelectedRole(e.target.value as typeof selectedRole)
+                        }
+                        className="h-9 w-full border border-border bg-background px-3 text-sm rounded-none focus-visible:outline-none focus-visible:ring-0"
+                      >
+                        <option value="PRESIDENT">President</option>
+                        <option value="VP">Vice President</option>
+                        <option value="SECRETARY">Secretary</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div
+                    className={
+                      mode === "reviewer"
+                        ? "text-xs text-muted-foreground"
+                        : "hidden"
+                    }
+                  >
+                    If you are student union or Director assigned by the admin
+                    you can create your account.
+                  </div>
+                </div>
+              </div>
+
               {error && <p className="text-sm text-destructive">{error}</p>}
+
               <Button
                 type="submit"
                 className="w-full cursor-pointer"

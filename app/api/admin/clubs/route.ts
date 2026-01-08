@@ -139,3 +139,39 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ club }, { status: 201 });
 }
+
+export async function DELETE(request: Request) {
+  const gate = await requireAdmin(request);
+  if (!gate.ok) {
+    return NextResponse.json({ message: "Forbidden" }, { status: gate.status });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const clubId = searchParams.get("clubId");
+
+  if (!clubId || typeof clubId !== "string") {
+    return NextResponse.json(
+      { message: "clubId is required" },
+      { status: 400 }
+    );
+  }
+
+  const existing = await prisma.club.findUnique({ where: { id: clubId } });
+  if (!existing) {
+    return NextResponse.json({ message: "Club not found" }, { status: 404 });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Delete all role grants for this club
+    await tx.clubRoleGrant.deleteMany({
+      where: { clubId },
+    });
+
+    // Delete the club
+    await tx.club.delete({
+      where: { id: clubId },
+    });
+  });
+
+  return NextResponse.json({ message: "Club deleted" });
+}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 import { ExistingClubsSection } from "../existing-clubs-section";
 import {
   Dialog,
@@ -32,6 +33,7 @@ export default function AdminClubsPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingClubId, setEditingClubId] = useState<string | null>(null);
@@ -61,6 +63,13 @@ export default function AdminClubsPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!message && !error) return;
+    setToastOpen(true);
+    const handle = setTimeout(() => setToastOpen(false), 4000);
+    return () => clearTimeout(handle);
+  }, [message, error]);
 
   const closeEdit = () => {
     setIsEditOpen(false);
@@ -146,13 +155,34 @@ export default function AdminClubsPage() {
     await refresh();
   };
 
+  const deleteClub = async (clubId: string) => {
+    setMessage(null);
+    setError(null);
+
+    try {
+      const res = await fetch(
+        `/api/admin/clubs?clubId=${encodeURIComponent(clubId)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setError(body?.message || "Failed to delete club");
+        return;
+      }
+
+      setMessage("Club deleted.");
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete club");
+    }
+  };
+
   return (
     <div className="grid gap-6">
       {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
-      {!loading && error && <p className="text-sm text-destructive">{error}</p>}
-      {!loading && message && (
-        <p className="text-sm text-emerald-700">{message}</p>
-      )}
 
       <Dialog
         open={isEditOpen}
@@ -230,7 +260,58 @@ export default function AdminClubsPage() {
         </DialogContent>
       </Dialog>
 
-      <ExistingClubsSection clubs={clubs} onEdit={startEdit} />
+      <ExistingClubsSection
+        clubs={clubs}
+        onEdit={startEdit}
+        onDelete={deleteClub}
+      />
+
+      {(message || error) && toastOpen && (
+        <div
+          className="fixed bottom-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]"
+          role="status"
+          aria-live={error ? "assertive" : "polite"}
+        >
+          <div
+            className={
+              error
+                ? "border border-destructive/30 bg-background"
+                : "border border-border bg-background"
+            }
+          >
+            <div className="flex items-start justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <div
+                  className={
+                    error
+                      ? "text-sm font-medium text-destructive"
+                      : "text-sm font-medium text-foreground"
+                  }
+                >
+                  {error ? "Action failed" : "Update"}
+                </div>
+                <div
+                  className={
+                    error
+                      ? "mt-1 text-sm text-destructive/90"
+                      : "mt-1 text-sm text-muted-foreground"
+                  }
+                >
+                  {error || message}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                aria-label="Dismiss"
+                onClick={() => setToastOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

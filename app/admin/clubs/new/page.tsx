@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 
 export default function AdminAddClubPage() {
   const [clubName, setClubName] = useState("");
@@ -14,6 +15,14 @@ export default function AdminAddClubPage() {
 
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+
+  useEffect(() => {
+    if (!message && !error) return;
+    setToastOpen(true);
+    const handle = setTimeout(() => setToastOpen(false), 4000);
+    return () => clearTimeout(handle);
+  }, [message, error]);
 
   const clear = () => {
     setClubName("");
@@ -72,9 +81,6 @@ export default function AdminAddClubPage() {
 
   return (
     <div className="grid gap-6">
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {message && <p className="text-sm text-emerald-700">{message}</p>}
-
       <Card>
         <CardHeader>
           <CardTitle>Add Club</CardTitle>
@@ -133,6 +139,53 @@ export default function AdminAddClubPage() {
           </div>
         </CardContent>
       </Card>
+
+      {(message || error) && toastOpen && (
+        <div
+          className="fixed bottom-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]"
+          role="status"
+          aria-live={error ? "assertive" : "polite"}
+        >
+          <div
+            className={
+              error
+                ? "border border-destructive/30 bg-background"
+                : "border border-border bg-background"
+            }
+          >
+            <div className="flex items-start justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <div
+                  className={
+                    error
+                      ? "text-sm font-medium text-destructive"
+                      : "text-sm font-medium text-foreground"
+                  }
+                >
+                  {error ? "Action failed" : "Update"}
+                </div>
+                <div
+                  className={
+                    error
+                      ? "mt-1 text-sm text-destructive/90"
+                      : "mt-1 text-sm text-muted-foreground"
+                  }
+                >
+                  {error || message}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                aria-label="Dismiss"
+                onClick={() => setToastOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

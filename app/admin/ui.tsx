@@ -162,6 +162,27 @@ export default function AdminClient() {
     setSecretaryEmail("");
   };
 
+  const deleteClub = async (clubId: string) => {
+    setMessage(null);
+    setError(null);
+
+    const res = await fetch(
+      `/api/admin/clubs?clubId=${encodeURIComponent(clubId)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.message || "Failed to delete club");
+      return;
+    }
+
+    setMessage("Club deleted.");
+    await refresh();
+  };
+
   const grantSystemRole = async () => {
     setMessage(null);
     setError(null);
@@ -315,7 +336,11 @@ export default function AdminClient() {
           </CardContent>
         </Card>
 
-        <ExistingClubsSection clubs={clubs} onEdit={startEditClub} />
+        <ExistingClubsSection
+          clubs={clubs}
+          onEdit={startEditClub}
+          onDelete={deleteClub}
+        />
 
         <Card>
           <CardHeader>

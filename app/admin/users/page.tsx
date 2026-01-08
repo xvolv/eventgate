@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useConfirmation } from "@/components/ui/confirmation-card";
 
 type AdminUser = {
   id: string;
@@ -21,6 +22,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
+
+  const { requestConfirmation, ConfirmationComponent } = useConfirmation();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [query, setQuery] = useState("");
@@ -136,10 +139,13 @@ export default function AdminUsersPage() {
   };
 
   const deleteUser = async (u: AdminUser) => {
-    const ok = window.confirm(
-      `Delete user ${u.email}? This will remove their sessions/accounts too.`
+    const confirmed = await requestConfirmation(
+      "Delete User",
+      `Delete user ${u.email}? This will remove their sessions/accounts too.`,
+      () => {},
+      { variant: "destructive", confirmText: "Delete", cancelText: "Cancel" }
     );
-    if (!ok) return;
+    if (!confirmed) return;
 
     setMessage(null);
     setError(null);
@@ -167,6 +173,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="grid gap-6">
+      <ConfirmationComponent />
       {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
 
       <Card>

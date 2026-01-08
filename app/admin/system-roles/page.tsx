@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useConfirmation } from "@/components/ui/confirmation-card";
 
 type SystemRole = "ADMIN" | "DIRECTOR" | "STUDENT_UNION";
 
@@ -19,6 +20,8 @@ export default function AdminSystemRolesPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
+
+  const { requestConfirmation, ConfirmationComponent } = useConfirmation();
 
   const [systemRoleGrants, setSystemRoleGrants] = useState<SystemRoleGrant[]>(
     []
@@ -91,10 +94,13 @@ export default function AdminSystemRolesPage() {
   };
 
   const deleteGrant = async (grant: SystemRoleGrant) => {
-    const ok = window.confirm(
-      `Delete system role grant for ${grant.email} (${grant.role})?`
+    const confirmed = await requestConfirmation(
+      "Delete System Role Grant",
+      `Delete system role grant for ${grant.email} (${grant.role})?`,
+      () => {},
+      { variant: "destructive", confirmText: "Delete", cancelText: "Cancel" }
     );
-    if (!ok) return;
+    if (!confirmed) return;
 
     setMessage(null);
     setError(null);
@@ -283,6 +289,7 @@ export default function AdminSystemRolesPage() {
 
   return (
     <div className="grid gap-6">
+      <ConfirmationComponent />
       {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
 
       <Card>

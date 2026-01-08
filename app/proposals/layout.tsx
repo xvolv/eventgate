@@ -20,22 +20,39 @@ export default async function ProposalsLayout({
     redirect("/verify?email=" + encodeURIComponent(user.email || ""));
   }
 
-  const grants = await prisma.systemRoleGrant.findMany({
+  // Check system roles first
+  const systemGrants = await prisma.systemRoleGrant.findMany({
     where: { email: user.email.toLowerCase() },
     select: { role: true },
   });
 
-  const roles = new Set(grants.map((g) => g.role));
+  const systemRoles = new Set(systemGrants.map((g) => g.role));
 
-  if (roles.has("ADMIN")) {
+  if (systemRoles.has("ADMIN")) {
     redirect("/admin");
   }
-  if (roles.has("STUDENT_UNION")) {
+  if (systemRoles.has("STUDENT_UNION")) {
     redirect("/student-union");
   }
-  if (roles.has("DIRECTOR")) {
+  if (systemRoles.has("DIRECTOR")) {
     redirect("/director");
   }
 
+  // Check club roles
+  const clubGrants = await prisma.clubRoleGrant.findMany({
+    where: { email: user.email.toLowerCase() },
+    select: { role: true },
+  });
+
+  const clubRoles = new Set(clubGrants.map((g) => g.role));
+
+  if (clubRoles.has("VP")) {
+    redirect("/vp");
+  }
+  if (clubRoles.has("SECRETARY")) {
+    redirect("/secretary");
+  }
+
+  // If no special roles, allow access to proposals (for presidents)
   return <>{children}</>;
 }

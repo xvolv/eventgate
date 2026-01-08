@@ -25,16 +25,26 @@ export function HomeActions() {
         const res = await fetch("/api/roles", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
-        const roles: string[] = Array.isArray(json?.systemRoles)
+        const systemRoles: string[] = Array.isArray(json?.systemRoles)
           ? json.systemRoles
           : [];
-        const nextHref = roles.includes("ADMIN")
+        const clubRoles: string[] = Array.isArray(json?.clubRoles)
+          ? json.clubRoles
+          : [];
+
+        // Check system roles first (higher priority)
+        const nextHref = systemRoles.includes("ADMIN")
           ? "/admin/clubs/new"
-          : roles.includes("STUDENT_UNION")
-            ? "/student-union"
-            : roles.includes("DIRECTOR")
-              ? "/director"
-              : "/proposals/new";
+          : systemRoles.includes("STUDENT_UNION")
+          ? "/student-union"
+          : systemRoles.includes("DIRECTOR")
+          ? "/director"
+          : // Then check club roles
+          clubRoles.includes("VP")
+          ? "/vp"
+          : clubRoles.includes("SECRETARY")
+          ? "/secretary"
+          : "/proposals/new"; // Default for presidents
         if (!cancelled) setDashboardHref(nextHref);
       } catch {
         if (!cancelled) setDashboardHref("/proposals/new");
@@ -53,7 +63,7 @@ export function HomeActions() {
   if (isAuthed && !isVerified) {
     return (
       <div className="flex gap-3 mb-12">
-        <Link href={"/verify?email=" + encodeURIComponent(user?.email || "") }>
+        <Link href={"/verify?email=" + encodeURIComponent(user?.email || "")}>
           <Button size="lg" className="rounded-none hover:cursor-pointer">
             Verify Email
           </Button>

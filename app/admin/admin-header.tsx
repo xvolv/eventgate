@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { signOut } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 
 function isActive(pathname: string, href: string) {
   if (href === "/admin/clubs") {
@@ -24,6 +25,9 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const currentSessionEmail = session?.user?.email || userEmail;
 
   const currentSection = (() => {
     if (pathname === "/admin" || pathname === "/admin/clubs") return "Clubs";
@@ -33,11 +37,18 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
     return "Admin";
   })();
 
+  // If session is null (signed out), redirect to home immediately
+  React.useEffect(() => {
+    if (session === null) {
+      router.push("/");
+    }
+  }, [session, router]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
     } finally {
-      router.push("/");
+      // Let the useEffect handle redirect after session clears
     }
   };
 
@@ -65,7 +76,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
 
           <div className="flex items-center gap-2">
             <div className="hidden lg:block text-xs text-white/70 truncate max-w-[28rem]">
-              {userEmail}
+              {currentSessionEmail}
             </div>
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogTrigger asChild>
@@ -84,7 +95,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                       Admin Menu
                     </DialogTitle>
                     <div className="mt-1 text-xs text-white/70 truncate">
-                      {userEmail}
+                      {currentSessionEmail}
                     </div>
                   </div>
 

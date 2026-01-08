@@ -85,6 +85,7 @@ model Club {
   updatedAt DateTime @updatedAt
 
   roleGrants ClubRoleGrant[]
+  proposals   Proposal[]
 }
 
 enum ClubRole {
@@ -104,4 +105,127 @@ model ClubRoleGrant {
 
   @@unique([clubId, role])
   @@unique([clubId, email, role])
+}
+
+// Core proposal - minimal essential info
+model Proposal {
+  id                String           @id @default(cuid())
+  clubId            String
+  club              Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  submittedBy       String           // President's email
+  
+  // Relations to normalized data
+  event             Event?           @relation
+  eventId           String?          @unique
+  contacts          ProposalContact[]
+  reviews           ProposalReview[]
+  collaborators     ProposalCollaborator[]
+  guests            ProposalGuest[]
+  
+  // Status tracking
+  status            ProposalStatus   @default(PENDING)
+  resubmissionCount Int              @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clubId, status])
+  @@index([submittedBy])
+}
+
+// Event details - extracted from Proposal
+model Event {
+  id                String   @id @default(cuid())
+  proposalId        String   @unique
+  proposal          Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  title             String
+  description       String
+  location          String
+  startTime         DateTime
+  endTime           DateTime
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Contact information - extracted from Proposal
+model ProposalContact {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  role       ContactRole
+  name       String
+  email      String?
+  mobile     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([proposalId, role])
+}
+
+// External collaborators - normalized from JSON
+model ProposalCollaborator {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  name       String
+  type       String   // "Organization", "Club", "Department", etc.
+  
+  createdAt DateTime @default(now())
+}
+
+// Invited guests - normalized from JSON
+model ProposalGuest {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  name       String
+  affiliation String?
+  reason     String?
+  
+  createdAt DateTime @default(now())
+}
+
+// Review process - extracted from Proposal
+model ProposalReview {
+  id         String     @id @default(cuid())
+  proposalId String
+  proposal   Proposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  reviewerRole ReviewRole
+  reviewerEmail String
+  recommendation String? // "Recommended" or "Not Recommended"
+  comments      String?
+  approved      Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([proposalId, reviewerRole])
+}
+
+// Enums for the new models
+enum ContactRole {
+  PRESIDENT
+  VICE_PRESIDENT
+  SECRETARY
+}
+
+enum ReviewRole {
+  STUDENT_UNION
+  DIRECTOR
+}
+
+enum ProposalStatus {
+  PENDING
+  SU_APPROVED
+  SU_REJECTED
+  DIRECTOR_APPROVED
+  DIRECTOR_REJECTED
+  RESUBMISSION_REQUIRED
 }
