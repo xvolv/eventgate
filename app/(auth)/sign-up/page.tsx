@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { prisma } from "@/lib/prisma";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -25,6 +24,13 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const rawSignupContact = process.env.NEXT_PUBLIC_SIGNUP_CONTACT;
+  const signupContact = rawSignupContact
+    ? rawSignupContact
+        .replace(/\r?\n/g, " ")
+        .replace(/^\s*['\"]|['\"]\s*$/g, "")
+        .trim()
+    : "";
   const passwordsMatch = password.length > 0 && password === repeatPassword;
   const passwordTooShort = password.length > 0 && password.length < 8;
   const showMismatch = repeatPassword.length > 0 && !passwordsMatch;
@@ -57,6 +63,12 @@ export default function SignUpPage() {
       // Check if signup failed or returned an error
       if (result.error) {
         const errorMessage = result.error.message || "Something went wrong";
+        if (/restricted|not registered|not allowed/i.test(errorMessage)) {
+          setError(
+            signupContact ? `${errorMessage} ${signupContact}` : errorMessage
+          );
+          return;
+        }
         if (/already|exists|registered|duplicate/i.test(errorMessage)) {
           // Check if user is verified or not via API
           try {
@@ -66,16 +78,18 @@ export default function SignUpPage() {
               body: JSON.stringify({ email }),
             });
             const checkData = await checkRes.json();
-            
+
             if (checkData.exists && !checkData.verified) {
               // User exists but not verified - redirect to verify page
               router.push("/verify?email=" + encodeURIComponent(email));
               return;
             }
           } catch {}
-          
+
           // User exists and is verified
-          setError("An account with this email already exists. Please sign in instead.");
+          setError(
+            "An account with this email already exists. Please sign in instead."
+          );
           return;
         }
         setError(errorMessage);
@@ -102,6 +116,10 @@ export default function SignUpPage() {
       // Surface better-auth error response when available
       const message =
         err?.data?.message || err?.message || "Something went wrong";
+      if (/restricted|not registered|not allowed/i.test(message)) {
+        setError(signupContact ? `${message} ${signupContact}` : message);
+        return;
+      }
       if (/already|exists|registered|duplicate/i.test(message)) {
         // Check if user is verified or not
         try {
@@ -111,15 +129,17 @@ export default function SignUpPage() {
             body: JSON.stringify({ email }),
           });
           const checkData = await checkRes.json();
-          
+
           if (checkData.exists && !checkData.verified) {
             // User exists but not verified - redirect to verify page
             router.push("/verify?email=" + encodeURIComponent(email));
             return;
           }
         } catch {}
-        
-        setError("An account with this email already exists. Please sign in instead.");
+
+        setError(
+          "An account with this email already exists. Please sign in instead."
+        );
       } else {
         setError(message);
       }

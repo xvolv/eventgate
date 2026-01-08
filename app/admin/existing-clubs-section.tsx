@@ -41,12 +41,8 @@ export function ExistingClubsSection({
             {clubs.map((c) => (
               <div key={c.id} className="border border-border p-3">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="font-medium">{c.name}</div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(c)}
-                  >
+                  <div className="font-medium">{c.name.toUpperCase()}</div>
+                  <Button className="rounded-none" variant="outline" size="sm" onClick={() => onEdit(c)}>
                     Edit
                   </Button>
                 </div>

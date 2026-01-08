@@ -24,7 +24,7 @@ type Club = {
 type SystemRoleGrant = { id: string; email: string; role: SystemRole };
 
 const selectClassName =
-  "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+  "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 export default function AdminClient() {
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -43,6 +43,10 @@ export default function AdminClient() {
 
   const [systemRole, setSystemRole] = useState<SystemRole>("DIRECTOR");
   const [systemRoleEmail, setSystemRoleEmail] = useState("");
+  const [editingGrantId, setEditingGrantId] = useState<string | null>(null);
+  const [editingGrantEmail, setEditingGrantEmail] = useState("");
+  const [editingGrantRole, setEditingGrantRole] =
+    useState<SystemRole>("DIRECTOR");
 
   const clubsByName = useMemo(() => {
     const map = new Map<string, Club>();
@@ -142,7 +146,9 @@ export default function AdminClient() {
     setPresidentEmail(
       (club.roleGrants || []).find((g) => g.role === "PRESIDENT")?.email || ""
     );
-    setVpEmail((club.roleGrants || []).find((g) => g.role === "VP")?.email || "");
+    setVpEmail(
+      (club.roleGrants || []).find((g) => g.role === "VP")?.email || ""
+    );
     setSecretaryEmail(
       (club.roleGrants || []).find((g) => g.role === "SECRETARY")?.email || ""
     );
@@ -182,8 +188,54 @@ export default function AdminClient() {
     await refresh();
   };
 
+  const startEditSystemGrant = (grant: SystemRoleGrant) => {
+    setMessage(null);
+    setError(null);
+    setEditingGrantId(grant.id);
+    setEditingGrantEmail(grant.email);
+    setEditingGrantRole(grant.role);
+  };
+
+  const cancelEditSystemGrant = () => {
+    setEditingGrantId(null);
+    setEditingGrantEmail("");
+    setEditingGrantRole("DIRECTOR");
+  };
+
+  const saveSystemGrant = async () => {
+    if (!editingGrantId) return;
+    setMessage(null);
+    setError(null);
+
+    const email = editingGrantEmail.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      setError("Enter a valid email");
+      return;
+    }
+
+    const res = await fetch("/api/admin/system-role-grants", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingGrantId,
+        email,
+        role: editingGrantRole,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.message || "Failed to update system role");
+      return;
+    }
+
+    setMessage("System role updated.");
+    cancelEditSystemGrant();
+    await refresh();
+  };
+
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-10">
       <h1 className="text-2xl font-semibold">Clubs</h1>
       <p className="text-sm text-muted-foreground">
         Manage clubs and role assignments.
@@ -303,8 +355,58 @@ export default function AdminClient() {
               <div className="font-medium text-foreground">Existing grants</div>
               {systemRoleGrants.length === 0 && <div>No system roles yet.</div>}
               {systemRoleGrants.map((g) => (
-                <div key={g.id}>
-                  {g.role}: {g.email}
+                <div
+                  key={g.id}
+                  className="flex flex-col gap-2 border border-border/50 p-3 md:flex-row md:items-center md:gap-3"
+                >
+                  {editingGrantId === g.id ? (
+                    <>
+                      <select
+                        className={selectClassName}
+                        value={editingGrantRole}
+                        onChange={(e) =>
+                          setEditingGrantRole(e.target.value as SystemRole)
+                        }
+                      >
+                        <option value="DIRECTOR">Director</option>
+                        <option value="STUDENT_UNION">Student Union</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                      <Input
+                        type="email"
+                        value={editingGrantEmail}
+                        onChange={(e) => setEditingGrantEmail(e.target.value)}
+                        placeholder="user@school.edu"
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={saveSystemGrant}>Save</Button>
+                        <Button
+                          variant="outline"
+                          onClick={cancelEditSystemGrant}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="font-medium text-foreground">
+                          {g.role}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {g.email}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="rounded-none"
+                        onClick={() => startEditSystemGrant(g)}
+                      >
+                        Edit
+                      </Button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
