@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { GuestModal } from "@/components/guest-modal";
+import { CollaboratorModal } from "@/components/collaborator-modal";
 
 export default function NewProposalPage() {
   const { data, isPending } = useSession();
@@ -37,10 +39,12 @@ export default function NewProposalPage() {
   const [presidentName, setPresidentName] = useState("");
   const [vpName, setVpName] = useState("");
   const [secretaryName, setSecretaryName] = useState("");
-  const [collaborators, setCollaborators] = useState<string[]>([""]);
+  const [collaborators, setCollaborators] = useState<string[]>([]);
   const [guests, setGuests] = useState<
     Array<{ name: string; expertise: string; reason: string }>
-  >([{ name: "", expertise: "", reason: "" }]);
+  >([]);
+  const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -84,7 +88,7 @@ export default function NewProposalPage() {
 
     if (!user) {
       // Not logged in - redirect to login
-      router.replace("/login?redirect=" + encodeURIComponent("/proposals/new"));
+      router.replace("/login?redirect=" + encodeURIComponent("/president/new"));
       return;
     }
 
@@ -170,20 +174,6 @@ export default function NewProposalPage() {
       }
     }
 
-    // Validate guests
-    guests.forEach((guest, index) => {
-      if (guest.name.trim()) {
-        if (!guest.expertise.trim()) {
-          nextErrors[`guests.${index}.expertise`] =
-            "Expertise is required when guest name is provided.";
-        }
-        if (!guest.reason.trim()) {
-          nextErrors[`guests.${index}.reason`] =
-            "Reason for invitation is required when guest name is provided.";
-        }
-      }
-    });
-
     return nextErrors;
   };
 
@@ -227,8 +217,11 @@ export default function NewProposalPage() {
         throw new Error(data.message || "Failed to submit proposal");
       }
 
-      setMessage("Proposal submitted successfully!");
-      // Reset form
+      setMessage(
+        "Proposal submitted successfully and sent to club leads for review!"
+      );
+
+      // Clear form state immediately
       setTitle("");
       setStartDateTime("");
       setEndDateTime("");
@@ -237,13 +230,13 @@ export default function NewProposalPage() {
       setPresidentName("");
       setVpName("");
       setSecretaryName("");
-      setCollaborators([""]);
-      setGuests([{ name: "", expertise: "", reason: "" }]);
+      setCollaborators([]);
+      setGuests([]);
       setErrors({});
 
       // Redirect after a delay
       setTimeout(() => {
-        router.push("/proposals");
+        router.push("/president");
       }, 2000);
     } catch (error) {
       setFormError(
@@ -276,28 +269,19 @@ export default function NewProposalPage() {
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="border-b border-border bg-muted/30">
-        <div className="container mx-auto px-4 py-6 max-w-5xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold font-serif text-gray-700">
-                Submit Event Proposal
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Provide event details for review and approval.
+      <div className="container mx-auto px-4 py-10 max-w-5xl">
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground">
+            Provide event details for review and approval.
+          </p>
+          {clubInfo && (
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-700">
+                {clubInfo.name}
               </p>
+              <p className="text-xs text-muted-foreground">President Account</p>
             </div>
-            {clubInfo && (
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-700">
-                  {clubInfo.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  President Account
-                </p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
@@ -570,46 +554,30 @@ export default function NewProposalPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setCollaborators([...collaborators, ""])}
+                    onClick={() => setIsCollaboratorModalOpen(true)}
                     className="rounded-none"
                   >
-                    Add Collaborator
+                    Manage Collaborators
                   </Button>
                 </div>
-                {collaborators.map((collaborator, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      placeholder="e.g., Engineering Department"
-                      value={collaborator}
-                      onChange={(e) => {
-                        const newCollaborators = [...collaborators];
-                        newCollaborators[index] = e.target.value;
-                        setCollaborators(newCollaborators);
-                      }}
-                      className="rounded-none shadow-none focus-visible:ring-0"
-                    />
-                    {collaborators.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newCollaborators = collaborators.filter(
-                            (_, i) => i !== index
-                          );
-                          setCollaborators(
-                            newCollaborators.length > 0
-                              ? newCollaborators
-                              : [""]
-                          );
-                        }}
-                        className="rounded-none"
+                {collaborators.length > 0 ? (
+                  <div className="space-y-2">
+                    {collaborators.map((collaborator, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-3 bg-muted/30 rounded-none"
                       >
-                        Remove
-                      </Button>
-                    )}
+                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <span className="text-sm">{collaborator}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    No collaborating organizations added. Click "Manage
+                    Collaborators" to add.
+                  </p>
+                )}
               </div>
 
               {/* Guests Section */}
@@ -622,149 +590,37 @@ export default function NewProposalPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setGuests([
-                        ...guests,
-                        { name: "", expertise: "", reason: "" },
-                      ])
-                    }
+                    onClick={() => setIsGuestModalOpen(true)}
                     className="rounded-none"
                   >
-                    Add Guest
+                    Manage Guests
                   </Button>
                 </div>
-                {guests.map((guest, index) => (
-                  <Card key={index} className="shadow-none rounded-none border">
-                    <CardContent className="p-4 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor={`guest-name-${index}`}
-                            className="text-sm"
-                          >
-                            Guest Name *
-                          </Label>
-                          <Input
-                            id={`guest-name-${index}`}
-                            placeholder="Dr. Jane Smith"
-                            value={guest.name}
-                            onChange={(e) => {
-                              const newGuests = [...guests];
-                              newGuests[index] = {
-                                ...newGuests[index],
-                                name: e.target.value,
-                              };
-                              setGuests(newGuests);
-                              if (errors[`guests.${index}.name`]) {
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  [`guests.${index}.name`]: "",
-                                }));
-                              }
-                            }}
-                            className="rounded-none shadow-none focus-visible:ring-0"
-                          />
-                          {errors[`guests.${index}.name`] && (
-                            <p className="text-xs text-destructive">
-                              {errors[`guests.${index}.name`]}
+                {guests.length > 0 ? (
+                  <div className="space-y-3">
+                    {guests.map((guest, index) => (
+                      <div
+                        key={index}
+                        className="p-4 border border-border bg-background space-y-2"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                          <div className="flex-1 space-y-1">
+                            <p className="font-medium">{guest.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              <strong>Expertise:</strong> {guest.expertise}
                             </p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor={`guest-expertise-${index}`}
-                            className="text-sm"
-                          >
-                            Area of Expertise *
-                          </Label>
-                          <Input
-                            id={`guest-expertise-${index}`}
-                            placeholder="e.g., Machine Learning, Finance"
-                            value={guest.expertise}
-                            onChange={(e) => {
-                              const newGuests = [...guests];
-                              newGuests[index] = {
-                                ...newGuests[index],
-                                expertise: e.target.value,
-                              };
-                              setGuests(newGuests);
-                              if (errors[`guests.${index}.expertise`]) {
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  [`guests.${index}.expertise`]: "",
-                                }));
-                              }
-                            }}
-                            className="rounded-none shadow-none focus-visible:ring-0"
-                          />
-                          {errors[`guests.${index}.expertise`] && (
-                            <p className="text-xs text-destructive">
-                              {errors[`guests.${index}.expertise`]}
+                            <p className="text-sm text-muted-foreground">
+                              <strong>Reason:</strong> {guest.reason}
                             </p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor={`guest-reason-${index}`}
-                            className="text-sm"
-                          >
-                            Reason for Invitation *
-                          </Label>
-                          <Input
-                            id={`guest-reason-${index}`}
-                            placeholder="e.g., Keynote speaker on AI ethics"
-                            value={guest.reason}
-                            onChange={(e) => {
-                              const newGuests = [...guests];
-                              newGuests[index] = {
-                                ...newGuests[index],
-                                reason: e.target.value,
-                              };
-                              setGuests(newGuests);
-                              if (errors[`guests.${index}.reason`]) {
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  [`guests.${index}.reason`]: "",
-                                }));
-                              }
-                            }}
-                            className="rounded-none shadow-none focus-visible:ring-0"
-                          />
-                          {errors[`guests.${index}.reason`] && (
-                            <p className="text-xs text-destructive">
-                              {errors[`guests.${index}.reason`]}
-                            </p>
-                          )}
+                          </div>
                         </div>
                       </div>
-                      {guests.length > 1 && (
-                        <div className="flex justify-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newGuests = guests.filter(
-                                (_, i) => i !== index
-                              );
-                              setGuests(
-                                newGuests.length > 0
-                                  ? newGuests
-                                  : [{ name: "", expertise: "", reason: "" }]
-                              );
-                            }}
-                            className="rounded-none"
-                          >
-                            Remove Guest
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-                {guests.length === 1 && guests[0].name === "" && (
+                    ))}
+                  </div>
+                ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    No guests added. Click "Add Guest" to invite speakers or
+                    No guests added. Click "Manage Guests" to invite speakers or
                     special attendees.
                   </p>
                 )}
@@ -783,6 +639,21 @@ export default function NewProposalPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Modals */}
+      <GuestModal
+        isOpen={isGuestModalOpen}
+        onClose={() => setIsGuestModalOpen(false)}
+        guests={guests}
+        onSave={setGuests}
+      />
+
+      <CollaboratorModal
+        isOpen={isCollaboratorModalOpen}
+        onClose={() => setIsCollaboratorModalOpen(false)}
+        collaborators={collaborators}
+        onSave={setCollaborators}
+      />
     </div>
   );
 }

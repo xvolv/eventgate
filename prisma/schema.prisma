@@ -121,6 +121,7 @@ model Proposal {
   reviews           ProposalReview[]
   collaborators     ProposalCollaborator[]
   guests            ProposalGuest[]
+  leadApprovals     ProposalLeadApproval[]
   
   // Status tracking
   status            ProposalStatus   @default(PENDING)
@@ -221,7 +222,27 @@ enum ReviewRole {
   DIRECTOR
 }
 
+// Lead approval tracking
+model ProposalLeadApproval {
+  id         String     @id @default(cuid())
+  proposalId String
+  proposal   Proposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  leadRole   ClubRole   // PRESIDENT or VP
+  leadEmail  String     // Email of the lead who reviewed
+  approved   Boolean    @default(false)
+  comments   String?
+  
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([proposalId, leadRole])
+}
+
 enum ProposalStatus {
+  LEAD_REVIEW
+  LEAD_APPROVED
+  LEAD_REJECTED
   PENDING
   SU_APPROVED
   SU_REJECTED

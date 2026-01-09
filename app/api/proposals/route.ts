@@ -43,13 +43,14 @@ export async function POST(request: Request) {
       data: {
         clubId: presidentGrant.clubId,
         submittedBy: user.email.toLowerCase(),
-        status: "PENDING",
+        status: "LEAD_REVIEW", // Start with lead review stage
       },
       include: {
         event: true,
         contacts: true,
         collaborators: true,
         guests: true,
+        club: true,
       },
     });
 
@@ -130,13 +131,48 @@ export async function POST(request: Request) {
       });
     }
 
-    // Send notification to Student Union members
-    // TODO: Implement email notification system
+    // Create lead approval tracking entries for VP and Secretary only (not President)
+    const clubLeads = await prisma.clubRoleGrant.findMany({
+      where: {
+        clubId: presidentGrant.clubId,
+        role: {
+          in: ["VP", "SECRETARY"], // Only VP and Secretary review proposals
+        },
+      },
+      select: {
+        role: true,
+        email: true,
+      },
+    });
+
+    // Create lead approval records
+    if (clubLeads.length > 0) {
+      await prisma.proposalLeadApproval.createMany({
+        data: clubLeads.map((lead) => ({
+          proposalId: proposal.id,
+          leadRole: lead.role,
+          leadEmail: lead.email,
+          approved: false, // Initial state - not yet approved
+        })),
+      });
+    }
+
+    // Send notifications to club leads
+    // TODO: Implement email notification system for club leads
 
     return NextResponse.json(
       {
-        message: "Proposal submitted successfully",
-        proposal,
+        message:
+          "Proposal submitted successfully and sent to club leads for review",
+        proposal: {
+          ...proposal,
+          leadApprovals: clubLeads.map((lead) => ({
+            leadRole: lead.role,
+            leadEmail: lead.email,
+            approved: false, // Initial state - not yet approved
+            comments: null,
+          })),
+        },
       },
       { status: 201 }
     );
@@ -209,6 +245,19 @@ export async function GET(request: Request) {
           guests: true,
           club: {
             select: { name: true },
+          },
+          leadApprovals: {
+            include: {
+              proposal: {
+                include: {
+                  event: {
+                    select: {
+                      title: true,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       }),

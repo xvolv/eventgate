@@ -10,13 +10,13 @@ export function HomeActions() {
   const user = data?.user;
   const isAuthed = Boolean(user);
   const isVerified = Boolean(user?.emailVerified);
-  const [dashboardHref, setDashboardHref] = useState("/proposals/new");
+  const [dashboardHref, setDashboardHref] = useState("/president");
 
   useEffect(() => {
     let cancelled = false;
 
     if (!isVerified) {
-      setDashboardHref("/proposals/new");
+      setDashboardHref("/president");
       return;
     }
 
@@ -44,10 +44,10 @@ export function HomeActions() {
           ? "/vp"
           : clubRoles.includes("SECRETARY")
           ? "/secretary"
-          : "/proposals/new"; // Default for presidents
+          : "/president"; // Default for presidents
         if (!cancelled) setDashboardHref(nextHref);
       } catch {
-        if (!cancelled) setDashboardHref("/proposals/new");
+        if (!cancelled) setDashboardHref("/president");
       }
     })();
 

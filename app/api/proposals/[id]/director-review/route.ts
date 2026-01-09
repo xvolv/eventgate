@@ -39,7 +39,11 @@ export async function POST(
     const body = await request.json();
     const { directorApproval, directorComments } = body;
 
-    if (!directorApproval || !directorComments) {
+    if (
+      directorApproval === undefined ||
+      directorApproval === null ||
+      !directorComments
+    ) {
       return NextResponse.json(
         {
           message: "Approval decision and comments are required",
@@ -48,18 +52,41 @@ export async function POST(
       );
     }
 
+    const normalizedDecision = String(directorApproval);
+    const directorApproved = normalizedDecision === "Approved";
+
     // Update proposal with Director review
     const updatedProposal = await prisma.proposal.update({
       where: { id: params.id },
       data: {
-        directorApproval,
-        directorComments,
-        directorApprovedBy: user.email.toLowerCase(),
-        directorApprovedAt: new Date(),
-        status:
-          directorApproval === "Approved"
-            ? "DIRECTOR_APPROVED"
-            : "DIRECTOR_REJECTED",
+        status: directorApproved ? "DIRECTOR_APPROVED" : "DIRECTOR_REJECTED",
+        reviews: {
+          upsert: {
+            where: {
+              proposalId_reviewerRole: {
+                proposalId: params.id,
+                reviewerRole: "DIRECTOR",
+              },
+            },
+            create: {
+              reviewerRole: "DIRECTOR",
+              reviewerEmail: user.email.toLowerCase(),
+              recommendation: directorApproved
+                ? "Recommended"
+                : "Not Recommended",
+              comments: directorComments,
+              approved: directorApproved,
+            },
+            update: {
+              reviewerEmail: user.email.toLowerCase(),
+              recommendation: directorApproved
+                ? "Recommended"
+                : "Not Recommended",
+              comments: directorComments,
+              approved: directorApproved,
+            },
+          },
+        },
       },
     });
 
@@ -68,7 +95,7 @@ export async function POST(
 
     return NextResponse.json({
       message: `Proposal ${
-        directorApproval === "Approved" ? "approved" : "rejected"
+        directorApproved ? "approved" : "rejected"
       } by Director`,
       proposal: updatedProposal,
     });

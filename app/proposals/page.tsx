@@ -12,20 +12,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { VPHeader } from "@/components/vp-header";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 interface Proposal {
   id: string;
+  title: string;
   status: string;
   createdAt: string;
   event: {
-    title?: string;
-    description?: string;
-    location?: string;
-    startTime?: string;
-    endTime?: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    location: string;
   };
   club: {
     name: string;
@@ -62,26 +59,24 @@ const statusLabels = {
   RESUBMISSION_REQUIRED: "Resubmission Required",
 };
 
-export default function VPPage() {
+export default function ProposalsPage() {
   const { data, isPending } = useSession();
   const router = useRouter();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [approving, setApproving] = useState<string | null>(null);
-  const [comments, setComments] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (isPending) return;
 
     const fetchProposals = async () => {
       try {
-        const response = await fetch("/api/lead-approvals");
+        const response = await fetch("/api/proposals");
         if (!response.ok) {
           throw new Error("Failed to fetch proposals");
         }
         const data = await response.json();
-        setProposals(data.approvals || []);
+        setProposals(data.proposals);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch proposals"
@@ -93,42 +88,6 @@ export default function VPPage() {
 
     fetchProposals();
   }, [isPending]);
-
-  const handleApproval = async (proposalId: string, approved: boolean) => {
-    setApproving(proposalId);
-    try {
-      const response = await fetch("/api/lead-approvals", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          proposalId,
-          approved,
-          comments: comments[proposalId] || "",
-          leadRole: "VP",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit approval");
-      }
-
-      // Refresh the proposals list
-      const fetchResponse = await fetch("/api/lead-approvals");
-      const data = await fetchResponse.json();
-      setProposals(data.approvals || []);
-
-      // Clear comments for this proposal
-      setComments((prev) => ({ ...prev, [proposalId]: "" }));
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to submit approval"
-      );
-    } finally {
-      setApproving(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -155,18 +114,20 @@ export default function VPPage() {
 
   return (
     <div className="min-h-svh bg-background">
-      <VPHeader userEmail={data?.user?.email || ""} />
-
       <main className="container mx-auto px-4 py-10 max-w-5xl">
         {proposals.length === 0 ? (
           <Card className="shadow-none rounded-none">
             <CardContent className="p-12 text-center">
-              <h3 className="text-lg font-medium mb-4">
-                No Proposals to Review
-              </h3>
-              <p className="text-muted-foreground">
-                There are no proposals pending your review at this time.
+              <h3 className="text-lg font-medium mb-4">No Proposals Yet</h3>
+              <p className="text-muted-foreground mb-6">
+                You haven't submitted any event proposals yet.
               </p>
+              <Button
+                onClick={() => router.push("/president/new")}
+                className="rounded-none"
+              >
+                Create Your First Proposal
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -210,16 +171,9 @@ export default function VPPage() {
                           <strong>Location:</strong>{" "}
                           {proposal.event?.location || "Not specified"}
                         </p>
-                        <div>
-                          <strong>Description:</strong>{" "}
-                          <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                            {proposal.event?.description ||
-                              "No description provided"}
-                          </div>
-                        </div>
                         <p>
                           <strong>Time:</strong>{" "}
-                          {proposal.event?.startTime && proposal.event?.endTime
+                          {proposal.event?.startTime
                             ? `${new Date(
                                 proposal.event.startTime
                               ).toLocaleString()} - ${new Date(
@@ -260,44 +214,26 @@ export default function VPPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <Label htmlFor={`comments-${proposal.id}`}>
-                        Comments
-                      </Label>
-                      <Textarea
-                        id={`comments-${proposal.id}`}
-                        placeholder="Add your comments (optional)"
-                        value={comments[proposal.id] || ""}
-                        onChange={(e) =>
-                          setComments((prev) => ({
-                            ...prev,
-                            [proposal.id]: e.target.value,
-                          }))
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        router.push(`/proposals/${proposal.id}/edit`)
+                      }
+                      className="rounded-none"
+                    >
+                      Edit Proposal
+                    </Button>
+                    {proposal.status === "LEAD_REVIEW" && (
+                      <Button
+                        onClick={() =>
+                          router.push(`/proposals/${proposal.id}/review`)
                         }
-                        className="mt-2"
-                      />
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleApproval(proposal.id, true)}
-                        disabled={approving === proposal.id}
                         className="rounded-none"
                       >
-                        {approving === proposal.id
-                          ? "Submitting..."
-                          : "Approve"}
+                        Review Details
                       </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleApproval(proposal.id, false)}
-                        disabled={approving === proposal.id}
-                        className="rounded-none"
-                      >
-                        {approving === proposal.id ? "Submitting..." : "Reject"}
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -109,12 +108,17 @@ export default function LoginPage() {
           return;
         }
 
+        if (systemRoles.includes("PRESIDENT")) {
+          router.push("/president");
+          return;
+        }
+
         if (redirectParam) {
           router.push(redirectParam);
           return;
         }
 
-        router.push("/proposals/new");
+        router.push("/president");
       } else if (user) {
         await signOut();
         router.push("/verify?email=" + encodeURIComponent(email));
@@ -150,14 +154,6 @@ export default function LoginPage() {
     <div className="flex min-h-svh w-full items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <Card className="shadow-none border-t border-r border-l border-b rounded-none">
-          <CardHeader>
-            <CardTitle className="text-2xl font-semibold text-gray-600 flex justify-center font-serif ">
-              EventGate
-            </CardTitle>
-            <CardDescription className="font-serif">
-              Event Proposal System
-            </CardDescription>
-          </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div className="grid gap-2">

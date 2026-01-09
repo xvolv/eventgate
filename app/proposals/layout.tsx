@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ProposalsHeader } from "./proposals-header";
 
 export default async function ProposalsLayout({
   children,
@@ -13,7 +14,7 @@ export default async function ProposalsLayout({
   const user = session?.user;
 
   if (!user) {
-    redirect("/login?redirect=" + encodeURIComponent("/proposals/new"));
+    redirect("/login?redirect=" + encodeURIComponent("/president/new"));
   }
 
   if (!user.emailVerified) {
@@ -54,5 +55,10 @@ export default async function ProposalsLayout({
   }
 
   // If no special roles, allow access to proposals (for presidents)
-  return <>{children}</>;
+  return (
+    <>
+      <ProposalsHeader userEmail={user.email} />
+      {children}
+    </>
+  );
 }

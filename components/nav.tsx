@@ -20,32 +20,46 @@ export default async function Nav() {
       <NavClient
         isAuthed={false}
         isVerified={false}
-        dashboardHref="/proposals/new"
+        dashboardHref="/president"
       />
     );
   }
 
   const email = user.email.toLowerCase();
   const isVerified = Boolean(user.emailVerified);
-  let dashboardHref = "/proposals/new";
+  let dashboardHref = "/president";
 
   if (isVerified) {
     try {
-      const grants = await prisma.systemRoleGrant.findMany({
-        where: { email },
-        select: { role: true },
-      });
-      const roles = grants.map((g) => g.role);
+      const [systemGrants, clubGrants] = await Promise.all([
+        prisma.systemRoleGrant.findMany({
+          where: { email },
+          select: { role: true },
+        }),
+        prisma.clubRoleGrant.findMany({
+          where: { email },
+          select: { role: true },
+        }),
+      ]);
 
-      if (roles.includes("ADMIN")) {
+      const systemRoles = systemGrants.map((g) => g.role);
+      const clubRoles = clubGrants.map((g) => g.role);
+
+      if (systemRoles.includes("ADMIN")) {
         dashboardHref = "/admin/clubs/new";
-      } else if (roles.includes("STUDENT_UNION")) {
+      } else if (systemRoles.includes("STUDENT_UNION")) {
         dashboardHref = "/student-union";
-      } else if (roles.includes("DIRECTOR")) {
+      } else if (systemRoles.includes("DIRECTOR")) {
         dashboardHref = "/director";
+      } else if (clubRoles.includes("VP")) {
+        dashboardHref = "/vp";
+      } else if (clubRoles.includes("SECRETARY")) {
+        dashboardHref = "/secretary";
+      } else if (clubRoles.includes("PRESIDENT")) {
+        dashboardHref = "/president";
       }
     } catch {
-      dashboardHref = "/proposals/new";
+      dashboardHref = "/president";
     }
   }
 

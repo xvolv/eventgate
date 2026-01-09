@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -211,14 +210,6 @@ export default function SignUpPage() {
     <div className="flex min-h-svh w-full items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <Card className="rounded-none shadow-none">
-          <CardHeader>
-            <CardTitle className="text-2xl font-serif text-gray-600 flex justify-center">
-              Create Account
-            </CardTitle>
-            <CardDescription className="font-serif">
-              EventGate Event Proposal System
-            </CardDescription>
-          </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div className="grid gap-2">
