@@ -4,10 +4,18 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: proposalId } = await params;
   const session = await auth.api.getSession({ headers: request.headers });
   const user = session?.user;
+
+  if (!proposalId) {
+    return NextResponse.json(
+      { message: "Missing proposal id" },
+      { status: 400 }
+    );
+  }
 
   if (!user?.email) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -39,41 +47,64 @@ export async function POST(
     const body = await request.json();
     const { suRecommendation, suComments } = body;
 
-    if (!suRecommendation || !suComments) {
+    if (!suRecommendation) {
       return NextResponse.json(
         {
-          message: "Recommendation and comments are required",
+          message: "Recommendation is required",
         },
         { status: 400 }
       );
     }
 
-    // Update proposal with Student Union review
-    const updatedProposal = await prisma.proposal.update({
-      where: { id: params.id },
-      data: {
-        suRecommendation,
-        suComments,
-        suApprovedBy: user.email.toLowerCase(),
-        suApprovedAt: new Date(),
-        status:
-          suRecommendation === "Recommended" ? "SU_APPROVED" : "SU_REJECTED",
-      },
+    const normalizedRecommendation = String(suRecommendation);
+    const suApproved = normalizedRecommendation === "Recommended";
+
+    const updatedProposal = await prisma.$transaction(async (tx) => {
+      await tx.proposalReview.upsert({
+        where: {
+          proposalId_reviewerRole: {
+            proposalId,
+            reviewerRole: "STUDENT_UNION",
+          },
+        },
+        create: {
+          proposalId,
+          reviewerRole: "STUDENT_UNION",
+          reviewerEmail: user.email.toLowerCase(),
+          recommendation: normalizedRecommendation,
+          comments: suComments ?? "",
+          approved: suApproved,
+        },
+        update: {
+          reviewerEmail: user.email.toLowerCase(),
+          recommendation: normalizedRecommendation,
+          comments: suComments ?? "",
+          approved: suApproved,
+        },
+      });
+
+      return tx.proposal.update({
+        where: { id: proposalId },
+        data: {
+          status: suApproved ? "SU_APPROVED" : "SU_REJECTED",
+        },
+      });
     });
 
     // TODO: Send email notification to President
 
     return NextResponse.json({
       message: `Proposal ${
-        suRecommendation === "Recommended" ? "approved" : "rejected"
+        suApproved ? "approved" : "rejected"
       } by Student Union`,
       proposal: updatedProposal,
     });
   } catch (error) {
     console.error("Student Union review error:", error);
+    const detail = error instanceof Error ? error.message : undefined;
     return NextResponse.json(
       {
-        message: "Failed to review proposal",
+        message: detail || "Failed to review proposal",
       },
       { status: 500 }
     );

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HomeActions } from "./home-actions";
+import { LandingHeader } from "@/components/landing-header";
 
 export default async function HomePage() {
   const hdrs = await headers();
@@ -11,6 +12,7 @@ export default async function HomePage() {
   if (!session?.user) {
     return (
       <div className="min-h-svh bg-background">
+        <LandingHeader userEmail="" />
         <main className="container mx-auto px-4 py-16 max-w-4xl">
           <div className="max-w-2xl">
             <h2 className="text-4xl font-semibold mb-4 text-balance">

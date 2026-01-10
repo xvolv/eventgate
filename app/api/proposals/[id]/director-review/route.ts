@@ -4,10 +4,18 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: proposalId } = await params;
   const session = await auth.api.getSession({ headers: request.headers });
   const user = session?.user;
+
+  if (!proposalId) {
+    return NextResponse.json(
+      { message: "Missing proposal id" },
+      { status: 400 }
+    );
+  }
 
   if (!user?.email) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -57,14 +65,14 @@ export async function POST(
 
     // Update proposal with Director review
     const updatedProposal = await prisma.proposal.update({
-      where: { id: params.id },
+      where: { id: proposalId },
       data: {
         status: directorApproved ? "DIRECTOR_APPROVED" : "DIRECTOR_REJECTED",
         reviews: {
           upsert: {
             where: {
               proposalId_reviewerRole: {
-                proposalId: params.id,
+                proposalId,
                 reviewerRole: "DIRECTOR",
               },
             },

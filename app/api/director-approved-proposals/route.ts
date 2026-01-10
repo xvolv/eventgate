@@ -17,66 +17,71 @@ export async function GET(request: Request) {
     );
   }
 
-  // Check if user is Director
-  const directorGrant = await prisma.systemRoleGrant.findFirst({
+  const directorGrant = await prisma.systemRoleGrant.findUnique({
     where: {
-      email: user.email.toLowerCase(),
-      role: "DIRECTOR",
+      email_role: {
+        email: user.email.toLowerCase(),
+        role: "DIRECTOR",
+      },
     },
   });
 
   if (!directorGrant) {
     return NextResponse.json(
-      { message: "Only Directors can review proposals" },
+      { message: "Only Directors can view proposals" },
       { status: 403 }
     );
   }
 
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status") as any;
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
     const where = {
-      status: status ? status : "SU_APPROVED", // Default to show proposals approved by SU
+      status: "DIRECTOR_APPROVED" as const,
     };
 
-    // Get proposals that need Director review
-    const proposals = await prisma.proposal.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-      include: {
-        event: true,
-        club: {
-          select: { name: true },
-        },
-        leadApprovals: {
-          where: {
-            leadRole: {
-              in: ["VP", "SECRETARY"],
+    const [proposals, total] = await Promise.all([
+      prisma.proposal.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          event: true,
+          club: {
+            select: { name: true },
+          },
+          leadApprovals: {
+            where: {
+              leadRole: {
+                in: ["VP", "SECRETARY"],
+              },
+            },
+          },
+          reviews: {
+            where: {
+              reviewerRole: {
+                in: ["STUDENT_UNION", "DIRECTOR"],
+              },
+            },
+            select: {
+              reviewerRole: true,
+              reviewerEmail: true,
+              recommendation: true,
+              comments: true,
+              updatedAt: true,
+            },
+            orderBy: {
+              updatedAt: "desc",
             },
           },
         },
-        reviews: {
-          where: {
-            reviewerRole: "STUDENT_UNION",
-          },
-          select: {
-            reviewerRole: true,
-            reviewerEmail: true,
-            recommendation: true,
-            comments: true,
-            updatedAt: true,
-          },
-        },
-      },
-    });
-
-    const total = await prisma.proposal.count({ where });
+      }),
+      prisma.proposal.count({ where }),
+    ]);
 
     return NextResponse.json({
       proposals,
@@ -88,7 +93,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Director proposals fetch error:", error);
+    console.error("Director approved proposals fetch error:", error);
     return NextResponse.json(
       {
         message: "Failed to fetch proposals",

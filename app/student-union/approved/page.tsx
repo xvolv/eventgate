@@ -42,74 +42,37 @@ interface Proposal {
 
 const statusColors = {
   SU_APPROVED: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  DIRECTOR_APPROVED: "bg-purple-100 text-purple-800 border-purple-300",
-  DIRECTOR_REJECTED: "bg-red-100 text-red-800 border-red-300",
 } as const;
 
-export default function DirectorPage() {
+export default function StudentUnionApprovedPage() {
   const { data, isPending } = useSession();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [acting, setActing] = useState<{
-    proposalId: string;
-    action: "approve" | "reject";
-  } | null>(null);
-  const [comments, setComments] = useState<{ [key: string]: string }>({});
-
-  const fetchProposals = async () => {
-    try {
-      const response = await fetch("/api/proposals/director");
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.message || "Failed to fetch proposals");
-      }
-      const body = await response.json();
-      setProposals(body.proposals || []);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch proposals"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (isPending) return;
+
+    const fetchProposals = async () => {
+      try {
+        const response = await fetch("/api/student-union-approved-proposals");
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.message || "Failed to fetch proposals");
+        }
+        const body = await response.json();
+        setProposals(body.proposals || []);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch proposals"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProposals();
   }, [isPending]);
-
-  const handleDecision = async (proposalId: string, approve: boolean) => {
-    setActing({ proposalId, action: approve ? "approve" : "reject" });
-    try {
-      const response = await fetch(
-        `/api/proposals/${proposalId}/director-review`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            directorApproval: approve ? "Approved" : "Rejected",
-            directorComments: comments[proposalId] || "",
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.message || "Failed to submit decision");
-      }
-
-      setComments((prev) => ({ ...prev, [proposalId]: "" }));
-      await fetchProposals();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to submit decision"
-      );
-    } finally {
-      setActing(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -139,9 +102,9 @@ export default function DirectorPage() {
       {proposals.length === 0 ? (
         <Card className="shadow-none rounded-none">
           <CardContent className="p-12 text-center">
-            <h3 className="text-lg font-medium mb-4">No Proposals to Review</h3>
+            <h3 className="text-lg font-medium mb-4">No Approved Proposals</h3>
             <p className="text-muted-foreground">
-              There are no proposals pending Director review at this time.
+              There are no proposals approved by Student Union yet.
             </p>
           </CardContent>
         </Card>
@@ -166,10 +129,10 @@ export default function DirectorPage() {
                       className={`${
                         statusColors[
                           proposal.status as keyof typeof statusColors
-                        ] || "bg-muted text-foreground"
+                        ]
                       }`}
                     >
-                      {proposal.status}
+                      Approved
                     </Badge>
                   </div>
                 </CardHeader>
@@ -207,69 +170,51 @@ export default function DirectorPage() {
 
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                        Student Union Decision
+                        Lead Review Status
                       </h4>
-                      <div className="space-y-1 text-sm">
-                        <p>
-                          <strong>Recommendation:</strong>{" "}
-                          {suReview?.recommendation || "Recommended"}
-                        </p>
-                        {suReview?.comments ? (
-                          <p>
-                            <strong>Comments:</strong> {suReview.comments}
-                          </p>
-                        ) : null}
+                      <div className="space-y-2">
+                        {proposal.leadApprovals.map((approval) => (
+                          <div
+                            key={approval.leadRole}
+                            className="flex items-center gap-2"
+                          >
+                            <span className="text-sm font-medium">
+                              {approval.leadRole}
+                            </span>
+                            <Badge
+                              className={`${
+                                approval.approved
+                                  ? "bg-green-100 text-green-800 border-green-300"
+                                  : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                              }`}
+                            >
+                              {approval.approved ? "Approved" : "Pending"}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {approval.leadEmail}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  {proposal.status === "SU_APPROVED" && (
-                    <div className="space-y-4">
-                      <div>
-                        <label
-                          htmlFor={`comments-${proposal.id}`}
-                          className="text-sm font-medium"
-                        >
-                          Director Comments
-                        </label>
-                        <textarea
-                          id={`comments-${proposal.id}`}
-                          className="w-full min-h-[80px] px-3 py-2 text-sm border border-border rounded-md"
-                          placeholder="Add decision notes..."
-                          value={comments[proposal.id] || ""}
-                          onChange={(e) =>
-                            setComments((prev) => ({
-                              ...prev,
-                              [proposal.id]: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleDecision(proposal.id, true)}
-                          disabled={acting?.proposalId === proposal.id}
-                          className="cursor-pointer"
-                        >
-                          {acting?.proposalId === proposal.id &&
-                          acting.action === "approve"
-                            ? "Approving..."
-                            : "Approve"}
-                        </Button>
-                        <Button
-                          onClick={() => handleDecision(proposal.id, false)}
-                          disabled={acting?.proposalId === proposal.id}
-                          variant="destructive"
-                          className="cursor-pointer"
-                        >
-                          {acting?.proposalId === proposal.id &&
-                          acting.action === "reject"
-                            ? "Rejecting..."
-                            : "Reject"}
-                        </Button>
-                      </div>
+                  <div className="border-t border-border pt-4">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Student Union Decision
+                    </h4>
+                    <div className="space-y-1 text-sm">
+                      <p>
+                        <strong>Recommendation:</strong>{" "}
+                        {suReview?.recommendation || "Recommended"}
+                      </p>
+                      {suReview?.comments ? (
+                        <p>
+                          <strong>Comments:</strong> {suReview.comments}
+                        </p>
+                      ) : null}
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             );
