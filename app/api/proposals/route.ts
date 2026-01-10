@@ -223,13 +223,23 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") as any;
+    const archived = searchParams.get("archived") === "1";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    await prisma.proposal.deleteMany({
+      where: {
+        clubId: presidentGrant.clubId,
+        archivedAt: { lt: cutoff },
+      },
+    });
+
     const where = {
       clubId: presidentGrant.clubId,
       ...(status && { status }),
+      ...(archived ? { archivedAt: { not: null } } : { archivedAt: null }),
     };
 
     const [proposals, total] = await Promise.all([

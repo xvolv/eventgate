@@ -126,6 +126,8 @@ model Proposal {
   // Status tracking
   status            ProposalStatus   @default(PENDING)
   resubmissionCount Int              @default(0)
+
+  archivedAt DateTime?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

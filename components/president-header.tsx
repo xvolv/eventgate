@@ -29,6 +29,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
   const currentSection = (() => {
     if (pathname === "/president") return "My Proposals";
     if (pathname === "/president/new") return "New Proposal";
+    if (pathname === "/president/archive") return "Archive";
     return "Event Proposals";
   })();
 
@@ -82,6 +83,21 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                   My Proposals
                 </Button>
               </Link>
+              <Link
+                href="/president/archive"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Button
+                  variant={
+                    isActive(pathname, "/president/archive")
+                      ? "default"
+                      : "outline"
+                  }
+                  className="h-9 bg-white text-slate-900 hover:bg-white/90"
+                >
+                  Archive
+                </Button>
+              </Link>
               <Link href="/president/new" onClick={() => setMenuOpen(false)}>
                 <Button
                   variant={
@@ -131,6 +147,22 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                         className="h-10 w-full justify-start rounded-none"
                       >
                         My Proposals
+                      </Button>
+                    </Link>
+                    <Link
+                      href="/president/archive"
+                      onClick={() => setMenuOpen(false)}
+                      className="block"
+                    >
+                      <Button
+                        variant={
+                          isActive(pathname, "/president/archive")
+                            ? "default"
+                            : "ghost"
+                        }
+                        className="h-10 w-full justify-start rounded-none"
+                      >
+                        Archive
                       </Button>
                     </Link>
                     <Link

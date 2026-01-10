@@ -13,7 +13,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { formatDualTimeRange } from "@/lib/utils";
+import { Trash } from "lucide-react";
 
 interface Proposal {
   id: string;
@@ -68,6 +80,7 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resubmittingId, setResubmittingId] = useState<string | null>(null);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<{
     page: number;
@@ -80,18 +93,22 @@ export default function ProposalsPage() {
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
 
+  const fetchProposals = async (nextPage: number) => {
+    const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch proposals");
+    }
+    const resp = await response.json();
+    setProposals(resp.proposals);
+    setPagination(resp.pagination || null);
+  };
+
   useEffect(() => {
     if (isPending) return;
 
-    const fetchProposals = async () => {
+    const run = async () => {
       try {
-        const response = await fetch(`/api/proposals?page=${page}&limit=10`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch proposals");
-        }
-        const data = await response.json();
-        setProposals(data.proposals);
-        setPagination(data.pagination || null);
+        await fetchProposals(page);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch proposals"
@@ -101,7 +118,7 @@ export default function ProposalsPage() {
       }
     };
 
-    fetchProposals();
+    run();
   }, [isPending, page]);
 
   const formatDaysLeft = (startTime?: string) => {
@@ -155,11 +172,32 @@ export default function ProposalsPage() {
       if (!res.ok) {
         throw new Error(body?.message || "Failed to resubmit proposal");
       }
-      window.location.reload();
+      await fetchProposals(page);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to resubmit proposal");
     } finally {
       setResubmittingId(null);
+    }
+  };
+
+  const handleArchive = async (proposalId: string) => {
+    setArchivingId(proposalId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/proposals/${proposalId}/archive`, {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.message || "Failed to archive proposal");
+      }
+      setDetailsOpen(false);
+      setSelectedProposal(null);
+      await fetchProposals(page);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to archive proposal");
+    } finally {
+      setArchivingId(null);
     }
   };
 
@@ -260,7 +298,12 @@ export default function ProposalsPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div
+                          className="flex items-center gap-2"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
                           {canEditProposal(proposal.status) && (
                             <Button
                               variant="outline"
@@ -273,6 +316,40 @@ export default function ProposalsPage() {
                               Edit
                             </Button>
                           )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                disabled={
+                                  archivingId === proposal.id ||
+                                  resubmittingId === proposal.id
+                                }
+                                className="rounded-none h-8 w-8 p-0"
+                                aria-label="Archive"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Archive this proposal?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  It will be moved to the Archive page and will
+                                  be deleted automatically after 2 days.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleArchive(proposal.id)}
+                                >
+                                  Archive
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           {canResubmitProposal(proposal.status) && (
                             <Button
                               variant="outline"
