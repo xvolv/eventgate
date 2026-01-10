@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendProposalStatusEmail } from "@/lib/email";
 
 export async function POST(
   request: Request,
@@ -98,7 +99,44 @@ export async function POST(
       },
     });
 
-    // TODO: Send email notification to President
+    const proposal = await prisma.proposal.findUnique({
+      where: { id: proposalId },
+      select: {
+        id: true,
+        submittedBy: true,
+        event: { select: { title: true } },
+      },
+    });
+
+    if (proposal?.submittedBy) {
+      if (directorApproved) {
+        await sendProposalStatusEmail({
+          to: proposal.submittedBy,
+          proposalId,
+          eventTitle: proposal.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal approved by Director",
+          heading: "Congratulations — Director Approved",
+          message:
+            "Your event proposal has been approved by the Director. You may proceed with the next steps.",
+          actionLabel: "View Proposal",
+          actionPath: "/proposals",
+        });
+      } else {
+        await sendProposalStatusEmail({
+          to: proposal.submittedBy,
+          proposalId,
+          eventTitle: proposal.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal rejected by Director",
+          heading: "Proposal rejected by Director",
+          message:
+            "Your proposal was rejected by the Director. Please review the reason below, fix the issues, and resubmit (it will go back to Student Union review).\n\n" +
+            String(directorComments),
+          actionLabel: "Fix & Resubmit",
+          actionPath: `/proposals/${proposalId}/edit`,
+        });
+      }
+    }
+
     // TODO: If approved, send guest ID request email
 
     return NextResponse.json({

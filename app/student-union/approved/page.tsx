@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatDualTimeRange } from "@/lib/utils";
 
 interface Proposal {
   id: string;
@@ -168,13 +169,22 @@ export default function StudentUnionApprovedPage() {
                         </div>
                         <p>
                           <strong>Time:</strong>{" "}
-                          {proposal.event?.startTime && proposal.event?.endTime
-                            ? `${new Date(
-                                proposal.event.startTime
-                              ).toLocaleString()} - ${new Date(
-                                proposal.event.endTime
-                              ).toLocaleString()}`
-                            : "Not specified"}
+                          {(() => {
+                            const { western, ethiopian } = formatDualTimeRange(
+                              proposal.event?.startTime,
+                              proposal.event?.endTime
+                            );
+                            return ethiopian ? (
+                              <span>
+                                {western}
+                                <span className="block text-xs text-muted-foreground">
+                                  LT: [{ethiopian}]
+                                </span>
+                              </span>
+                            ) : (
+                              western
+                            );
+                          })()}
                         </p>
                       </div>
                     </div>

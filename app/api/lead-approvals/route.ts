@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendProposalStatusEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -101,6 +102,37 @@ export async function POST(request: Request) {
       where: { id: proposalId },
       data: { status: newStatus },
     });
+
+    if (newStatus === "LEAD_REJECTED") {
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          submittedBy: true,
+          event: { select: { title: true } },
+        },
+      });
+
+      const rejecting = allApprovals
+        .filter((a) => !a.approved && a.comments)
+        .map((a) => `(${a.leadRole}) ${a.comments}`)
+        .join("\n");
+
+      if (proposal?.submittedBy) {
+        await sendProposalStatusEmail({
+          to: proposal.submittedBy,
+          proposalId,
+          eventTitle: proposal.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal needs changes (Lead review)",
+          heading: "Proposal needs changes (Lead review)",
+          message:
+            "Your proposal was rejected during lead review. Please review the comments below, fix the issues, and resubmit.\n\n" +
+            rejecting,
+          actionLabel: "Open Proposal",
+          actionPath: `/proposals/${proposalId}/edit`,
+        });
+      }
+    }
 
     return NextResponse.json({
       message: `Proposal ${approved ? "approved" : "rejected"} by ${leadRole}`,

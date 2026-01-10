@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatDualTimeRange } from "@/lib/utils";
 
 interface Proposal {
   id: string;
@@ -65,6 +66,7 @@ export default function ProposalsPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resubmittingId, setResubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isPending) return;
@@ -88,6 +90,45 @@ export default function ProposalsPage() {
 
     fetchProposals();
   }, [isPending]);
+
+  const canEditProposal = (status: string) => {
+    return (
+      status === "LEAD_REVIEW" ||
+      status === "LEAD_APPROVED" ||
+      status === "LEAD_REJECTED" ||
+      status === "SU_REJECTED" ||
+      status === "DIRECTOR_REJECTED" ||
+      status === "RESUBMISSION_REQUIRED"
+    );
+  };
+
+  const canResubmitProposal = (status: string) => {
+    return (
+      status === "LEAD_REJECTED" ||
+      status === "SU_REJECTED" ||
+      status === "DIRECTOR_REJECTED" ||
+      status === "RESUBMISSION_REQUIRED"
+    );
+  };
+
+  const handleResubmit = async (proposalId: string) => {
+    setResubmittingId(proposalId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/proposals/${proposalId}/resubmit`, {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.message || "Failed to resubmit proposal");
+      }
+      window.location.reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to resubmit proposal");
+    } finally {
+      setResubmittingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -171,15 +212,24 @@ export default function ProposalsPage() {
                           <strong>Location:</strong>{" "}
                           {proposal.event?.location || "Not specified"}
                         </p>
-                        <p>
+                        <p className="text-sm text-muted-foreground">
                           <strong>Time:</strong>{" "}
-                          {proposal.event?.startTime
-                            ? `${new Date(
-                                proposal.event.startTime
-                              ).toLocaleString()} - ${new Date(
-                                proposal.event.endTime
-                              ).toLocaleString()}`
-                            : "Not specified"}
+                          {(() => {
+                            const { western, ethiopian } = formatDualTimeRange(
+                              proposal.event?.startTime,
+                              proposal.event?.endTime
+                            );
+                            return ethiopian ? (
+                              <span>
+                                {western}
+                                <span className="block text-xs text-muted-foreground">
+                                  LT: [{ethiopian}]
+                                </span>
+                              </span>
+                            ) : (
+                              western
+                            );
+                          })()}
                         </p>
                       </div>
                     </div>
@@ -215,15 +265,29 @@ export default function ProposalsPage() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        router.push(`/proposals/${proposal.id}/edit`)
-                      }
-                      className="rounded-none"
-                    >
-                      Edit Proposal
-                    </Button>
+                    {canEditProposal(proposal.status) && (
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          router.push(`/proposals/${proposal.id}/edit`)
+                        }
+                        className="rounded-none"
+                      >
+                        Edit Proposal
+                      </Button>
+                    )}
+                    {canResubmitProposal(proposal.status) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleResubmit(proposal.id)}
+                        disabled={resubmittingId === proposal.id}
+                        className="rounded-none"
+                      >
+                        {resubmittingId === proposal.id
+                          ? "Resubmitting..."
+                          : "Resubmit"}
+                      </Button>
+                    )}
                     {proposal.status === "LEAD_REVIEW" && (
                       <Button
                         onClick={() =>

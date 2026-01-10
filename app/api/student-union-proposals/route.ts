@@ -56,6 +56,7 @@ export async function GET(request: Request) {
           event: true,
           collaborators: true,
           guests: true,
+          reviews: true,
           club: {
             select: { name: true },
           },

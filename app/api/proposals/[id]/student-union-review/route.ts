@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendProposalStatusEmail } from "@/lib/email";
 
 export async function POST(
   request: Request,
@@ -91,7 +92,31 @@ export async function POST(
       });
     });
 
-    // TODO: Send email notification to President
+    if (!suApproved) {
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          submittedBy: true,
+          event: { select: { title: true } },
+        },
+      });
+
+      if (proposal?.submittedBy) {
+        await sendProposalStatusEmail({
+          to: proposal.submittedBy,
+          proposalId,
+          eventTitle: proposal.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal rejected by Student Union",
+          heading: "Proposal rejected by Student Union",
+          message:
+            "Your proposal was rejected by the Student Union. Please review the comment below, fix the issues, and resubmit.\n\n" +
+            String(suComments ?? ""),
+          actionLabel: "Fix & Resubmit",
+          actionPath: `/proposals/${proposalId}/edit`,
+        });
+      }
+    }
 
     return NextResponse.json({
       message: `Proposal ${
