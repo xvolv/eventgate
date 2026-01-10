@@ -76,11 +76,16 @@ export async function POST(
   }
 
   const nextStatus =
-    proposal.status === "LEAD_REJECTED" ? "LEAD_REVIEW" : "PENDING";
+    proposal.status === "LEAD_REJECTED" || proposal.status === "SU_REJECTED"
+      ? "LEAD_REVIEW"
+      : "PENDING";
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
-      if (proposal.status === "LEAD_REJECTED") {
+      if (
+        proposal.status === "LEAD_REJECTED" ||
+        proposal.status === "SU_REJECTED"
+      ) {
         await tx.proposalLeadApproval.updateMany({
           where: { proposalId },
           data: {

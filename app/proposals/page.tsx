@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDualTimeRange } from "@/lib/utils";
 
 interface Proposal {
@@ -67,18 +68,30 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resubmittingId, setResubmittingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
+    null
+  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (isPending) return;
 
     const fetchProposals = async () => {
       try {
-        const response = await fetch("/api/proposals");
+        const response = await fetch(`/api/proposals?page=${page}&limit=10`);
         if (!response.ok) {
           throw new Error("Failed to fetch proposals");
         }
         const data = await response.json();
         setProposals(data.proposals);
+        setPagination(data.pagination || null);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch proposals"
@@ -89,7 +102,27 @@ export default function ProposalsPage() {
     };
 
     fetchProposals();
-  }, [isPending]);
+  }, [isPending, page]);
+
+  const formatDaysLeft = (startTime?: string) => {
+    if (!startTime) return "";
+    const start = new Date(startTime);
+    if (Number.isNaN(start.getTime())) return "";
+    const now = new Date();
+    const diffMs = start.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) return `${diffDays} days left`;
+    if (diffDays === 1) return "1 day left";
+    if (diffDays === 0) return "Today";
+    if (diffDays === -1) return "1 day ago";
+    return `${Math.abs(diffDays)} days ago`;
+  };
+
+  const openDetails = (proposal: Proposal) => {
+    setSelectedProposal(proposal);
+    setDetailsOpen(true);
+  };
 
   const canEditProposal = (status: string) => {
     return (
@@ -172,137 +205,285 @@ export default function ProposalsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            {proposals.map((proposal) => (
-              <Card key={proposal.id} className="shadow-none rounded-none">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">
-                        {proposal.event?.title || "Untitled Proposal"}
-                      </CardTitle>
-                      <CardDescription>
-                        {proposal.club.name} •{" "}
-                        {new Date(proposal.createdAt).toLocaleDateString()}
-                      </CardDescription>
-                    </div>
-                    <Badge
-                      className={`${
-                        statusColors[
-                          proposal.status as keyof typeof statusColors
-                        ]
-                      }`}
-                    >
-                      {
-                        statusLabels[
-                          proposal.status as keyof typeof statusLabels
-                        ]
-                      }
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                        Event Details
-                      </h4>
-                      <div className="space-y-2">
-                        <p>
-                          <strong>Location:</strong>{" "}
-                          {proposal.event?.location || "Not specified"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Time:</strong>{" "}
-                          {(() => {
-                            const { western, ethiopian } = formatDualTimeRange(
-                              proposal.event?.startTime,
-                              proposal.event?.endTime
-                            );
-                            return ethiopian ? (
-                              <span>
-                                {western}
-                                <span className="block text-xs text-muted-foreground">
-                                  LT: [{ethiopian}]
-                                </span>
-                              </span>
-                            ) : (
-                              western
-                            );
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                        Lead Review Status
-                      </h4>
-                      <div className="space-y-3">
-                        {proposal.leadApprovals.map((approval, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
-                          >
-                            <div>
-                              <p className="font-medium">{approval.leadRole}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {approval.leadEmail}
-                              </p>
-                            </div>
-                            <Badge
-                              className={
-                                approval.approved
-                                  ? "bg-green-100 text-green-800 border-green-300"
-                                  : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                              }
-                            >
-                              {approval.approved ? "Approved" : "Pending"}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+          <>
+            <div className="space-y-2">
+              {proposals.map((proposal) => {
+                const { western, ethiopian } = formatDualTimeRange(
+                  proposal.event?.startTime,
+                  proposal.event?.endTime
+                );
+                const daysLeft = formatDaysLeft(proposal.event?.startTime);
 
-                  <div className="flex gap-3 pt-4">
-                    {canEditProposal(proposal.status) && (
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          router.push(`/proposals/${proposal.id}/edit`)
-                        }
-                        className="rounded-none"
+                return (
+                  <Card key={proposal.id} className="shadow-none rounded-none">
+                    <CardContent className="p-0">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openDetails(proposal)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openDetails(proposal);
+                          }
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 cursor-pointer"
                       >
-                        Edit Proposal
-                      </Button>
-                    )}
-                    {canResubmitProposal(proposal.status) && (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleResubmit(proposal.id)}
-                        disabled={resubmittingId === proposal.id}
-                        className="rounded-none"
-                      >
-                        {resubmittingId === proposal.id
-                          ? "Resubmitting..."
-                          : "Resubmit"}
-                      </Button>
-                    )}
-                    {proposal.status === "LEAD_REVIEW" && (
-                      <Button
-                        onClick={() =>
-                          router.push(`/proposals/${proposal.id}/review`)
-                        }
-                        className="rounded-none"
-                      >
-                        Review Details
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="font-medium truncate">
+                                {proposal.event?.title || "Untitled Proposal"}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {daysLeft ? `${daysLeft} • ` : ""}
+                                {ethiopian
+                                  ? `Time: ${western} | LT: [${ethiopian}]`
+                                  : `Time: ${western}`}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                className={`${
+                                  statusColors[
+                                    proposal.status as keyof typeof statusColors
+                                  ]
+                                } whitespace-nowrap`}
+                              >
+                                {
+                                  statusLabels[
+                                    proposal.status as keyof typeof statusLabels
+                                  ]
+                                }
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {canEditProposal(proposal.status) && (
+                            <Button
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/proposals/${proposal.id}/edit`);
+                              }}
+                              className="rounded-none h-8"
+                            >
+                              Edit
+                            </Button>
+                          )}
+                          {canResubmitProposal(proposal.status) && (
+                            <Button
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleResubmit(proposal.id);
+                              }}
+                              disabled={resubmittingId === proposal.id}
+                              className="rounded-none h-8"
+                            >
+                              {resubmittingId === proposal.id
+                                ? "Resubmitting..."
+                                : "Resubmit"}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-6">
+              <div className="text-sm text-muted-foreground">
+                {pagination
+                  ? `Page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total)`
+                  : null}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-none"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={!pagination || pagination.page <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-none"
+                  onClick={() =>
+                    setPage((p) =>
+                      pagination
+                        ? Math.min(pagination.totalPages, p + 1)
+                        : p + 1
+                    )
+                  }
+                  disabled={
+                    !pagination || pagination.page >= pagination.totalPages
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+
+            <Dialog
+              open={detailsOpen}
+              onOpenChange={(open) => {
+                setDetailsOpen(open);
+                if (!open) setSelectedProposal(null);
+              }}
+            >
+              <DialogContent className="max-w-4xl">
+                <DialogTitle className="sr-only">Proposal Details</DialogTitle>
+                {selectedProposal ? (
+                  <Card className="shadow-none rounded-none border-0">
+                    <CardHeader className="px-0 pt-0">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg">
+                            {selectedProposal.event?.title ||
+                              "Untitled Proposal"}
+                          </CardTitle>
+                          <CardDescription>
+                            {selectedProposal.club.name} •{" "}
+                            {new Date(
+                              selectedProposal.createdAt
+                            ).toLocaleDateString()}
+                          </CardDescription>
+                        </div>
+                        <Badge
+                          className={`${
+                            statusColors[
+                              selectedProposal.status as keyof typeof statusColors
+                            ]
+                          }`}
+                        >
+                          {
+                            statusLabels[
+                              selectedProposal.status as keyof typeof statusLabels
+                            ]
+                          }
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 px-0 pb-0">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                            Event Details
+                          </h4>
+                          <div className="space-y-2">
+                            <p>
+                              <strong>Location:</strong>{" "}
+                              {selectedProposal.event?.location ||
+                                "Not specified"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              <strong>Time:</strong>{" "}
+                              {(() => {
+                                const { western, ethiopian } =
+                                  formatDualTimeRange(
+                                    selectedProposal.event?.startTime,
+                                    selectedProposal.event?.endTime
+                                  );
+                                return ethiopian ? (
+                                  <span>
+                                    {western}
+                                    <span className="block text-xs text-muted-foreground">
+                                      LT: [{ethiopian}]
+                                    </span>
+                                  </span>
+                                ) : (
+                                  western
+                                );
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                            Lead Review Status
+                          </h4>
+                          <div className="space-y-3">
+                            {selectedProposal.leadApprovals.map(
+                              (approval, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                                >
+                                  <div>
+                                    <p className="font-medium">
+                                      {approval.leadRole}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {approval.leadEmail}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    className={
+                                      approval.approved
+                                        ? "bg-green-100 text-green-800 border-green-300"
+                                        : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                                    }
+                                  >
+                                    {approval.approved ? "Approved" : "Pending"}
+                                  </Badge>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 pt-4">
+                        {canEditProposal(selectedProposal.status) && (
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              router.push(
+                                `/proposals/${selectedProposal.id}/edit`
+                              )
+                            }
+                            className="rounded-none"
+                          >
+                            Edit Proposal
+                          </Button>
+                        )}
+                        {canResubmitProposal(selectedProposal.status) && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleResubmit(selectedProposal.id)}
+                            disabled={resubmittingId === selectedProposal.id}
+                            className="rounded-none"
+                          >
+                            {resubmittingId === selectedProposal.id
+                              ? "Resubmitting..."
+                              : "Resubmit"}
+                          </Button>
+                        )}
+                        {selectedProposal.status === "LEAD_REVIEW" && (
+                          <Button
+                            onClick={() =>
+                              router.push(
+                                `/proposals/${selectedProposal.id}/review`
+                              )
+                            }
+                            className="rounded-none"
+                          >
+                            Review Details
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </main>
     </div>
