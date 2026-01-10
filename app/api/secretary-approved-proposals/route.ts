@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ClubRole } from "@prisma/client";
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
     const where = {
       leadApprovals: {
         some: {
-          leadRole: "SECRETARY",
+          leadRole: ClubRole.SECRETARY,
           leadEmail: email,
         },
       },
@@ -53,6 +54,8 @@ export async function GET(request: Request) {
         take: limit,
         include: {
           event: true,
+          collaborators: true,
+          guests: true,
           club: {
             select: { name: true },
           },

@@ -54,6 +54,8 @@ export async function GET(request: Request) {
         take: limit,
         include: {
           event: true,
+          collaborators: true,
+          guests: true,
           club: {
             select: { name: true },
           },

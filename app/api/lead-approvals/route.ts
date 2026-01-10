@@ -151,6 +151,8 @@ export async function GET(request: Request) {
                   endTime: true,
                 },
               },
+              collaborators: true,
+              guests: true,
               club: {
                 select: {
                   name: true,
@@ -201,6 +203,8 @@ export async function GET(request: Request) {
               endTime: true,
             },
           },
+          collaborators: true,
+          guests: true,
           club: {
             select: {
               name: true,

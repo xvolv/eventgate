@@ -24,6 +24,17 @@ interface Proposal {
     startTime?: string;
     endTime?: string;
   };
+  collaborators: Array<{
+    id: string;
+    name: string;
+    type: string;
+  }>;
+  guests: Array<{
+    id: string;
+    name: string;
+    affiliation: string | null;
+    reason: string | null;
+  }>;
   club: {
     name: string;
   };
@@ -199,6 +210,57 @@ export default function SecretaryApprovedPage() {
                     </div>
                   </div>
                 </div>
+
+                {proposal.collaborators?.length > 0 && (
+                  <div className="border-t border-border pt-4">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Collaborating Organizations
+                    </h4>
+                    <div className="space-y-2">
+                      {proposal.collaborators.map((collaborator) => (
+                        <div
+                          key={collaborator.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <span className="font-medium">
+                            {collaborator.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {collaborator.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {proposal.guests?.length > 0 && (
+                  <div className="border-t border-border pt-4">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Invited Guests
+                    </h4>
+                    <div className="space-y-2">
+                      {proposal.guests.map((guest) => (
+                        <div
+                          key={guest.id}
+                          className="border border-border p-3 rounded"
+                        >
+                          <p className="text-sm">
+                            <strong>Name:</strong> {guest.name}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Affiliation:</strong>{" "}
+                            {guest.affiliation || "Not specified"}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Reason:</strong>{" "}
+                            {guest.reason || "Not specified"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
