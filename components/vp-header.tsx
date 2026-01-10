@@ -28,6 +28,7 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
 
   const currentSection = (() => {
     if (pathname === "/vp") return "Review Dashboard";
+    if (pathname === "/vp/approved") return "History";
     return "VP Dashboard";
   })();
 
@@ -79,6 +80,16 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
                   Review Dashboard
                 </Button>
               </Link>
+              <Link href="/vp/approved" onClick={() => setMenuOpen(false)}>
+                <Button
+                  variant={
+                    isActive(pathname, "/vp/approved") ? "default" : "outline"
+                  }
+                  className="h-9 bg-white text-slate-900 hover:bg-white/90"
+                >
+                  Approved
+                </Button>
+              </Link>
             </div>
 
             <div className="hidden lg:block text-xs text-white/70 truncate max-w-[28rem]">
@@ -118,6 +129,22 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
                         className="h-10 w-full justify-start rounded-none"
                       >
                         Review Dashboard
+                      </Button>
+                    </Link>
+                    <Link
+                      href="/vp/approved"
+                      onClick={() => setMenuOpen(false)}
+                      className="block"
+                    >
+                      <Button
+                        variant={
+                          isActive(pathname, "/vp/approved")
+                            ? "default"
+                            : "ghost"
+                        }
+                        className="h-10 w-full justify-start rounded-none"
+                      >
+                        Approved Proposals
                       </Button>
                     </Link>
                   </nav>

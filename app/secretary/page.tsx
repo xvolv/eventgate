@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SecretaryHeader } from "@/components/secretary-header";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -154,157 +153,141 @@ export default function SecretaryPage() {
   }
 
   return (
-    <div className="min-h-svh bg-background">
-      <SecretaryHeader userEmail={data?.user?.email || ""} />
-
-      <main className="container mx-auto px-4 py-10 max-w-5xl">
-        {proposals.length === 0 ? (
-          <Card className="shadow-none rounded-none">
-            <CardContent className="p-12 text-center">
-              <h3 className="text-lg font-medium mb-4">
-                No Proposals to Review
-              </h3>
-              <p className="text-muted-foreground">
-                There are no proposals pending your review at this time.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {proposals.map((proposal) => (
-              <Card key={proposal.id} className="shadow-none rounded-none">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">
-                        {proposal.event?.title || "Untitled Proposal"}
-                      </CardTitle>
-                      <CardDescription>
-                        {proposal.club.name} •{" "}
-                        {new Date(proposal.createdAt).toLocaleDateString()}
-                      </CardDescription>
-                    </div>
-                    <Badge
-                      className={`${
-                        statusColors[
-                          proposal.status as keyof typeof statusColors
-                        ]
-                      }`}
-                    >
-                      {
-                        statusLabels[
-                          proposal.status as keyof typeof statusLabels
-                        ]
-                      }
-                    </Badge>
+    <main className="container mx-auto px-4 py-10 max-w-5xl">
+      {proposals.length === 0 ? (
+        <Card className="shadow-none rounded-none">
+          <CardContent className="p-12 text-center">
+            <h3 className="text-lg font-medium mb-4">No Proposals to Review</h3>
+            <p className="text-muted-foreground">
+              There are no proposals pending your review at this time.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {proposals.map((proposal) => (
+            <Card key={proposal.id} className="shadow-none rounded-none">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg">
+                      {proposal.event?.title || "Untitled Proposal"}
+                    </CardTitle>
+                    <CardDescription>
+                      {proposal.club.name} •{" "}
+                      {new Date(proposal.createdAt).toLocaleDateString()}
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                        Event Details
-                      </h4>
-                      <div className="space-y-2">
-                        <p>
-                          <strong>Location:</strong>{" "}
-                          {proposal.event?.location || "Not specified"}
-                        </p>
-                        <div>
-                          <strong>Description:</strong>{" "}
-                          <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                            {proposal.event?.description ||
-                              "No description provided"}
-                          </div>
+                  <Badge
+                    className={`${
+                      statusColors[proposal.status as keyof typeof statusColors]
+                    }`}
+                  >
+                    {statusLabels[proposal.status as keyof typeof statusLabels]}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Event Details
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Location:</strong>{" "}
+                        {proposal.event?.location || "Not specified"}
+                      </p>
+                      <div>
+                        <strong>Description:</strong>{" "}
+                        <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                          {proposal.event?.description ||
+                            "No description provided"}
                         </div>
-                        <p>
-                          <strong>Time:</strong>{" "}
-                          {proposal.event?.startTime && proposal.event?.endTime
-                            ? `${new Date(
-                                proposal.event.startTime
-                              ).toLocaleString()} - ${new Date(
-                                proposal.event.endTime
-                              ).toLocaleString()}`
-                            : "Not specified"}
-                        </p>
                       </div>
+                      <p>
+                        <strong>Time:</strong>{" "}
+                        {proposal.event?.startTime && proposal.event?.endTime
+                          ? `${new Date(
+                              proposal.event.startTime
+                            ).toLocaleString()} - ${new Date(
+                              proposal.event.endTime
+                            ).toLocaleString()}`
+                          : "Not specified"}
+                      </p>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                        Lead Review Status
-                      </h4>
-                      <div className="space-y-3">
-                        {proposal.leadApprovals.map((approval, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
-                          >
-                            <div>
-                              <p className="font-medium">{approval.leadRole}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {approval.leadEmail}
-                              </p>
-                            </div>
-                            <Badge
-                              className={
-                                approval.approved
-                                  ? "bg-green-100 text-green-800 border-green-300"
-                                  : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                              }
-                            >
-                              {approval.approved ? "Approved" : "Pending"}
-                            </Badge>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
+                      Lead Review Status
+                    </h4>
+                    <div className="space-y-3">
+                      {proposal.leadApprovals.map((approval, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                        >
+                          <div>
+                            <p className="font-medium">{approval.leadRole}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {approval.leadEmail}
+                            </p>
                           </div>
-                        ))}
-                      </div>
+                          <Badge
+                            className={
+                              approval.approved
+                                ? "bg-green-100 text-green-800 border-green-300"
+                                : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                            }
+                          >
+                            {approval.approved ? "Approved" : "Pending"}
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                </div>
 
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <Label htmlFor={`comments-${proposal.id}`}>
-                        Comments
-                      </Label>
-                      <Textarea
-                        id={`comments-${proposal.id}`}
-                        placeholder="Add your comments (optional)"
-                        value={comments[proposal.id] || ""}
-                        onChange={(e) =>
-                          setComments((prev) => ({
-                            ...prev,
-                            [proposal.id]: e.target.value,
-                          }))
-                        }
-                        className="mt-2"
-                      />
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleApproval(proposal.id, true)}
-                        disabled={approving === proposal.id}
-                        className="rounded-none"
-                      >
-                        {approving === proposal.id
-                          ? "Submitting..."
-                          : "Approve"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleApproval(proposal.id, false)}
-                        disabled={approving === proposal.id}
-                        className="rounded-none"
-                      >
-                        {approving === proposal.id ? "Submitting..." : "Reject"}
-                      </Button>
-                    </div>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor={`comments-${proposal.id}`}>Comments</Label>
+                    <Textarea
+                      id={`comments-${proposal.id}`}
+                      placeholder="Add your comments (optional)"
+                      value={comments[proposal.id] || ""}
+                      onChange={(e) =>
+                        setComments((prev) => ({
+                          ...prev,
+                          [proposal.id]: e.target.value,
+                        }))
+                      }
+                      className="mt-2"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleApproval(proposal.id, true)}
+                      disabled={approving === proposal.id}
+                      className="rounded-none"
+                    >
+                      {approving === proposal.id ? "Submitting..." : "Approve"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleApproval(proposal.id, false)}
+                      disabled={approving === proposal.id}
+                      className="rounded-none"
+                    >
+                      {approving === proposal.id ? "Submitting..." : "Reject"}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </main>
   );
 }

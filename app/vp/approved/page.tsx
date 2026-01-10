@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import {
   Card,
@@ -12,13 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 interface Proposal {
   id: string;
   status: string;
   createdAt: string;
+  updatedAt: string;
   event: {
     title?: string;
     description?: string;
@@ -47,7 +45,7 @@ const statusColors = {
   DIRECTOR_APPROVED: "bg-purple-100 text-purple-800 border-purple-300",
   DIRECTOR_REJECTED: "bg-red-100 text-red-800 border-red-300",
   RESUBMISSION_REQUIRED: "bg-orange-100 text-orange-800 border-orange-300",
-};
+} as const;
 
 const statusLabels = {
   LEAD_REVIEW: "Under Lead Review",
@@ -59,28 +57,26 @@ const statusLabels = {
   DIRECTOR_APPROVED: "Director Approved",
   DIRECTOR_REJECTED: "Director Rejected",
   RESUBMISSION_REQUIRED: "Resubmission Required",
-};
+} as const;
 
-export default function VPPage() {
+export default function VPApprovedPage() {
   const { data, isPending } = useSession();
-  const router = useRouter();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [approving, setApproving] = useState<string | null>(null);
-  const [comments, setComments] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (isPending) return;
 
     const fetchProposals = async () => {
       try {
-        const response = await fetch("/api/lead-approvals");
+        const response = await fetch("/api/vp-approved-proposals");
         if (!response.ok) {
-          throw new Error("Failed to fetch proposals");
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.message || "Failed to fetch proposals");
         }
-        const data = await response.json();
-        setProposals(data.approvals || []);
+        const body = await response.json();
+        setProposals(body.proposals || []);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch proposals"
@@ -92,42 +88,6 @@ export default function VPPage() {
 
     fetchProposals();
   }, [isPending]);
-
-  const handleApproval = async (proposalId: string, approved: boolean) => {
-    setApproving(proposalId);
-    try {
-      const response = await fetch("/api/lead-approvals", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          proposalId,
-          approved,
-          comments: comments[proposalId] || "",
-          leadRole: "VP",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit approval");
-      }
-
-      // Refresh the proposals list
-      const fetchResponse = await fetch("/api/lead-approvals");
-      const data = await fetchResponse.json();
-      setProposals(data.approvals || []);
-
-      // Clear comments for this proposal
-      setComments((prev) => ({ ...prev, [proposalId]: "" }));
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to submit approval"
-      );
-    } finally {
-      setApproving(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -157,9 +117,9 @@ export default function VPPage() {
       {proposals.length === 0 ? (
         <Card className="shadow-none rounded-none">
           <CardContent className="p-12 text-center">
-            <h3 className="text-lg font-medium mb-4">No Proposals to Review</h3>
+            <h3 className="text-lg font-medium mb-4">No History Yet</h3>
             <p className="text-muted-foreground">
-              There are no proposals pending your review at this time.
+              You have not approved or rejected any proposals yet.
             </p>
           </CardContent>
         </Card>
@@ -187,6 +147,7 @@ export default function VPPage() {
                   </Badge>
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -205,82 +166,37 @@ export default function VPPage() {
                             "No description provided"}
                         </div>
                       </div>
-                      <p>
-                        <strong>Time:</strong>{" "}
-                        {proposal.event?.startTime && proposal.event?.endTime
-                          ? `${new Date(
-                              proposal.event.startTime
-                            ).toLocaleString()} - ${new Date(
-                              proposal.event.endTime
-                            ).toLocaleString()}`
-                          : "Not specified"}
-                      </p>
                     </div>
                   </div>
+
                   <div>
                     <h4 className="font-medium text-sm text-muted-foreground mb-2">
                       Lead Review Status
                     </h4>
-                    <div className="space-y-3">
-                      {proposal.leadApprovals.map((approval, index) => (
+                    <div className="space-y-2">
+                      {proposal.leadApprovals.map((approval) => (
                         <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                          key={approval.leadRole}
+                          className="flex items-center gap-2"
                         >
-                          <div>
-                            <p className="font-medium">{approval.leadRole}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {approval.leadEmail}
-                            </p>
-                          </div>
+                          <span className="text-sm font-medium">
+                            {approval.leadRole}
+                          </span>
                           <Badge
-                            className={
+                            className={`${
                               approval.approved
                                 ? "bg-green-100 text-green-800 border-green-300"
                                 : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                            }
+                            }`}
                           >
                             {approval.approved ? "Approved" : "Pending"}
                           </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {approval.leadEmail}
+                          </span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <div>
-                    <Label htmlFor={`comments-${proposal.id}`}>Comments</Label>
-                    <Textarea
-                      id={`comments-${proposal.id}`}
-                      placeholder="Add your comments (optional)"
-                      value={comments[proposal.id] || ""}
-                      onChange={(e) =>
-                        setComments((prev) => ({
-                          ...prev,
-                          [proposal.id]: e.target.value,
-                        }))
-                      }
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => handleApproval(proposal.id, true)}
-                      disabled={approving === proposal.id}
-                      className="rounded-none"
-                    >
-                      {approving === proposal.id ? "Submitting..." : "Approve"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleApproval(proposal.id, false)}
-                      disabled={approving === proposal.id}
-                      className="rounded-none"
-                    >
-                      {approving === proposal.id ? "Submitting..." : "Reject"}
-                    </Button>
                   </div>
                 </div>
               </CardContent>
