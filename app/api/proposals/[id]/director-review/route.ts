@@ -105,15 +105,34 @@ export async function POST(
         id: true,
         submittedBy: true,
         event: { select: { title: true } },
+        contacts: {
+          where: { role: "PRESIDENT" },
+          select: { email: true },
+        },
       },
     });
 
-    if (proposal?.submittedBy) {
+    const presidentEmail =
+      proposal?.contacts?.[0]?.email || proposal?.submittedBy || null;
+    const eventTitle = proposal?.event?.title || "Untitled Event";
+
+    console.info("[director-review] decision", {
+      proposalId,
+      directorApproved,
+      presidentEmail,
+    });
+
+    if (presidentEmail) {
       if (directorApproved) {
-        await sendProposalStatusEmail({
-          to: proposal.submittedBy,
+        console.info("[director-review] sending approval email", {
+          to: presidentEmail,
           proposalId,
-          eventTitle: proposal.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal approved by Director",
+        });
+        await sendProposalStatusEmail({
+          to: presidentEmail,
+          proposalId,
+          eventTitle,
           subject: "EventGate: Proposal approved by Director",
           heading: "Congratulations — Director Approved",
           message:
@@ -122,10 +141,15 @@ export async function POST(
           actionPath: "/proposals",
         });
       } else {
-        await sendProposalStatusEmail({
-          to: proposal.submittedBy,
+        console.info("[director-review] sending rejection email", {
+          to: presidentEmail,
           proposalId,
-          eventTitle: proposal.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal rejected by Director",
+        });
+        await sendProposalStatusEmail({
+          to: presidentEmail,
+          proposalId,
+          eventTitle,
           subject: "EventGate: Proposal rejected by Director",
           heading: "Proposal rejected by Director",
           message:

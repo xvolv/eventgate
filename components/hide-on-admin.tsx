@@ -13,6 +13,10 @@ export function HideOnAdmin({ children }: { children: React.ReactNode }) {
     return null;
   }
 
+  if (pathname === "/proposals" || pathname.startsWith("/proposals/")) {
+    return null;
+  }
+
   if (pathname === "/vp" || pathname.startsWith("/vp/")) {
     return null;
   }
