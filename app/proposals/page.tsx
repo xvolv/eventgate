@@ -41,6 +41,15 @@ interface Proposal {
   club: {
     name: string;
   };
+  collaborators: Array<{
+    name: string;
+    type?: string;
+  }>;
+  guests: Array<{
+    name: string;
+    affiliation?: string | null;
+    reason?: string | null;
+  }>;
   leadApprovals: Array<{
     leadRole: string;
     leadEmail: string;
@@ -92,6 +101,10 @@ export default function ProposalsPage() {
     null
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [contributorsOpen, setContributorsOpen] = useState(false);
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const [contributorsPage, setContributorsPage] = useState(1);
+  const [guestsPage, setGuestsPage] = useState(1);
 
   const fetchProposals = async (nextPage: number) => {
     const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`);
@@ -139,6 +152,10 @@ export default function ProposalsPage() {
   const openDetails = (proposal: Proposal) => {
     setSelectedProposal(proposal);
     setDetailsOpen(true);
+    setContributorsOpen(false);
+    setGuestsOpen(false);
+    setContributorsPage(1);
+    setGuestsPage(1);
   };
 
   const canEditProposal = (status: string) => {
@@ -411,7 +428,13 @@ export default function ProposalsPage() {
               open={detailsOpen}
               onOpenChange={(open) => {
                 setDetailsOpen(open);
-                if (!open) setSelectedProposal(null);
+                if (!open) {
+                  setSelectedProposal(null);
+                  setContributorsOpen(false);
+                  setGuestsOpen(false);
+                  setContributorsPage(1);
+                  setGuestsPage(1);
+                }
               }}
             >
               <DialogContent className="max-w-4xl">
@@ -516,6 +539,105 @@ export default function ProposalsPage() {
                         </div>
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <h4 className="font-medium text-sm text-muted-foreground">
+                              Contributors
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {selectedProposal.collaborators?.length || 0}
+                              </span>
+                              {(selectedProposal.collaborators?.length || 0) >
+                              2 ? (
+                                <Button
+                                  variant="outline"
+                                  className="rounded-none h-8"
+                                  onClick={() => setContributorsOpen(true)}
+                                >
+                                  View all
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                          {selectedProposal.collaborators?.length ? (
+                            <div className="space-y-2">
+                              {selectedProposal.collaborators
+                                .slice(0, 2)
+                                .map((c, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                                  >
+                                    <div className="min-w-0">
+                                      <div className="font-medium truncate">
+                                        {c.name}
+                                      </div>
+                                      {c.type ? (
+                                        <div className="text-xs text-muted-foreground truncate">
+                                          {c.type}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              No contributors.
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <h4 className="font-medium text-sm text-muted-foreground">
+                              Invited Guests
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {selectedProposal.guests?.length || 0}
+                              </span>
+                              {(selectedProposal.guests?.length || 0) > 2 ? (
+                                <Button
+                                  variant="outline"
+                                  className="rounded-none h-8"
+                                  onClick={() => setGuestsOpen(true)}
+                                >
+                                  View all
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                          {selectedProposal.guests?.length ? (
+                            <div className="space-y-2">
+                              {selectedProposal.guests
+                                .slice(0, 2)
+                                .map((g, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="p-3 bg-muted/30 rounded-none"
+                                  >
+                                    <div className="font-medium truncate">
+                                      {g.name}
+                                    </div>
+                                    {g.affiliation ? (
+                                      <div className="text-xs text-muted-foreground truncate">
+                                        {g.affiliation}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              No guests.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="flex gap-3 pt-4">
                         {canEditProposal(selectedProposal.status) && (
                           <Button
@@ -558,6 +680,173 @@ export default function ProposalsPage() {
                     </CardContent>
                   </Card>
                 ) : null}
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={contributorsOpen}
+              onOpenChange={(open) => {
+                setContributorsOpen(open);
+                if (!open) setContributorsPage(1);
+              }}
+            >
+              <DialogContent className="max-w-2xl">
+                <DialogTitle>Contributors</DialogTitle>
+                {selectedProposal
+                  ? (() => {
+                      const items = selectedProposal.collaborators || [];
+                      const limit = 10;
+                      const totalPages = Math.max(
+                        1,
+                        Math.ceil(items.length / limit)
+                      );
+                      const pageSafe = Math.min(contributorsPage, totalPages);
+                      const slice = items.slice(
+                        (pageSafe - 1) * limit,
+                        pageSafe * limit
+                      );
+                      return (
+                        <div className="space-y-3">
+                          <div className="text-sm text-muted-foreground">
+                            {items.length} total
+                          </div>
+                          <div className="space-y-2">
+                            {slice.map((c, idx) => (
+                              <div
+                                key={`${pageSafe}-${idx}`}
+                                className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                              >
+                                <div className="min-w-0">
+                                  <div className="font-medium truncate">
+                                    {c.name}
+                                  </div>
+                                  {c.type ? (
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {c.type}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between gap-3 pt-2">
+                            <div className="text-sm text-muted-foreground">
+                              Page {pageSafe} of {totalPages}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                className="rounded-none"
+                                onClick={() =>
+                                  setContributorsPage((p) => Math.max(1, p - 1))
+                                }
+                                disabled={pageSafe <= 1}
+                              >
+                                Previous
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="rounded-none"
+                                onClick={() =>
+                                  setContributorsPage((p) =>
+                                    Math.min(totalPages, p + 1)
+                                  )
+                                }
+                                disabled={pageSafe >= totalPages}
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  : null}
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={guestsOpen}
+              onOpenChange={(open) => {
+                setGuestsOpen(open);
+                if (!open) setGuestsPage(1);
+              }}
+            >
+              <DialogContent className="max-w-2xl">
+                <DialogTitle>Invited Guests</DialogTitle>
+                {selectedProposal
+                  ? (() => {
+                      const items = selectedProposal.guests || [];
+                      const limit = 10;
+                      const totalPages = Math.max(
+                        1,
+                        Math.ceil(items.length / limit)
+                      );
+                      const pageSafe = Math.min(guestsPage, totalPages);
+                      const slice = items.slice(
+                        (pageSafe - 1) * limit,
+                        pageSafe * limit
+                      );
+                      return (
+                        <div className="space-y-3">
+                          <div className="text-sm text-muted-foreground">
+                            {items.length} total
+                          </div>
+                          <div className="space-y-2">
+                            {slice.map((g, idx) => (
+                              <div
+                                key={`${pageSafe}-${idx}`}
+                                className="p-3 bg-muted/30 rounded-none"
+                              >
+                                <div className="font-medium truncate">
+                                  {g.name}
+                                </div>
+                                {g.affiliation ? (
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {g.affiliation}
+                                  </div>
+                                ) : null}
+                                {g.reason ? (
+                                  <div className="text-xs text-muted-foreground">
+                                    {g.reason}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between gap-3 pt-2">
+                            <div className="text-sm text-muted-foreground">
+                              Page {pageSafe} of {totalPages}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                className="rounded-none"
+                                onClick={() =>
+                                  setGuestsPage((p) => Math.max(1, p - 1))
+                                }
+                                disabled={pageSafe <= 1}
+                              >
+                                Previous
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="rounded-none"
+                                onClick={() =>
+                                  setGuestsPage((p) =>
+                                    Math.min(totalPages, p + 1)
+                                  )
+                                }
+                                disabled={pageSafe >= totalPages}
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  : null}
               </DialogContent>
             </Dialog>
           </>
