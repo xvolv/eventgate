@@ -2,25 +2,38 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const res = NextResponse.json(body, init);
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   const user = session?.user;
 
   if (!user?.email) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    console.info("[api/proposals][POST] unauthorized (no session)");
+    return jsonNoStore({ message: "Unauthorized" }, { status: 401 });
   }
 
   if (!user.emailVerified) {
-    return NextResponse.json(
+    console.info("[api/proposals][POST] forbidden (email not verified)", {
+      email: user.email,
+    });
+    return jsonNoStore(
       { message: "Email verification required" },
       { status: 403 }
     );
   }
 
   // Check if user is a club president
+  const userEmail = String(user.email).trim();
   const presidentGrant = await prisma.clubRoleGrant.findFirst({
     where: {
-      email: user.email.toLowerCase(),
+      email: { equals: userEmail, mode: "insensitive" },
       role: "PRESIDENT",
     },
     include: {
@@ -29,7 +42,10 @@ export async function POST(request: Request) {
   });
 
   if (!presidentGrant) {
-    return NextResponse.json(
+    console.info("[api/proposals][POST] forbidden (not a club president)", {
+      email: user.email,
+    });
+    return jsonNoStore(
       { message: "Only club presidents can submit proposals" },
       { status: 403 }
     );
@@ -160,7 +176,7 @@ export async function POST(request: Request) {
     // Send notifications to club leads
     // TODO: Implement email notification system for club leads
 
-    return NextResponse.json(
+    return jsonNoStore(
       {
         message:
           "Proposal submitted successfully and sent to club leads for review",
@@ -178,7 +194,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Proposal submission error:", error);
-    return NextResponse.json(
+    return jsonNoStore(
       {
         message: "Failed to submit proposal",
       },
@@ -192,20 +208,25 @@ export async function GET(request: Request) {
   const user = session?.user;
 
   if (!user?.email) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    console.info("[api/proposals][GET] unauthorized (no session)");
+    return jsonNoStore({ message: "Unauthorized" }, { status: 401 });
   }
 
   if (!user.emailVerified) {
-    return NextResponse.json(
+    console.info("[api/proposals][GET] forbidden (email not verified)", {
+      email: user.email,
+    });
+    return jsonNoStore(
       { message: "Email verification required" },
       { status: 403 }
     );
   }
 
   // Check if user is a club president
+  const userEmail = String(user.email).trim();
   const presidentGrant = await prisma.clubRoleGrant.findFirst({
     where: {
-      email: user.email.toLowerCase(),
+      email: { equals: userEmail, mode: "insensitive" },
       role: "PRESIDENT",
     },
     include: {
@@ -214,7 +235,10 @@ export async function GET(request: Request) {
   });
 
   if (!presidentGrant) {
-    return NextResponse.json(
+    console.info("[api/proposals][GET] forbidden (not a club president)", {
+      email: user.email,
+    });
+    return jsonNoStore(
       { message: "Only club presidents can view proposals" },
       { status: 403 }
     );
@@ -274,7 +298,7 @@ export async function GET(request: Request) {
       prisma.proposal.count({ where }),
     ]);
 
-    return NextResponse.json({
+    return jsonNoStore({
       proposals,
       pagination: {
         page,
@@ -285,7 +309,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Proposals fetch error:", error);
-    return NextResponse.json(
+    return jsonNoStore(
       {
         message: "Failed to fetch proposals",
       },

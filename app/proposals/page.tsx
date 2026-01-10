@@ -107,9 +107,16 @@ export default function ProposalsPage() {
   const [guestsPage, setGuestsPage] = useState(1);
 
   const fetchProposals = async (nextPage: number) => {
-    const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`);
+    const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`, {
+      cache: "no-store",
+    });
     if (!response.ok) {
-      throw new Error("Failed to fetch proposals");
+      let message = "Failed to fetch proposals";
+      try {
+        const body = await response.json();
+        if (body?.message) message = String(body.message);
+      } catch {}
+      throw new Error(message);
     }
     const resp = await response.json();
     setProposals(resp.proposals);

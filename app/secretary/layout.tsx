@@ -21,9 +21,10 @@ export default async function SecretaryLayout({
     redirect("/verify?email=" + encodeURIComponent(user.email || ""));
   }
 
+  const userEmail = String(user.email || "").trim();
   const grant = await prisma.clubRoleGrant.findFirst({
     where: {
-      email: user.email.toLowerCase(),
+      email: { equals: userEmail, mode: "insensitive" },
       role: "SECRETARY",
     },
   });

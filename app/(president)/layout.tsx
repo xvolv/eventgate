@@ -29,9 +29,10 @@ export default async function PresidentLayout({
   }
 
   // Check if user is a president
+  const userEmail = String(user.email || "").trim();
   const presidentGrant = await prisma.clubRoleGrant.findFirst({
     where: {
-      email: user.email.toLowerCase(),
+      email: { equals: userEmail, mode: "insensitive" },
       role: "PRESIDENT",
     },
   });

@@ -36,7 +36,7 @@ export default function LoginPage() {
   // No auto-redirect on visit; redirects are handled after explicit login
   const { data: session, isPending } = useSession();
 
-  const getSystemRolesWithRetry = async () => {
+  const getRolesWithRetry = async () => {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const rolesRes = await fetch("/api/roles", { cache: "no-store" });
@@ -45,13 +45,16 @@ export default function LoginPage() {
         const systemRoles: string[] = Array.isArray(roles?.systemRoles)
           ? roles.systemRoles
           : [];
-        return systemRoles;
+        const clubRoles: string[] = Array.isArray(roles?.clubRoles)
+          ? roles.clubRoles
+          : [];
+        return { systemRoles, clubRoles };
       } catch {
         // Small backoff in case session cookie/roles query lags behind.
         await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
       }
     }
-    return [] as string[];
+    return { systemRoles: [] as string[], clubRoles: [] as string[] };
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -91,7 +94,7 @@ export default function LoginPage() {
       const user = (data as any)?.user ?? (data as any)?.session?.user;
 
       if (user?.emailVerified) {
-        const systemRoles = await getSystemRolesWithRetry();
+        const { systemRoles, clubRoles } = await getRolesWithRetry();
 
         if (systemRoles.includes("ADMIN")) {
           router.push("/admin");
@@ -108,7 +111,17 @@ export default function LoginPage() {
           return;
         }
 
-        if (systemRoles.includes("PRESIDENT")) {
+        if (clubRoles.includes("VP")) {
+          router.push("/vp");
+          return;
+        }
+
+        if (clubRoles.includes("SECRETARY")) {
+          router.push("/secretary");
+          return;
+        }
+
+        if (clubRoles.includes("PRESIDENT")) {
           router.push("/president");
           return;
         }

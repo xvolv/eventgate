@@ -25,7 +25,7 @@ export default async function Nav() {
     );
   }
 
-  const email = user.email.toLowerCase();
+  const email = String(user.email).trim();
   const isVerified = Boolean(user.emailVerified);
   let dashboardHref = "/president";
 
@@ -33,11 +33,11 @@ export default async function Nav() {
     try {
       const [systemGrants, clubGrants] = await Promise.all([
         prisma.systemRoleGrant.findMany({
-          where: { email },
+          where: { email: { equals: email, mode: "insensitive" } },
           select: { role: true },
         }),
         prisma.clubRoleGrant.findMany({
-          where: { email },
+          where: { email: { equals: email, mode: "insensitive" } },
           select: { role: true },
         }),
       ]);
