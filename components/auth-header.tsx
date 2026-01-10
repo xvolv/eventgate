@@ -26,6 +26,10 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
+  if (currentSessionEmail) {
+    return null;
+  }
+
   const currentSection = (() => {
     if (pathname === "/login") return "Sign In";
     if (pathname === "/sign-up") return "Create Account";
