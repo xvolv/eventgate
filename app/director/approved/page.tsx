@@ -23,6 +23,11 @@ interface Proposal {
     location?: string;
     startTime?: string;
     endTime?: string;
+    occurrences?: Array<{
+      startTime?: string;
+      endTime?: string;
+      location?: string | null;
+    }>;
   };
   collaborators: Array<{
     id: string;
@@ -167,6 +172,49 @@ export default function DirectorApprovedPage() {
                           <strong>Location:</strong>{" "}
                           {proposal.event?.location || "Not specified"}
                         </p>
+                        {Array.isArray(proposal.event?.occurrences) &&
+                        proposal.event.occurrences.length > 1 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              <strong>Sessions:</strong>{" "}
+                              {proposal.event.occurrences.length}
+                            </p>
+                            <div className="space-y-2">
+                              {proposal.event.occurrences
+                                .slice()
+                                .sort(
+                                  (a, b) =>
+                                    new Date(a.startTime || 0).getTime() -
+                                    new Date(b.startTime || 0).getTime()
+                                )
+                                .map((occ, idx) => {
+                                  const { western, ethiopian } =
+                                    formatDualTimeRange(
+                                      occ.startTime,
+                                      occ.endTime
+                                    );
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className="p-3 bg-muted/30 rounded"
+                                    >
+                                      <div className="text-sm">{western}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {ethiopian
+                                          ? `LT: [${ethiopian}]`
+                                          : null}
+                                        {occ.location
+                                          ? `${ethiopian ? " • " : ""}${
+                                              occ.location
+                                            }`
+                                          : null}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        ) : null}
                         <div>
                           <strong>Description:</strong>{" "}
                           <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">

@@ -38,6 +38,11 @@ interface Proposal {
     startTime: string;
     endTime: string;
     location: string;
+    occurrences?: Array<{
+      startTime: string;
+      endTime: string;
+      location: string;
+    }>;
   };
   club: {
     name: string;
@@ -499,6 +504,53 @@ export default function ProposalsPage() {
                               {selectedProposal.event?.location ||
                                 "Not specified"}
                             </p>
+                            {Array.isArray(
+                              selectedProposal.event?.occurrences
+                            ) &&
+                            selectedProposal.event.occurrences.length > 1 ? (
+                              <div className="space-y-2">
+                                <p className="text-sm text-muted-foreground">
+                                  <strong>Sessions:</strong>{" "}
+                                  {selectedProposal.event.occurrences.length}
+                                </p>
+                                <div className="space-y-2">
+                                  {selectedProposal.event.occurrences
+                                    .slice()
+                                    .sort(
+                                      (a, b) =>
+                                        new Date(a.startTime).getTime() -
+                                        new Date(b.startTime).getTime()
+                                    )
+                                    .map((occ, idx) => {
+                                      const { western, ethiopian } =
+                                        formatDualTimeRange(
+                                          occ.startTime,
+                                          occ.endTime
+                                        );
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className="p-3 bg-muted/30 rounded-none"
+                                        >
+                                          <div className="text-sm">
+                                            {western}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            {ethiopian
+                                              ? `LT: [${ethiopian}]`
+                                              : null}
+                                            {occ.location
+                                              ? `${ethiopian ? " • " : ""}${
+                                                  occ.location
+                                                }`
+                                              : null}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            ) : null}
                             <p className="text-sm text-muted-foreground">
                               <strong>Time:</strong>{" "}
                               {(() => {

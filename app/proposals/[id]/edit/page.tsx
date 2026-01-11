@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,6 +28,11 @@ type ProposalResponse = {
       location: string;
       startTime: string;
       endTime: string;
+      occurrences?: Array<{
+        startTime: string;
+        endTime: string;
+        location: string;
+      }>;
     } | null;
     collaborators: Array<{ id: string; name: string; type: string }>;
     guests: Array<{
@@ -58,19 +64,26 @@ export default function ProposalEditPage() {
   const params = useParams<{ id: string }>();
   const proposalId = params?.id;
 
+  type EventOccurrenceForm = {
+    startDateTime: string;
+    endDateTime: string;
+    location: string;
+  };
+
   const { data, isPending } = useSession();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [status, setStatus] = useState<string>("");
 
   const [title, setTitle] = useState("");
-  const [startDateTime, setStartDateTime] = useState("");
-  const [endDateTime, setEndDateTime] = useState("");
-  const [location, setLocation] = useState("");
+  const [occurrences, setOccurrences] = useState<EventOccurrenceForm[]>([
+    { startDateTime: "", endDateTime: "", location: "" },
+  ]);
   const [description, setDescription] = useState("");
 
   const [presidentName, setPresidentName] = useState("");
@@ -136,15 +149,39 @@ export default function ProposalEditPage() {
 
         setStatus(proposal.status);
         setTitle(proposal.event.title || "");
-        setLocation(proposal.event.location || "");
         setDescription(proposal.event.description || "");
 
-        setStartDateTime(
-          new Date(proposal.event.startTime).toISOString().slice(0, 16)
-        );
-        setEndDateTime(
-          new Date(proposal.event.endTime).toISOString().slice(0, 16)
-        );
+        const apiOccurrences = Array.isArray(
+          (proposal.event as any).occurrences
+        )
+          ? ((proposal.event as any).occurrences as Array<{
+              startTime: string;
+              endTime: string;
+              location: string;
+            }>)
+          : [];
+
+        if (apiOccurrences.length > 0) {
+          setOccurrences(
+            apiOccurrences.map((o) => ({
+              startDateTime: new Date(o.startTime).toISOString().slice(0, 16),
+              endDateTime: new Date(o.endTime).toISOString().slice(0, 16),
+              location: o.location || "",
+            }))
+          );
+        } else {
+          setOccurrences([
+            {
+              startDateTime: new Date(proposal.event.startTime)
+                .toISOString()
+                .slice(0, 16),
+              endDateTime: new Date(proposal.event.endTime)
+                .toISOString()
+                .slice(0, 16),
+              location: proposal.event.location || "",
+            },
+          ]);
+        }
 
         const president = proposal.contacts?.find(
           (c) => c.role === "PRESIDENT"
@@ -190,6 +227,67 @@ export default function ProposalEditPage() {
     setSaving(true);
     setError(null);
     setMessage(null);
+    setFieldErrors({});
+
+    const nextErrors: Record<string, string> = {};
+    if (!occurrences || occurrences.length === 0) {
+      nextErrors.occurrences = "At least one event session is required.";
+    }
+
+    occurrences.forEach((o, idx) => {
+      const startKey = `occurrences.${idx}.startDateTime`;
+      const endKey = `occurrences.${idx}.endDateTime`;
+      const locationKey = `occurrences.${idx}.location`;
+
+      if (!o.startDateTime)
+        nextErrors[startKey] = "Start date/time is required.";
+      if (!o.endDateTime) nextErrors[endKey] = "End date/time is required.";
+      if (!String(o.location || "").trim())
+        nextErrors[locationKey] = "Location is required.";
+
+      const start = o.startDateTime ? new Date(o.startDateTime) : null;
+      const end = o.endDateTime ? new Date(o.endDateTime) : null;
+
+      if (start && Number.isNaN(start.getTime()))
+        nextErrors[startKey] = "Enter a valid start date/time.";
+      if (end && Number.isNaN(end.getTime()))
+        nextErrors[endKey] = "Enter a valid end date/time.";
+
+      if (
+        start &&
+        end &&
+        !Number.isNaN(start.getTime()) &&
+        !Number.isNaN(end.getTime()) &&
+        end.getTime() <= start.getTime()
+      ) {
+        nextErrors[endKey] = "End date/time must be after the start.";
+      }
+    });
+
+    const parsed = occurrences
+      .map((o) => ({
+        start: new Date(o.startDateTime),
+        end: new Date(o.endDateTime),
+      }))
+      .filter(
+        (o) =>
+          !Number.isNaN(o.start.getTime()) && !Number.isNaN(o.end.getTime())
+      )
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    for (let i = 0; i < parsed.length - 1; i++) {
+      if (parsed[i].end.getTime() > parsed[i + 1].start.getTime()) {
+        nextErrors.occurrences = "Event sessions cannot overlap.";
+        break;
+      }
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setError("Please fix the highlighted fields.");
+      setSaving(false);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/proposals/${proposalId}`, {
@@ -198,9 +296,12 @@ export default function ProposalEditPage() {
         body: JSON.stringify({
           eventTitle: title,
           eventDescription: description,
-          eventStartTime: startDateTime,
-          eventEndTime: endDateTime,
-          eventLocation: location,
+          eventLocation: String(occurrences?.[0]?.location || "").trim(),
+          eventOccurrences: occurrences.map((o) => ({
+            startTime: o.startDateTime,
+            endTime: o.endDateTime,
+            location: o.location,
+          })),
           presidentName,
           vpName,
           secretaryName,
@@ -255,6 +356,43 @@ export default function ProposalEditPage() {
     );
   }
 
+  const updateOccurrence = (
+    index: number,
+    patch: Partial<EventOccurrenceForm>
+  ) => {
+    setOccurrences((prev) => {
+      const next = [...prev];
+      const current = next[index] ?? {
+        startDateTime: "",
+        endDateTime: "",
+        location: "",
+      };
+      next[index] = { ...current, ...patch };
+      return next;
+    });
+  };
+
+  const addOccurrence = () => {
+    setOccurrences((prev) => {
+      const last = prev[prev.length - 1];
+      return [
+        ...prev,
+        {
+          startDateTime: "",
+          endDateTime: "",
+          location: String(last?.location || "").trim(),
+        },
+      ];
+    });
+  };
+
+  const removeOccurrence = (index: number) => {
+    setOccurrences((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   return (
     <div className="min-h-svh bg-background">
       <main className="container mx-auto px-4 py-10 max-w-5xl">
@@ -288,44 +426,125 @@ export default function ProposalEditPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="startDateTime">Start Date &amp; Time</Label>
-                  <Input
-                    id="startDateTime"
-                    type="datetime-local"
-                    required
-                    value={startDateTime}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Event Sessions</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addOccurrence}
                     disabled={!canEdit}
-                    onChange={(e) => setStartDateTime(e.target.value)}
-                    className="rounded-none shadow-none focus-visible:ring-0"
-                  />
+                    className="rounded-none"
+                  >
+                    Add another day/session
+                  </Button>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="endDateTime">End Date &amp; Time</Label>
-                  <Input
-                    id="endDateTime"
-                    type="datetime-local"
-                    required
-                    value={endDateTime}
-                    disabled={!canEdit}
-                    onChange={(e) => setEndDateTime(e.target.value)}
-                    className="rounded-none shadow-none focus-visible:ring-0"
-                  />
-                </div>
-              </div>
+                {fieldErrors.occurrences && (
+                  <p className="text-xs text-destructive">
+                    {fieldErrors.occurrences}
+                  </p>
+                )}
 
-              <div className="grid gap-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  required
-                  value={location}
-                  disabled={!canEdit}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="rounded-none shadow-none focus-visible:ring-0"
-                />
+                <div className="space-y-4">
+                  {occurrences.map((o, idx) => {
+                    const startKey = `occurrences.${idx}.startDateTime`;
+                    const endKey = `occurrences.${idx}.endDateTime`;
+                    const locationKey = `occurrences.${idx}.location`;
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-4 border border-border bg-muted/30 space-y-4"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="font-medium">Session {idx + 1}</div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeOccurrence(idx)}
+                            disabled={!canEdit || occurrences.length <= 1}
+                            className="rounded-none"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid gap-2">
+                            <Label htmlFor={`startDateTime-${idx}`}>
+                              Start Date &amp; Time
+                            </Label>
+                            <Input
+                              id={`startDateTime-${idx}`}
+                              type="datetime-local"
+                              required
+                              value={o.startDateTime}
+                              disabled={!canEdit}
+                              onChange={(e) =>
+                                updateOccurrence(idx, {
+                                  startDateTime: e.target.value,
+                                })
+                              }
+                              className="rounded-none shadow-none focus-visible:ring-0"
+                            />
+                            {fieldErrors[startKey] && (
+                              <p className="text-xs text-destructive">
+                                {fieldErrors[startKey]}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label htmlFor={`endDateTime-${idx}`}>
+                              End Date &amp; Time
+                            </Label>
+                            <Input
+                              id={`endDateTime-${idx}`}
+                              type="datetime-local"
+                              required
+                              value={o.endDateTime}
+                              disabled={!canEdit}
+                              onChange={(e) =>
+                                updateOccurrence(idx, {
+                                  endDateTime: e.target.value,
+                                })
+                              }
+                              className="rounded-none shadow-none focus-visible:ring-0"
+                            />
+                            {fieldErrors[endKey] && (
+                              <p className="text-xs text-destructive">
+                                {fieldErrors[endKey]}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor={`location-${idx}`}>Location</Label>
+                          <Input
+                            id={`location-${idx}`}
+                            required
+                            value={o.location}
+                            disabled={!canEdit}
+                            onChange={(e) =>
+                              updateOccurrence(idx, {
+                                location: e.target.value,
+                              })
+                            }
+                            className="rounded-none shadow-none focus-visible:ring-0"
+                          />
+                          {fieldErrors[locationKey] && (
+                            <p className="text-xs text-destructive">
+                              {fieldErrors[locationKey]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="grid gap-2">

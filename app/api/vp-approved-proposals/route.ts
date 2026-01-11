@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         skip,
         take: limit,
         include: {
-          event: true,
+          event: { include: { occurrences: true } },
           collaborators: true,
           guests: true,
           club: {

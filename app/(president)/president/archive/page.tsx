@@ -29,6 +29,11 @@ interface Proposal {
     startTime: string;
     endTime: string;
     location: string;
+    occurrences?: Array<{
+      startTime: string;
+      endTime: string;
+      location: string;
+    }>;
   };
   club: {
     name: string;
@@ -253,6 +258,9 @@ export default function PresidentArchivePage() {
                   proposal.event?.startTime,
                   proposal.event?.endTime
                 );
+                const sessionCount = Array.isArray(proposal.event?.occurrences)
+                  ? proposal.event.occurrences.length
+                  : 0;
 
                 return (
                   <Card key={proposal.id} className="shadow-none rounded-none">
@@ -265,9 +273,14 @@ export default function PresidentArchivePage() {
                                 {proposal.event?.title || "Untitled Proposal"}
                               </div>
                               <div className="text-xs text-muted-foreground truncate">
-                                {ethiopian
-                                  ? `Time: ${western} | LT: [${ethiopian}]`
-                                  : `Time: ${western}`}
+                                {(() => {
+                                  const timeText = ethiopian
+                                    ? `Time: ${western} | LT: [${ethiopian}]`
+                                    : `Time: ${western}`;
+                                  return sessionCount > 1
+                                    ? `${timeText} • Sessions: ${sessionCount}`
+                                    : timeText;
+                                })()}
                               </div>
                             </div>
                             <Badge

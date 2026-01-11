@@ -11,6 +11,76 @@ const EDITABLE_STATUSES = new Set([
   "RESUBMISSION_REQUIRED",
 ]);
 
+type EventOccurrenceInput = {
+  startTime: string;
+  endTime: string;
+  location?: string;
+};
+
+function parseOccurrences(body: any) {
+  const raw = Array.isArray(body?.eventOccurrences)
+    ? body.eventOccurrences
+    : null;
+
+  const occurrences: Array<{
+    startTime: Date;
+    endTime: Date;
+    location: string;
+  }> =
+    raw && raw.length > 0
+      ? raw.map((o: EventOccurrenceInput) => ({
+          startTime: new Date(String(o?.startTime ?? "")),
+          endTime: new Date(String(o?.endTime ?? "")),
+          location: String(o?.location ?? body?.eventLocation ?? "").trim(),
+        }))
+      : [
+          {
+            startTime: new Date(String(body?.eventStartTime ?? "")),
+            endTime: new Date(String(body?.eventEndTime ?? "")),
+            location: String(body?.eventLocation ?? "").trim(),
+          },
+        ];
+
+  return occurrences;
+}
+
+function validateOccurrences(
+  occurrences: Array<{ startTime: Date; endTime: Date; location: string }>
+) {
+  if (!occurrences || occurrences.length === 0) {
+    return "At least one event date/time is required";
+  }
+
+  for (const [idx, o] of occurrences.entries()) {
+    if (
+      Number.isNaN(o.startTime.getTime()) ||
+      Number.isNaN(o.endTime.getTime())
+    ) {
+      return `Invalid date/time in session #${idx + 1}`;
+    }
+    if (o.endTime.getTime() <= o.startTime.getTime()) {
+      return `End time must be after start time in session #${idx + 1}`;
+    }
+    if (!o.location) {
+      return `Location is required in session #${idx + 1}`;
+    }
+  }
+
+  // Disallow overlaps across all sessions
+  const sorted = [...occurrences].sort(
+    (a, b) => a.startTime.getTime() - b.startTime.getTime()
+  );
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const current = sorted[i];
+    const next = sorted[i + 1];
+    if (current.endTime.getTime() > next.startTime.getTime()) {
+      return "Event sessions cannot overlap";
+    }
+  }
+
+  return null;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -58,7 +128,7 @@ export async function GET(
       clubId: presidentGrant.clubId,
     },
     include: {
-      event: true,
+      event: { include: { occurrences: true } },
       contacts: true,
       collaborators: true,
       guests: true,
@@ -156,6 +226,7 @@ export async function PATCH(
     eventStartTime,
     eventEndTime,
     eventLocation,
+    eventOccurrences,
     presidentName,
     vpName,
     secretaryName,
@@ -173,16 +244,47 @@ export async function PATCH(
   const eventId = existing.eventId;
 
   try {
+    const occurrences = parseOccurrences({
+      eventStartTime,
+      eventEndTime,
+      eventLocation,
+      eventOccurrences,
+    });
+    const occurrencesError = validateOccurrences(occurrences);
+    if (occurrencesError) {
+      return NextResponse.json({ message: occurrencesError }, { status: 400 });
+    }
+
+    const summaryStart = new Date(
+      Math.min(...occurrences.map((o) => o.startTime.getTime()))
+    );
+    const summaryEnd = new Date(
+      Math.max(...occurrences.map((o) => o.endTime.getTime()))
+    );
+    const summaryLocation = String(
+      eventLocation ?? occurrences[0]?.location ?? ""
+    ).trim();
+
     const updated = await prisma.$transaction(async (tx) => {
       await tx.event.update({
         where: { id: eventId },
         data: {
           title: String(eventTitle ?? "").trim(),
           description: String(eventDescription ?? "").trim(),
-          location: String(eventLocation ?? "").trim(),
-          startTime: new Date(eventStartTime),
-          endTime: new Date(eventEndTime),
+          location: summaryLocation,
+          startTime: summaryStart,
+          endTime: summaryEnd,
         },
+      });
+
+      await tx.eventOccurrence.deleteMany({ where: { eventId } });
+      await tx.eventOccurrence.createMany({
+        data: occurrences.map((o) => ({
+          eventId,
+          startTime: o.startTime,
+          endTime: o.endTime,
+          location: o.location,
+        })),
       });
 
       if (presidentName) {
@@ -277,7 +379,7 @@ export async function PATCH(
       return tx.proposal.findUnique({
         where: { id: proposalId },
         include: {
-          event: true,
+          event: { include: { occurrences: true } },
           contacts: true,
           collaborators: true,
           guests: true,

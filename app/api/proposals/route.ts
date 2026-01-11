@@ -10,6 +10,76 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
   return res;
 }
 
+type EventOccurrenceInput = {
+  startTime: string;
+  endTime: string;
+  location?: string;
+};
+
+function parseOccurrences(body: any) {
+  const raw = Array.isArray(body?.eventOccurrences)
+    ? body.eventOccurrences
+    : null;
+
+  const occurrences: Array<{
+    startTime: Date;
+    endTime: Date;
+    location: string;
+  }> =
+    raw && raw.length > 0
+      ? raw.map((o: EventOccurrenceInput) => ({
+          startTime: new Date(String(o?.startTime ?? "")),
+          endTime: new Date(String(o?.endTime ?? "")),
+          location: String(o?.location ?? body?.eventLocation ?? "").trim(),
+        }))
+      : [
+          {
+            startTime: new Date(String(body?.eventStartTime ?? "")),
+            endTime: new Date(String(body?.eventEndTime ?? "")),
+            location: String(body?.eventLocation ?? "").trim(),
+          },
+        ];
+
+  return occurrences;
+}
+
+function validateOccurrences(
+  occurrences: Array<{ startTime: Date; endTime: Date; location: string }>
+) {
+  if (!occurrences || occurrences.length === 0) {
+    return "At least one event date/time is required";
+  }
+
+  for (const [idx, o] of occurrences.entries()) {
+    if (
+      Number.isNaN(o.startTime.getTime()) ||
+      Number.isNaN(o.endTime.getTime())
+    ) {
+      return `Invalid date/time in session #${idx + 1}`;
+    }
+    if (o.endTime.getTime() <= o.startTime.getTime()) {
+      return `End time must be after start time in session #${idx + 1}`;
+    }
+    if (!o.location) {
+      return `Location is required in session #${idx + 1}`;
+    }
+  }
+
+  // Disallow overlaps across all sessions (including same day)
+  const sorted = [...occurrences].sort(
+    (a, b) => a.startTime.getTime() - b.startTime.getTime()
+  );
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const current = sorted[i];
+    const next = sorted[i + 1];
+    if (current.endTime.getTime() > next.startTime.getTime()) {
+      return "Event sessions cannot overlap";
+    }
+  }
+
+  return null;
+}
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   const user = session?.user;
@@ -54,6 +124,22 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const occurrences = parseOccurrences(body);
+    const occurrencesError = validateOccurrences(occurrences);
+    if (occurrencesError) {
+      return jsonNoStore({ message: occurrencesError }, { status: 400 });
+    }
+
+    const summaryStart = new Date(
+      Math.min(...occurrences.map((o) => o.startTime.getTime()))
+    );
+    const summaryEnd = new Date(
+      Math.max(...occurrences.map((o) => o.endTime.getTime()))
+    );
+    const summaryLocation = String(
+      body?.eventLocation ?? occurrences[0]?.location ?? ""
+    ).trim();
+
     // Create the proposal first
     const proposal = await prisma.proposal.create({
       data: {
@@ -76,10 +162,18 @@ export async function POST(request: Request) {
         proposalId: proposal.id,
         title: body.eventTitle,
         description: body.eventDescription,
-        location: body.eventLocation,
-        startTime: new Date(body.eventStartTime),
-        endTime: new Date(body.eventEndTime),
+        location: summaryLocation,
+        startTime: summaryStart,
+        endTime: summaryEnd,
+        occurrences: {
+          create: occurrences.map((o) => ({
+            startTime: o.startTime,
+            endTime: o.endTime,
+            location: o.location,
+          })),
+        },
       },
+      include: { occurrences: true },
     });
 
     // Update the proposal with the eventId
@@ -273,7 +367,7 @@ export async function GET(request: Request) {
         skip,
         take: limit,
         include: {
-          event: true,
+          event: { include: { occurrences: true } },
           contacts: true,
           collaborators: true,
           guests: true,
