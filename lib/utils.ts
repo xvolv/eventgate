@@ -18,8 +18,7 @@ export function formatWesternAddisDateTime(input: string | Date) {
   if (!d) return "Invalid date";
   return new Intl.DateTimeFormat("en-US", {
     timeZone: addisTimeZone,
-    weekday: "long",
-    year: "numeric",
+    weekday: "short",
     month: "short",
     day: "2-digit",
     hour: "numeric",
