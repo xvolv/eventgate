@@ -23,7 +23,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
@@ -36,10 +36,10 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
 
   // If session is null (signed out), redirect to home immediately
   React.useEffect(() => {
-    if (session === null) {
+    if (!isPending && session === null) {
       router.push("/");
     }
-  }, [session, router]);
+  }, [isPending, session, router]);
 
   const handleSignOut = async () => {
     try {

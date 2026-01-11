@@ -22,7 +22,7 @@ export function DirectorHeader({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
@@ -33,10 +33,10 @@ export function DirectorHeader({ userEmail }: { userEmail: string }) {
   })();
 
   React.useEffect(() => {
-    if (session === null) {
+    if (!isPending && session === null) {
       router.push("/");
     }
-  }, [session, router]);
+  }, [isPending, session, router]);
 
   const handleSignOut = async () => {
     try {

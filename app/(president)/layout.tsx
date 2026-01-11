@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PresidentHeader } from "@/components/president-header";
-import { LandingHeader } from "@/components/landing-header";
 
 export default async function PresidentLayout({
   children,
@@ -15,13 +14,7 @@ export default async function PresidentLayout({
   const user = session?.user;
 
   if (!user) {
-    // Show landing header for non-authenticated users
-    return (
-      <>
-        <LandingHeader userEmail="" />
-        {children}
-      </>
-    );
+    redirect("/login?redirect=" + encodeURIComponent("/president"));
   }
 
   if (!user.emailVerified) {
@@ -38,13 +31,7 @@ export default async function PresidentLayout({
   });
 
   if (!presidentGrant) {
-    // Not a president, show landing header
-    return (
-      <>
-        <LandingHeader userEmail={user.email} />
-        {children}
-      </>
-    );
+    redirect("/");
   }
 
   // User is a president, show president header

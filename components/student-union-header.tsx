@@ -22,7 +22,7 @@ export function StudentUnionHeader({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
@@ -34,10 +34,10 @@ export function StudentUnionHeader({ userEmail }: { userEmail: string }) {
 
   // If session is null (signed out), redirect to home immediately
   React.useEffect(() => {
-    if (session === null) {
+    if (!isPending && session === null) {
       router.push("/");
     }
-  }, [session, router]);
+  }, [isPending, session, router]);
 
   const handleSignOut = async () => {
     try {

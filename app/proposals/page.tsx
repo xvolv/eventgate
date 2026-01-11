@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { SkeletonProposalCard } from "@/components/skeleton-proposal-card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -227,8 +228,17 @@ export default function ProposalsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-svh flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading proposals...</p>
+      <div className="container mx-auto px-4 py-10 max-w-5xl">
+        <div className="space-y-4">
+          <Card className="shadow-none rounded-none">
+            <CardHeader>
+              <CardTitle className="text-xl">My Proposals</CardTitle>
+            </CardHeader>
+          </Card>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <SkeletonProposalCard key={index} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -669,18 +679,6 @@ export default function ProposalsPage() {
                             {resubmittingId === selectedProposal.id
                               ? "Resubmitting..."
                               : "Resubmit"}
-                          </Button>
-                        )}
-                        {selectedProposal.status === "LEAD_REVIEW" && (
-                          <Button
-                            onClick={() =>
-                              router.push(
-                                `/proposals/${selectedProposal.id}/review`
-                              )
-                            }
-                            className="rounded-none"
-                          >
-                            Review Details
                           </Button>
                         )}
                       </div>

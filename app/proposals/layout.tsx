@@ -14,47 +14,27 @@ export default async function ProposalsLayout({
   const user = session?.user;
 
   if (!user) {
-    redirect("/login?redirect=" + encodeURIComponent("/president/new"));
+    const pathname = hdrs.get("x-pathname") || "/proposals";
+    redirect("/login?redirect=" + encodeURIComponent(pathname));
   }
 
   if (!user.emailVerified) {
     redirect("/verify?email=" + encodeURIComponent(user.email || ""));
   }
 
-  // Check system roles first
-  const systemGrants = await prisma.systemRoleGrant.findMany({
-    where: { email: user.email.toLowerCase() },
-    select: { role: true },
+  // Check if user is a president
+  const userEmail = String(user.email || "").trim();
+  const presidentGrant = await prisma.clubRoleGrant.findFirst({
+    where: {
+      email: { equals: userEmail, mode: "insensitive" },
+      role: "PRESIDENT",
+    },
   });
 
-  const systemRoles = new Set(systemGrants.map((g) => g.role));
-
-  if (systemRoles.has("ADMIN")) {
-    redirect("/admin");
-  }
-  if (systemRoles.has("STUDENT_UNION")) {
-    redirect("/student-union");
-  }
-  if (systemRoles.has("DIRECTOR")) {
-    redirect("/director");
+  if (!presidentGrant) {
+    redirect("/");
   }
 
-  // Check club roles
-  const clubGrants = await prisma.clubRoleGrant.findMany({
-    where: { email: user.email.toLowerCase() },
-    select: { role: true },
-  });
-
-  const clubRoles = new Set(clubGrants.map((g) => g.role));
-
-  if (clubRoles.has("VP")) {
-    redirect("/vp");
-  }
-  if (clubRoles.has("SECRETARY")) {
-    redirect("/secretary");
-  }
-
-  // If no special roles, allow access to proposals (for presidents)
   return (
     <>
       <ProposalsHeader userEmail={user.email} />

@@ -30,7 +30,7 @@ export default function NavClient({
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
     setMounted(true);
@@ -43,10 +43,10 @@ export default function NavClient({
 
   // If session is null (signed out), redirect to home immediately
   useEffect(() => {
-    if (session === null && isAuthed) {
+    if (!isPending && session === null && isAuthed) {
       router.push("/");
     }
-  }, [session, isAuthed, router]);
+  }, [isPending, session, isAuthed, router]);
 
   const currentSection = (() => {
     if (!currentIsAuthed) return "Public";
