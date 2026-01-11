@@ -21,8 +21,6 @@ export function CollaboratorModal({
   onSave,
 }: CollaboratorModalProps) {
   const [currentCollaborator, setCurrentCollaborator] = useState("");
-  const [tempCollaborators, setTempCollaborators] =
-    useState<string[]>(collaborators);
   const [error, setError] = useState("");
 
   const validateCurrentCollaborator = () => {
@@ -31,7 +29,7 @@ export function CollaboratorModal({
       return false;
     }
 
-    if (tempCollaborators.includes(currentCollaborator.trim())) {
+    if (collaborators.includes(currentCollaborator.trim())) {
       setError("This collaborator has already been added");
       return false;
     }
@@ -42,23 +40,17 @@ export function CollaboratorModal({
 
   const handleAddCollaborator = () => {
     if (validateCurrentCollaborator()) {
-      setTempCollaborators([...tempCollaborators, currentCollaborator.trim()]);
+      onSave([...collaborators, currentCollaborator.trim()]);
       setCurrentCollaborator("");
       setError("");
     }
   };
 
   const handleRemoveCollaborator = (index: number) => {
-    setTempCollaborators(tempCollaborators.filter((_, i) => i !== index));
-  };
-
-  const handleSaveAndClose = () => {
-    onSave(tempCollaborators.filter((c) => c.trim() !== ""));
-    onClose();
+    onSave(collaborators.filter((_, i) => i !== index));
   };
 
   const handleClose = () => {
-    setTempCollaborators(collaborators);
     setCurrentCollaborator("");
     setError("");
     onClose();
@@ -104,13 +96,13 @@ export function CollaboratorModal({
         </div>
 
         {/* Added Collaborators Stack */}
-        {tempCollaborators.length > 0 && (
+        {collaborators.length > 0 && (
           <div className="space-y-4">
             <h3 className="font-medium">
-              Added Collaborators ({tempCollaborators.length})
+              Added Collaborators ({collaborators.length})
             </h3>
             <div className="space-y-3">
-              {tempCollaborators.map((collaborator, index) => (
+              {collaborators.map((collaborator, index) => (
                 <div
                   key={index}
                   className="p-4 border border-border bg-background"
@@ -134,7 +126,7 @@ export function CollaboratorModal({
         )}
 
         {/* Empty State */}
-        {tempCollaborators.length === 0 && (
+        {collaborators.length === 0 && (
           <div className="text-center py-8">
             <p className="text-muted-foreground italic">
               No collaborators added yet. Add your first collaborating
@@ -152,13 +144,6 @@ export function CollaboratorModal({
             className="rounded-none"
           >
             Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSaveAndClose}
-            className="rounded-none"
-          >
-            Done ({tempCollaborators.length} collaborators)
           </Button>
         </div>
       </div>

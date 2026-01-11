@@ -177,8 +177,8 @@ export default function NewProposalPage() {
     return nextErrors;
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setMessage(null);
     setFormError(null);
     const nextErrors = validate();
@@ -249,20 +249,80 @@ export default function NewProposalPage() {
 
   if (isPending || isChecking) {
     return (
-      <div className="flex min-h-svh items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          Checking your session...
-        </p>
+      <div className="min-h-svh bg-background">
+        <div className="container mx-auto px-4 py-10 max-w-5xl">
+          <Card className="shadow-none rounded-none">
+            <CardHeader>
+              <CardTitle className="text-xl">New Proposal</CardTitle>
+              <CardDescription>Loading…</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6">
+                <div className="grid gap-2">
+                  <div className="h-4 w-36 skeleton rounded" />
+                  <div className="h-10 w-full skeleton rounded" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid gap-2">
+                    <div className="h-4 w-40 skeleton rounded" />
+                    <div className="h-10 w-full skeleton rounded" />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="h-4 w-40 skeleton rounded" />
+                    <div className="h-10 w-full skeleton rounded" />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="h-4 w-32 skeleton rounded" />
+                  <div className="h-10 w-full skeleton rounded" />
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="h-4 w-28 skeleton rounded" />
+                  <div className="h-24 w-full skeleton rounded" />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <div className="h-10 w-40 skeleton rounded" />
+                  <div className="h-10 w-40 skeleton rounded" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (!clubInfo || !officers) {
     return (
-      <div className="flex min-h-svh items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          Loading club information...
-        </p>
+      <div className="min-h-svh bg-background">
+        <div className="container mx-auto px-4 py-10 max-w-5xl">
+          <Card className="shadow-none rounded-none">
+            <CardHeader>
+              <CardTitle className="text-xl">New Proposal</CardTitle>
+              <CardDescription>Loading…</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6">
+                <div className="grid gap-2">
+                  <div className="h-4 w-56 skeleton rounded" />
+                  <div className="h-10 w-full skeleton rounded" />
+                </div>
+                <div className="grid gap-2">
+                  <div className="h-4 w-48 skeleton rounded" />
+                  <div className="h-10 w-full skeleton rounded" />
+                </div>
+                <div className="grid gap-2">
+                  <div className="h-4 w-44 skeleton rounded" />
+                  <div className="h-10 w-full skeleton rounded" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
