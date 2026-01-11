@@ -100,7 +100,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
               <DialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="hidden lg:inline-flex h-9 w-9 p-0 bg-white text-slate-900 hover:bg-white/90"
+                  className="hidden lg:inline-flex h-9 w-9 p-0 bg-transparent text-white hover:bg-transparent"
                   aria-label="Open account settings"
                 >
                   <Settings className="h-5 w-5" />
