@@ -369,9 +369,9 @@ export default function ProposalsPage() {
                                 <Trash className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="border-8 rounded-none">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>
+                                <AlertDialogTitle >
                                   Archive this proposal?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
