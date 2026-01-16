@@ -487,7 +487,7 @@ export default function ProposalEditPage() {
                                   startDateTime: e.target.value,
                                 })
                               }
-                              className="rounded-none shadow-none focus-visible:ring-0"
+                              className="rounded-none shadow-none focus-visible:ring-0 "
                             />
                             {fieldErrors[startKey] && (
                               <p className="text-xs text-destructive">

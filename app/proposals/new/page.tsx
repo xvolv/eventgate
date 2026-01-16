@@ -23,6 +23,8 @@ export default function NewProposalPage() {
   const { data } = useSession();
   const router = useRouter();
 
+  const minDateTimeValue = addDays(new Date(), 7).toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM for datetime-local
+
   type EventOccurrenceForm = {
     startDateTime: string;
     endDateTime: string;
@@ -402,29 +404,42 @@ export default function NewProposalPage() {
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <div className="grid gap-2">
                             <Label htmlFor={`startDateTime-${idx}`}>
                               Start Date &amp; Time
                             </Label>
-                            <Input
-                              id={`startDateTime-${idx}`}
-                              type="datetime-local"
-                              required
-                              value={o.startDateTime}
-                              onChange={(e) => {
-                                updateOccurrence(idx, {
-                                  startDateTime: e.target.value,
-                                });
-                                if (errors[startKey]) {
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    [startKey]: "",
-                                  }));
-                                }
-                              }}
-                              className="rounded-none shadow-none focus-visible:ring-0"
-                            />
+                            <div className="relative">
+                              <Input
+                                id={`startDateTime-${idx}`}
+                                type="datetime-local"
+                                required
+                                min={minDateTimeValue}
+                                step={60}
+                                value={o.startDateTime}
+                                onChange={(e) => {
+                                  updateOccurrence(idx, {
+                                    startDateTime: e.target.value,
+                                  });
+                                  if (errors[startKey]) {
+                                    setErrors((prev) => ({
+                                      ...prev,
+                                      [startKey]: "",
+                                    }));
+                                  }
+                                }}
+                                className={`rounded-none shadow-none focus-visible:ring-0 peer ${
+                                  !o.startDateTime
+                                    ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
+                                    : ""
+                                }`}
+                              />
+                              {!o.startDateTime && (
+                                <div className="pointer-events-none absolute inset-0 flex items-center px-3 text-sm text-muted-foreground/80">
+                                  Select date & time
+                                </div>
+                              )}
+                            </div>
                             {errors[startKey] && (
                               <p className="text-xs text-destructive">
                                 {errors[startKey]}
@@ -436,24 +451,37 @@ export default function NewProposalPage() {
                             <Label htmlFor={`endDateTime-${idx}`}>
                               End Date &amp; Time
                             </Label>
-                            <Input
-                              id={`endDateTime-${idx}`}
-                              type="datetime-local"
-                              required
-                              value={o.endDateTime}
-                              onChange={(e) => {
-                                updateOccurrence(idx, {
-                                  endDateTime: e.target.value,
-                                });
-                                if (errors[endKey]) {
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    [endKey]: "",
-                                  }));
-                                }
-                              }}
-                              className="rounded-none shadow-none focus-visible:ring-0"
-                            />
+                            <div className="relative">
+                              <Input
+                                id={`endDateTime-${idx}`}
+                                type="datetime-local"
+                                required
+                                min={minDateTimeValue}
+                                step={60}
+                                value={o.endDateTime}
+                                onChange={(e) => {
+                                  updateOccurrence(idx, {
+                                    endDateTime: e.target.value,
+                                  });
+                                  if (errors[endKey]) {
+                                    setErrors((prev) => ({
+                                      ...prev,
+                                      [endKey]: "",
+                                    }));
+                                  }
+                                }}
+                                className={`rounded-none shadow-none focus-visible:ring-0 peer ${
+                                  !o.endDateTime
+                                    ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
+                                    : ""
+                                }`}
+                              />
+                              {!o.endDateTime && (
+                                <div className="pointer-events-none absolute inset-0 flex items-center px-3 text-sm text-muted-foreground/80">
+                                  Select date & time
+                                </div>
+                              )}
+                            </div>
                             {errors[endKey] && (
                               <p className="text-xs text-destructive">
                                 {errors[endKey]}
@@ -650,7 +678,7 @@ export default function NewProposalPage() {
                     onClick={() => setIsCollaboratorModalOpen(true)}
                     className="rounded-none"
                   >
-                     Collaborators
+                    Collaborators
                   </Button>
                 </div>
                 {collaborators.length > 0 ? (
@@ -667,8 +695,7 @@ export default function NewProposalPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    No collaborating organizations added. Click "Manage
-                    Collaborators" to add.
+                    No collaborators
                   </p>
                 )}
               </div>
@@ -686,7 +713,7 @@ export default function NewProposalPage() {
                     onClick={() => setIsGuestModalOpen(true)}
                     className="rounded-none"
                   >
-                     Guests
+                    Guests
                   </Button>
                 </div>
                 {guests.length > 0 ? (
@@ -713,8 +740,7 @@ export default function NewProposalPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    No guests added. Click "Manage Guests" to invite speakers or
-                    special attendees.
+                    No guests
                   </p>
                 )}
               </div>

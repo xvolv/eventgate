@@ -268,7 +268,7 @@ export default function AdminClubsPage() {
 
       {(message || error) && toastOpen && (
         <div
-          className="fixed bottom-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]"
+          className="fixed bottom-4 right-4 z-50 w-88 max-w-[calc(100vw-2rem)]"
           role="status"
           aria-live={error ? "assertive" : "polite"}
         >
