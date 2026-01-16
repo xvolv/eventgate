@@ -264,8 +264,8 @@ export default function ProposalsPage() {
   }
 
   return (
-    <div className="min-h-svh bg-background">
-      <main className="container mx-auto px-4 py-10 max-w-5xl">
+    <div className="min-h-svh bg-background rounded-none">
+      <main className="container mx-auto px-4 py-10 max-w-5xl rounded-none">
         {proposals.length === 0 ? (
           <Card className="shadow-none rounded-none">
             <CardContent className="p-12 text-center">
@@ -283,7 +283,7 @@ export default function ProposalsPage() {
           </Card>
         ) : (
           <>
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-none">
               {proposals.map((proposal) => {
                 const { western, ethiopian } = formatDualTimeRange(
                   proposal.event?.startTime,
@@ -293,7 +293,7 @@ export default function ProposalsPage() {
 
                 return (
                   <Card key={proposal.id} className="shadow-none rounded-none">
-                    <CardContent className="p-0">
+                    <CardContent className="p-0 rounded-none">
                       <div
                         role="button"
                         tabIndex={0}
@@ -304,12 +304,12 @@ export default function ProposalsPage() {
                             openDetails(proposal);
                           }
                         }}
-                        className="flex items-center gap-3 px-4 py-3 cursor-pointer"
+                        className="flex items-center gap-3 px-4 py-3 cursor-pointer rounded-none"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="font-medium truncate">
+                        <div className="min-w-0 flex-1 rounded-none">
+                          <div className="flex items-center justify-between gap-3 rounded-none">
+                            <div className="min-w-0 rounded-none">
+                              <div className="font-medium truncate rounded-none">
                                 {proposal.event?.title || "Untitled Proposal"}
                               </div>
                               <div className="text-xs text-muted-foreground truncate">
@@ -319,9 +319,9 @@ export default function ProposalsPage() {
                                   : `Time: ${western}`}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 rounded-none">
                               <Badge
-                                className={`${
+                                className={`rounded-none ${
                                   statusColors[
                                     proposal.status as keyof typeof statusColors
                                   ]
@@ -338,7 +338,7 @@ export default function ProposalsPage() {
                         </div>
 
                         <div
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 rounded-none"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
@@ -355,8 +355,8 @@ export default function ProposalsPage() {
                               Edit
                             </Button>
                           )}
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                          <AlertDialog  >
+                            <AlertDialogTrigger asChild className="rounded-none">
                               <Button
                                 variant="destructive"
                                 disabled={
@@ -369,12 +369,12 @@ export default function ProposalsPage() {
                                 <Trash className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="border-8 rounded-none">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle >
+                            <AlertDialogContent className="rounded-none sm:rounded-none">
+                              <AlertDialogHeader className="rounded-none">
+                                <AlertDialogTitle className="rounded-none" >
                                   Archive this proposal?
                                 </AlertDialogTitle>
-                                <AlertDialogDescription>
+                                <AlertDialogDescription className="rounded-none">
                                   It will be moved to the Archive page and will
                                   be deleted automatically after 2 days.
                                 </AlertDialogDescription>
