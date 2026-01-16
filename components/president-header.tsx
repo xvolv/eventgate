@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { MenuIcon, Settings } from "lucide-react";
@@ -91,7 +92,16 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                   }
                   className="h-9 bg-white text-slate-900 hover:bg-white/90"
                 >
-                  New Proposal
+                  <span className="flex items-center gap-2">
+                    <Image
+                      src="/verified.png"
+                      alt="Verified president"
+                      width={16}
+                      height={16}
+                      className="h-4 w-4"
+                    />
+                    <span>New Proposal</span>
+                  </span>
                 </Button>
               </Link>
             </div>

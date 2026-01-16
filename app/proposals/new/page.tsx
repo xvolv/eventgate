@@ -20,9 +20,8 @@ import { GuestModal } from "@/components/guest-modal";
 import { CollaboratorModal } from "@/components/collaborator-modal";
 
 export default function NewProposalPage() {
-  const { data, isPending } = useSession();
+  const { data } = useSession();
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
 
   type EventOccurrenceForm = {
     startDateTime: string;
@@ -37,7 +36,11 @@ export default function NewProposalPage() {
     president: { email: string; name: string | null } | null;
     vicePresident: { email: string; name: string | null } | null;
     secretary: { email: string; name: string | null } | null;
-  } | null>(null);
+  }>({
+    president: null,
+    vicePresident: null,
+    secretary: null,
+  });
   const [title, setTitle] = useState("");
   const [occurrences, setOccurrences] = useState<EventOccurrenceForm[]>([
     { startDateTime: "", endDateTime: "", location: "" },
@@ -59,82 +62,36 @@ export default function NewProposalPage() {
 
   // Fetch club information on component mount
   useEffect(() => {
-    if (isPending) return;
-
     const fetchClubInfo = async () => {
       try {
         const response = await fetch("/api/club", { cache: "no-store" });
         if (response.ok) {
           const data = await response.json();
           setClubInfo(data.club);
-          setOfficers(data.officers);
+          const safeOfficers = data.officers || {
+            president: null,
+            vicePresident: null,
+            secretary: null,
+          };
+          setOfficers(safeOfficers);
 
           // Auto-fill officer names if available
-          if (data.officers.president?.name) {
-            setPresidentName(data.officers.president.name);
+          if (safeOfficers.president?.name) {
+            setPresidentName(safeOfficers.president.name);
           }
-          if (data.officers.vicePresident?.name) {
-            setVpName(data.officers.vicePresident.name);
+          if (safeOfficers.vicePresident?.name) {
+            setVpName(safeOfficers.vicePresident.name);
           }
-          if (data.officers.secretary?.name) {
-            setSecretaryName(data.officers.secretary.name);
+          if (safeOfficers.secretary?.name) {
+            setSecretaryName(safeOfficers.secretary.name);
           }
         }
       } catch (error) {
         console.error("Failed to fetch club info:", error);
       }
     };
-
     fetchClubInfo();
-  }, [isPending]);
-
-  useEffect(() => {
-    if (isPending) return;
-
-    const user = data?.user;
-
-    if (!user) {
-      // Not logged in - redirect to login
-      router.replace("/login?redirect=" + encodeURIComponent("/president/new"));
-      return;
-    }
-
-    if (!user.emailVerified) {
-      // Not verified - redirect to verify page
-      router.replace("/verify?email=" + encodeURIComponent(user.email || ""));
-      return;
-    }
-
-    // User is authenticated and verified; route away if this isn't their dashboard.
-    (async () => {
-      try {
-        const rolesRes = await fetch("/api/roles", { cache: "no-store" });
-        if (rolesRes.ok) {
-          const rolesJson = await rolesRes.json();
-          const roles: string[] = Array.isArray(rolesJson?.systemRoles)
-            ? rolesJson.systemRoles
-            : [];
-
-          if (roles.includes("ADMIN")) {
-            router.replace("/admin");
-            return;
-          }
-
-          if (roles.includes("STUDENT_UNION")) {
-            router.replace("/student-union");
-            return;
-          }
-
-          if (roles.includes("DIRECTOR")) {
-            router.replace("/director");
-            return;
-          }
-        }
-      } finally {
-        setIsChecking(false);
-      }
-    })();
-  }, [data, isPending, router]);
+  }, []);
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
@@ -287,86 +244,6 @@ export default function NewProposalPage() {
     }
   };
 
-  if (isPending || isChecking) {
-    return (
-      <div className="min-h-svh bg-background">
-        <div className="container mx-auto px-4 py-10 max-w-5xl">
-          <Card className="shadow-none rounded-none">
-            <CardHeader>
-              <CardTitle className="text-xl">New Proposal</CardTitle>
-              <CardDescription>Loading…</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                <div className="grid gap-2">
-                  <div className="h-4 w-36 skeleton rounded" />
-                  <div className="h-10 w-full skeleton rounded" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="grid gap-2">
-                    <div className="h-4 w-40 skeleton rounded" />
-                    <div className="h-10 w-full skeleton rounded" />
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="h-4 w-40 skeleton rounded" />
-                    <div className="h-10 w-full skeleton rounded" />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <div className="h-4 w-32 skeleton rounded" />
-                  <div className="h-10 w-full skeleton rounded" />
-                </div>
-
-                <div className="grid gap-2">
-                  <div className="h-4 w-28 skeleton rounded" />
-                  <div className="h-24 w-full skeleton rounded" />
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <div className="h-10 w-40 skeleton rounded" />
-                  <div className="h-10 w-40 skeleton rounded" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!clubInfo || !officers) {
-    return (
-      <div className="min-h-svh bg-background">
-        <div className="container mx-auto px-4 py-10 max-w-5xl">
-          <Card className="shadow-none rounded-none">
-            <CardHeader>
-              <CardTitle className="text-xl">New Proposal</CardTitle>
-              <CardDescription>Loading…</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                <div className="grid gap-2">
-                  <div className="h-4 w-56 skeleton rounded" />
-                  <div className="h-10 w-full skeleton rounded" />
-                </div>
-                <div className="grid gap-2">
-                  <div className="h-4 w-48 skeleton rounded" />
-                  <div className="h-10 w-full skeleton rounded" />
-                </div>
-                <div className="grid gap-2">
-                  <div className="h-4 w-44 skeleton rounded" />
-                  <div className="h-10 w-full skeleton rounded" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   const updateOccurrence = (
     index: number,
     patch: Partial<EventOccurrenceForm>
@@ -443,9 +320,17 @@ export default function NewProposalPage() {
                   {clubInfo ? (
                     <>
                       <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
-                      <span className="font-medium">{clubInfo.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        (Verified President)
+                      <span className="font-medium">{clubInfo.name.toUpperCase()}</span>
+                      <span className="text-sm text-muted-foreground inline-flex items-center gap-1">
+                      
+                        <img
+                          src="/verified.png"
+                          alt="Verified president"
+                          width={14}
+                          height={14}
+                          className="h-3.5 w-3.5"
+                          loading="lazy"
+                        />
                       </span>
                     </>
                   ) : (

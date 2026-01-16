@@ -1,69 +1,23 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@/lib/auth-client";
 
-export function HomeActions() {
-  const { data, isPending } = useSession();
-  const user = data?.user;
-  const isAuthed = Boolean(user);
-  const isVerified = Boolean(user?.emailVerified);
-  const [dashboardHref, setDashboardHref] = useState("/president");
+type HomeActionsProps = {
+  isAuthed: boolean;
+  isVerified: boolean;
+  userEmail: string;
+  dashboardHref: string;
+};
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!isVerified) {
-      setDashboardHref("/president");
-      return;
-    }
-
-    (async () => {
-      try {
-        const res = await fetch("/api/roles", { cache: "no-store" });
-        if (!res.ok) return;
-        const json = await res.json();
-        const systemRoles: string[] = Array.isArray(json?.systemRoles)
-          ? json.systemRoles
-          : [];
-        const clubRoles: string[] = Array.isArray(json?.clubRoles)
-          ? json.clubRoles
-          : [];
-
-        // Check system roles first (higher priority)
-        const nextHref = systemRoles.includes("ADMIN")
-          ? "/admin/clubs/new"
-          : systemRoles.includes("STUDENT_UNION")
-          ? "/student-union"
-          : systemRoles.includes("DIRECTOR")
-          ? "/director"
-          : // Then check club roles
-          clubRoles.includes("VP")
-          ? "/vp"
-          : clubRoles.includes("SECRETARY")
-          ? "/secretary"
-          : "/president"; // Default for presidents
-        if (!cancelled) setDashboardHref(nextHref);
-      } catch {
-        if (!cancelled) setDashboardHref("/president");
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isVerified]);
-
-  if (isPending) {
-    return null;
-  }
-
+export function HomeActions({
+  isAuthed,
+  isVerified,
+  userEmail,
+  dashboardHref,
+}: HomeActionsProps) {
   if (isAuthed && !isVerified) {
     return (
       <div className="flex gap-3 mb-12">
-        <Link href={"/verify?email=" + encodeURIComponent(user?.email || "")}>
+        <Link href={"/verify?email=" + encodeURIComponent(userEmail || "")}>
           <Button size="lg" className="rounded-none hover:cursor-pointer">
             Verify Email
           </Button>

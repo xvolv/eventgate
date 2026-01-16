@@ -355,8 +355,11 @@ export default function ProposalsPage() {
                               Edit
                             </Button>
                           )}
-                          <AlertDialog  >
-                            <AlertDialogTrigger asChild className="rounded-none">
+                          <AlertDialog>
+                            <AlertDialogTrigger
+                              asChild
+                              className="rounded-none"
+                            >
                               <Button
                                 variant="destructive"
                                 disabled={
@@ -371,7 +374,7 @@ export default function ProposalsPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent className="rounded-none sm:rounded-none">
                               <AlertDialogHeader className="rounded-none">
-                                <AlertDialogTitle className="rounded-none" >
+                                <AlertDialogTitle className="rounded-none">
                                   Archive this proposal?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription className="rounded-none">

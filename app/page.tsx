@@ -1,8 +1,40 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { HomeActions } from "./home-actions";
 import { LandingHeader } from "@/components/landing-header";
+
+async function getDashboardHref(email: string | null | undefined) {
+  const safeEmail = (email || "").trim();
+  if (!safeEmail) return "/president";
+
+  const [systemRoleGrants, clubRoleGrants] = await Promise.all([
+    prisma.systemRoleGrant.findMany({
+      where: { email: { equals: safeEmail, mode: "insensitive" } },
+      select: { role: true },
+    }),
+    prisma.clubRoleGrant.findMany({
+      where: { email: { equals: safeEmail, mode: "insensitive" } },
+      select: { role: true },
+    }),
+  ]);
+
+  const systemRoles = systemRoleGrants.map((g) => g.role);
+  const clubRoles = clubRoleGrants.map((g) => g.role);
+
+  return systemRoles.includes("ADMIN")
+    ? "/admin/clubs/new"
+    : systemRoles.includes("STUDENT_UNION")
+    ? "/student-union"
+    : systemRoles.includes("DIRECTOR")
+    ? "/director"
+    : clubRoles.includes("VP")
+    ? "/vp"
+    : clubRoles.includes("SECRETARY")
+    ? "/secretary"
+    : "/president";
+}
 
 export default async function HomePage() {
   const hdrs = await headers();
@@ -12,6 +44,13 @@ export default async function HomePage() {
   if (session?.user && !session.user.emailVerified) {
     redirect("/verify?email=" + encodeURIComponent(userEmail));
   }
+
+  const isAuthed = Boolean(session?.user);
+  const isVerified = Boolean(session?.user?.emailVerified);
+  const dashboardHref =
+    isAuthed && isVerified
+      ? await getDashboardHref(session?.user?.email)
+      : "/president";
 
   return (
     <div className="min-h-svh bg-background">
@@ -28,7 +67,12 @@ export default async function HomePage() {
             place.
           </p>
 
-          <HomeActions />
+          <HomeActions
+            isAuthed={isAuthed}
+            isVerified={isVerified}
+            userEmail={userEmail}
+            dashboardHref={dashboardHref}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
             <div>

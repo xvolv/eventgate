@@ -62,6 +62,7 @@ export default function LoginPage() {
     setError(null);
     setSuccessMessage(null);
     setIsLoading(true);
+    let succeeded = false;
     try {
       const result = await signIn.email({ email, password });
 
@@ -98,40 +99,48 @@ export default function LoginPage() {
 
         if (systemRoles.includes("ADMIN")) {
           router.push("/admin");
+          succeeded = true;
           return;
         }
 
         if (systemRoles.includes("STUDENT_UNION")) {
           router.push("/student-union");
+          succeeded = true;
           return;
         }
 
         if (systemRoles.includes("DIRECTOR")) {
           router.push("/director");
+          succeeded = true;
           return;
         }
 
         if (clubRoles.includes("VP")) {
           router.push("/vp");
+          succeeded = true;
           return;
         }
 
         if (clubRoles.includes("SECRETARY")) {
           router.push("/secretary");
+          succeeded = true;
           return;
         }
 
         if (clubRoles.includes("PRESIDENT")) {
           router.push("/president");
+          succeeded = true;
           return;
         }
 
         if (redirectParam) {
           router.push(redirectParam);
+          succeeded = true;
           return;
         }
 
         router.push("/president");
+        succeeded = true;
       } else if (user) {
         await signOut();
         router.push("/verify?email=" + encodeURIComponent(email));
@@ -159,7 +168,9 @@ export default function LoginPage() {
       // Use a generic error to avoid revealing whether the user exists
       setError("Invalid email or password.");
     } finally {
-      setIsLoading(false);
+      if (!succeeded) {
+        setIsLoading(false);
+      }
     }
   };
 
