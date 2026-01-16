@@ -109,7 +109,7 @@ export function GuestModal({
               <Label htmlFor="guest-expertise">Area of Expertise *</Label>
               <Input
                 id="guest-expertise"
-                placeholder="e.g., Machine Learning, Finance"
+                placeholder="Machine Learning, Finance"
                 value={currentGuest.expertise}
                 onChange={(e) => {
                   setCurrentGuest({
@@ -129,7 +129,7 @@ export function GuestModal({
               <Label htmlFor="guest-reason">Reason for Invitation *</Label>
               <Input
                 id="guest-reason"
-                placeholder="e.g., Keynote speaker on AI ethics"
+                placeholder="Keynote speaker on AI ethics"
                 value={currentGuest.reason}
                 onChange={(e) => {
                   setCurrentGuest({ ...currentGuest, reason: e.target.value });

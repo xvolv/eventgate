@@ -284,14 +284,11 @@ export default function NewProposalPage() {
   return (
     <div className="min-h-svh bg-background">
       <div className="container mx-auto px-4 py-10 max-w-5xl">
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground">
-            Provide event details for review and approval.
-          </p>
+        <div className="">
           {clubInfo && (
             <div className="text-right">
               <p className="text-sm font-medium text-gray-700">
-                {clubInfo.name}
+                {clubInfo.name.toUpperCase()}
               </p>
               <p className="text-xs text-muted-foreground">President Account</p>
             </div>
@@ -299,7 +296,7 @@ export default function NewProposalPage() {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-10 max-w-5xl">
+      <main className="container mx-auto px-4 max-w-5xl">
         <Card className="shadow-none rounded-none">
           <CardHeader>
             <CardTitle className="text-xl">Event Details</CardTitle>
@@ -320,9 +317,10 @@ export default function NewProposalPage() {
                   {clubInfo ? (
                     <>
                       <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
-                      <span className="font-medium">{clubInfo.name.toUpperCase()}</span>
+                      <span className="font-medium">
+                        {clubInfo.name.toUpperCase()}
+                      </span>
                       <span className="text-sm text-muted-foreground inline-flex items-center gap-1">
-                      
                         <img
                           src="/verified.png"
                           alt="Verified president"
@@ -346,7 +344,7 @@ export default function NewProposalPage() {
                 <Input
                   id="title"
                   required
-                  placeholder="e.g., Annual Budget Review Summit"
+                  placeholder="Annual Budget Review Summit"
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
@@ -652,7 +650,7 @@ export default function NewProposalPage() {
                     onClick={() => setIsCollaboratorModalOpen(true)}
                     className="rounded-none"
                   >
-                    Manage Collaborators
+                     Collaborators
                   </Button>
                 </div>
                 {collaborators.length > 0 ? (
@@ -688,7 +686,7 @@ export default function NewProposalPage() {
                     onClick={() => setIsGuestModalOpen(true)}
                     className="rounded-none"
                   >
-                    Manage Guests
+                     Guests
                   </Button>
                 </div>
                 {guests.length > 0 ? (

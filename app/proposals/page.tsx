@@ -304,8 +304,11 @@ export default function ProposalsPage() {
                             openDetails(proposal);
                           }
                         }}
-                        className="flex items-center gap-3 px-4 py-3 cursor-pointer rounded-none"
+                        className="relative flex items-center gap-3 px-4 py-3 cursor-pointer rounded-none overflow-hidden group"
                       >
+                        <div className="pointer-events-none absolute inset-0 bg-muted/70 text-xs font-medium text-foreground/80 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100 w-xl">
+                          Click to see details
+                        </div>
                         <div className="min-w-0 flex-1 rounded-none">
                           <div className="flex items-center justify-between gap-3 rounded-none">
                             <div className="min-w-0 rounded-none">

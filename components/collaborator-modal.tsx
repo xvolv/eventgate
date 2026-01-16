@@ -68,7 +68,7 @@ export function CollaboratorModal({
             </Label>
             <Input
               id="collaborator-name"
-              placeholder="e.g., Engineering Department"
+              placeholder="Engineering Department"
               value={currentCollaborator}
               onChange={(e) => {
                 setCurrentCollaborator(e.target.value);

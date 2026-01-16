@@ -304,7 +304,7 @@ export default function AdminSystemRolesPage() {
                 id="filter"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g. admin or user@school.edu"
+                placeholder="admin or user@school.edu"
               />
             </div>
             <Button className="md:self-end" onClick={handleSearch}>

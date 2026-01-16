@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
               id="q"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. user@school.edu or John"
+              placeholder="user@school.edu or John"
             />
           </div>
 

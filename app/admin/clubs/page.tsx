@@ -207,7 +207,7 @@ export default function AdminClubsPage() {
                 id="clubName"
                 value={clubName}
                 onChange={(e) => setClubName(e.target.value)}
-                placeholder="e.g., Computer Science Society"
+                placeholder="Computer Science Society"
               />
             </div>
 
