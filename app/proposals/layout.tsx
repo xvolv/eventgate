@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ProposalsHeader } from "./proposals-header";
+import { PresidentHeader } from "@/components/president-header";
 
 export default async function ProposalsLayout({
   children,
@@ -37,7 +37,7 @@ export default async function ProposalsLayout({
 
   return (
     <>
-      <ProposalsHeader userEmail={user.email} />
+      <PresidentHeader userEmail={user.email} />
       {children}
     </>
   );
