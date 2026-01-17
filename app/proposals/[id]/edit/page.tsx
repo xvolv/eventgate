@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useConfirmation } from "@/components/ui/confirmation-card";
 import { useSession } from "@/lib/auth-client";
 import { GuestModal } from "@/components/guest-modal";
 import { CollaboratorModal } from "@/components/collaborator-modal";
@@ -76,6 +77,7 @@ export default function ProposalEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [status, setStatus] = useState<string>("");
@@ -97,6 +99,7 @@ export default function ProposalEditPage() {
 
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false);
+  const { requestConfirmation, ConfirmationComponent } = useConfirmation();
 
   const canEdit = useMemo(() => EDITABLE_STATUSES.has(status), [status]);
 
@@ -219,8 +222,15 @@ export default function ProposalEditPage() {
     })();
   }, [data, isPending, proposalId, router, directorRejection]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Auto-hide toast after a short duration when message or error changes
+  useEffect(() => {
+    if (!message && !error) return;
+    setToastOpen(true);
+    const handle = setTimeout(() => setToastOpen(false), 4000);
+    return () => clearTimeout(handle);
+  }, [message, error]);
+
+  const performSave = async () => {
     if (!proposalId) return;
     if (!canEdit) return;
 
@@ -323,6 +333,23 @@ export default function ProposalEditPage() {
     }
   };
 
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const confirmed = await requestConfirmation(
+      "Save Changes",
+      "Confirm updating the proposal. Leads will see the updated details. 'Resubmit' triggers the review workflow.",
+      () => {},
+      { confirmText: "Save", cancelText: "Cancel" }
+    );
+    if (!confirmed) return;
+    await performSave();
+    if (!error) {
+      setMessage(
+        "Proposal updated. Leads can see changes. Use 'Resubmit' to trigger the review workflow."
+      );
+    }
+  };
+
   const handleResubmit = async () => {
     if (!proposalId) return;
 
@@ -395,6 +422,7 @@ export default function ProposalEditPage() {
 
   return (
     <div className="min-h-svh bg-background">
+      <ConfirmationComponent />
       <main className="container mx-auto px-4 py-10 max-w-5xl">
         <Card className="shadow-none rounded-none">
           <CardHeader>
@@ -413,7 +441,7 @@ export default function ProposalEditPage() {
               </div>
             )}
 
-            <form onSubmit={handleSave} className="grid gap-6">
+            <form onSubmit={(e) => e.preventDefault()} className="grid gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
                 <Input
@@ -634,9 +662,10 @@ export default function ProposalEditPage() {
 
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <Button
-                  type="submit"
+                  type="button"
                   className="rounded-none"
                   disabled={saving || !canEdit}
+                  onClick={handleSave}
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
@@ -660,6 +689,57 @@ export default function ProposalEditPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Toast Notification */}
+      {(message || error) && toastOpen && (
+        <div
+          className="fixed bottom-4 right-4 z-50 w-88 max-w-[calc(100vw-2rem)]"
+          role="status"
+          aria-live={error ? "assertive" : "polite"}
+        >
+          <div
+            className={
+              error
+                ? "border border-destructive/30 bg-background"
+                : "border border-border bg-background"
+            }
+          >
+            <div className="flex items-start justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <div
+                  className={
+                    error
+                      ? "text-sm font-medium text-destructive"
+                      : "text-sm font-medium text-foreground"
+                  }
+                >
+                  {error ? "Action failed" : "Success"}
+                </div>
+                <div
+                  className={
+                    error
+                      ? "mt-1 text-sm text-destructive/90"
+                      : "mt-1 text-sm text-muted-foreground"
+                  }
+                >
+                  {error || message}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                aria-label="Dismiss"
+                onClick={() => {
+                  setMessage(null);
+                  setError(null);
+                }}
+              >
+                ×
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <GuestModal
         isOpen={isGuestModalOpen}
