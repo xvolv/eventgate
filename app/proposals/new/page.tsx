@@ -303,7 +303,7 @@ export default function NewProposalPage() {
           <CardHeader>
             <CardTitle className="text-xl">Event Details</CardTitle>
             <CardDescription>
-              Fill out the information below to start the approval process.
+              Fill out the information below.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -404,7 +404,7 @@ export default function NewProposalPage() {
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className=" sm:grid-cols-2 gap-4 sm:gap-6">
                           <div className="grid gap-2">
                             <Label htmlFor={`startDateTime-${idx}`}>
                               Start Date &amp; Time
@@ -428,7 +428,7 @@ export default function NewProposalPage() {
                                     }));
                                   }
                                 }}
-                                className={`rounded-none shadow-none focus-visible:ring-0 peer ${
+                                className={`rounded-none shadow-none focus-visible:ring-0 peer  w-50 ${
                                   !o.startDateTime
                                     ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
                                     : ""
@@ -470,7 +470,7 @@ export default function NewProposalPage() {
                                     }));
                                   }
                                 }}
-                                className={`rounded-none shadow-none focus-visible:ring-0 peer ${
+                                className={`rounded-none shadow-none focus-visible:ring-0 peer w-50 ${
                                   !o.endDateTime
                                     ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
                                     : ""

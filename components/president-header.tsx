@@ -67,20 +67,20 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
               <div className="text-sm font-medium leading-5">
                 Event Proposal Portal
               </div>
-              <div className="hidden md:block text-xs text-white/70 truncate">
+              <div className="hidden md:block text-xs text-white/70 truncate ">
                 {currentSection}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2 ">
               <Link href="/president" onClick={() => setMenuOpen(false)}>
                 <Button
                   variant={
                     isActive(pathname, "/president") ? "default" : "outline"
                   }
-                  className="h-9 bg-white text-slate-900 hover:bg-white/90"
+                  className="border-none h-9 text-white bg-slate-900 hover:bg-slate-900 hover:text-white"
                 >
                   My Proposals
                 </Button>
@@ -90,7 +90,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                   variant={
                     isActive(pathname, "/president/new") ? "default" : "outline"
                   }
-                  className="h-9 bg-white text-slate-900 hover:bg-white/90"
+                  className="h-9 text-white bg-slate-900 hover:bg-slate-900"
                 >
                   <span className="flex items-center gap-2">
                     <Image

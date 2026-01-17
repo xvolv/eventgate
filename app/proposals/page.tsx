@@ -107,6 +107,7 @@ export default function ProposalsPage() {
     null
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [sessionsExpanded, setSessionsExpanded] = useState(false);
   const [contributorsOpen, setContributorsOpen] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [contributorsPage, setContributorsPage] = useState(1);
@@ -165,6 +166,7 @@ export default function ProposalsPage() {
   const openDetails = (proposal: Proposal) => {
     setSelectedProposal(proposal);
     setDetailsOpen(true);
+    setSessionsExpanded(false);
     setContributorsOpen(false);
     setGuestsOpen(false);
     setContributorsPage(1);
@@ -465,278 +467,192 @@ export default function ProposalsPage() {
                 }
               }}
             >
-              <DialogContent className="max-w-4xl">
+              <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
                 <DialogTitle className="sr-only">Proposal Details</DialogTitle>
                 {selectedProposal ? (
                   <Card className="shadow-none rounded-none border-0">
                     <CardHeader className="px-0 pt-0">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
-                          <CardTitle className="text-lg">
-                            {selectedProposal.event?.title ||
-                              "Untitled Proposal"}
+                          <CardTitle className="text-xl font-semibold">
+                            {selectedProposal.event?.title || "Untitled Proposal"}
                           </CardTitle>
-                          <CardDescription>
-                            {selectedProposal.club.name} •{" "}
-                            {new Date(
-                              selectedProposal.createdAt
-                            ).toLocaleDateString()}
+                          <CardDescription className="text-xs text-muted-foreground">
+                            {selectedProposal.club.name} • {new Date(selectedProposal.createdAt).toLocaleDateString()}
                           </CardDescription>
                         </div>
-                        <Badge
-                          className={`${
-                            statusColors[
-                              selectedProposal.status as keyof typeof statusColors
-                            ]
-                          }`}
-                        >
-                          {
-                            statusLabels[
-                              selectedProposal.status as keyof typeof statusLabels
-                            ]
-                          }
-                        </Badge>
+                        <div className="shrink-0">
+                          <Badge className="bg-muted text-foreground/70">
+                            {statusLabels[selectedProposal.status as keyof typeof statusLabels]}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4 px-0 pb-0">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                            Event Details
-                          </h4>
-                          <div className="space-y-2">
-                            <p>
-                              <strong>Location:</strong>{" "}
-                              {selectedProposal.event?.location ||
-                                "Not specified"}
-                            </p>
-                            {Array.isArray(
-                              selectedProposal.event?.occurrences
-                            ) &&
-                            selectedProposal.event.occurrences.length > 1 ? (
-                              <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground">
-                                  <strong>Sessions:</strong>{" "}
-                                  {selectedProposal.event.occurrences.length}
-                                </p>
-                                <div className="space-y-2">
+                    <CardContent className="space-y-6 px-0 pb-0">
+                      <section className="space-y-3">
+                        <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Core Facts</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <div className="text-xs text-muted-foreground">Date range</div>
+                            <div className="text-sm">
+                              {(() => {
+                                const { western } = formatDualTimeRange(
+                                  selectedProposal.event?.startTime,
+                                  selectedProposal.event?.endTime
+                                );
+                                return western;
+                              })()}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">Location</div>
+                            <div className="text-sm">
+                              {selectedProposal.event?.location || "Not specified"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">Sessions</div>
+                            <div className="text-sm">
+                              {Array.isArray(selectedProposal.event?.occurrences) && selectedProposal.event.occurrences.length > 1
+                                ? selectedProposal.event.occurrences.length
+                                : 1}
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      {Array.isArray(selectedProposal.event?.occurrences) && selectedProposal.event.occurrences.length > 1 ? (
+                        <section className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Sessions</h4>
+                            <Button
+                              variant="outline"
+                              className="h-8 rounded-none"
+                              onClick={() => setSessionsExpanded((v) => !v)}
+                            >
+                              {sessionsExpanded ? "Hide" : "Show"} sessions
+                            </Button>
+                          </div>
+                          {sessionsExpanded ? (
+                            <div className="overflow-x-auto border border-border">
+                              <table className="min-w-full text-sm">
+                                <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                                  <tr>
+                                    <th className="text-left px-3 py-2 font-semibold">Date</th>
+                                    <th className="text-left px-3 py-2 font-semibold">Start</th>
+                                    <th className="text-left px-3 py-2 font-semibold">End</th>
+                                    <th className="text-left px-3 py-2 font-semibold">Location</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
                                   {selectedProposal.event.occurrences
                                     .slice()
-                                    .sort(
-                                      (a, b) =>
-                                        new Date(a.startTime).getTime() -
-                                        new Date(b.startTime).getTime()
-                                    )
+                                    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
                                     .map((occ, idx) => {
-                                      const { western, ethiopian } =
-                                        formatDualTimeRange(
-                                          occ.startTime,
-                                          occ.endTime
-                                        );
+                                      const start = new Date(occ.startTime);
+                                      const end = new Date(occ.endTime);
+                                      const date = start.toLocaleDateString();
+                                      const startTime = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                                      const endTime = end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                                       return (
-                                        <div
-                                          key={idx}
-                                          className="p-3 bg-muted/30 rounded-none"
-                                        >
-                                          <div className="text-sm">
-                                            {western}
-                                          </div>
-                                          <div className="text-xs text-muted-foreground">
-                                            {ethiopian
-                                              ? `LT: [${ethiopian}]`
-                                              : null}
-                                            {occ.location
-                                              ? `${ethiopian ? " • " : ""}${
-                                                  occ.location
-                                                }`
-                                              : null}
-                                          </div>
-                                        </div>
+                                        <tr key={idx} className="border-t border-border">
+                                          <td className="px-3 py-2 align-top">{date}</td>
+                                          <td className="px-3 py-2 align-top">{startTime}</td>
+                                          <td className="px-3 py-2 align-top">{endTime}</td>
+                                          <td className="px-3 py-2 align-top">{occ.location || "—"}</td>
+                                        </tr>
                                       );
                                     })}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : null}
+                        </section>
+                      ) : null}
+
+                      <section className="space-y-3">
+                        <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Approval Status</h4>
+                        <div className="divide-y divide-border border border-border">
+                          {selectedProposal.leadApprovals.map((approval, index) => (
+                            <div key={index} className="flex items-center justify-between px-3 py-2">
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium truncate">{approval.leadRole}</div>
+                                <div className="text-xs text-muted-foreground truncate">{approval.leadEmail}</div>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {approval.approved ? "Approved" : "Pending"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Contributors</h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedProposal.collaborators?.length || 0}</span>
+                            {(selectedProposal.collaborators?.length || 0) > 2 ? (
+                              <Button variant="outline" className="rounded-none h-8" onClick={() => setContributorsOpen(true)}>
+                                View all
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                        {selectedProposal.collaborators?.length ? (
+                          <div className="space-y-2">
+                            {selectedProposal.collaborators.slice(0, 2).map((c, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-none">
+                                <div className="min-w-0">
+                                  <div className="font-medium truncate">{c.name}</div>
+                                  {c.type ? (
+                                    <div className="text-xs text-muted-foreground truncate">{c.type}</div>
+                                  ) : null}
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No contributors.</div>
+                        )}
+                      </section>
+
+                      <section className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Invited Guests</h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedProposal.guests?.length || 0}</span>
+                            {(selectedProposal.guests?.length || 0) > 2 ? (
+                              <Button variant="outline" className="rounded-none h-8" onClick={() => setGuestsOpen(true)}>
+                                View all
+                              </Button>
                             ) : null}
-                            <p className="text-sm text-muted-foreground">
-                              <strong>Time:</strong>{" "}
-                              {(() => {
-                                const { western, ethiopian } =
-                                  formatDualTimeRange(
-                                    selectedProposal.event?.startTime,
-                                    selectedProposal.event?.endTime
-                                  );
-                                return ethiopian ? (
-                                  <span>
-                                    {western}
-                                    <span className="block text-xs text-muted-foreground">
-                                      LT: [{ethiopian}]
-                                    </span>
-                                  </span>
-                                ) : (
-                                  western
-                                );
-                              })()}
-                            </p>
                           </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                            Lead Review Status
-                          </h4>
-                          <div className="space-y-3">
-                            {selectedProposal.leadApprovals.map(
-                              (approval, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
-                                >
-                                  <div>
-                                    <p className="font-medium">
-                                      {approval.leadRole}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {approval.leadEmail}
-                                    </p>
-                                  </div>
-                                  <Badge
-                                    className={
-                                      approval.approved
-                                        ? "bg-green-100 text-green-800 border-green-300"
-                                        : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                                    }
-                                  >
-                                    {approval.approved ? "Approved" : "Pending"}
-                                  </Badge>
-                                </div>
-                              )
-                            )}
+                        {selectedProposal.guests?.length ? (
+                          <div className="space-y-2">
+                            {selectedProposal.guests.slice(0, 2).map((g, idx) => (
+                              <div key={idx} className="p-3 bg-muted/30 rounded-none">
+                                <div className="font-medium truncate">{g.name}</div>
+                                {g.affiliation ? (
+                                  <div className="text-xs text-muted-foreground truncate">{g.affiliation}</div>
+                                ) : null}
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No guests.</div>
+                        )}
+                      </section>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <div className="flex items-center justify-between gap-3 mb-2">
-                            <h4 className="font-medium text-sm text-muted-foreground">
-                              Contributors
-                            </h4>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                {selectedProposal.collaborators?.length || 0}
-                              </span>
-                              {(selectedProposal.collaborators?.length || 0) >
-                              2 ? (
-                                <Button
-                                  variant="outline"
-                                  className="rounded-none h-8"
-                                  onClick={() => setContributorsOpen(true)}
-                                >
-                                  View all
-                                </Button>
-                              ) : null}
-                            </div>
-                          </div>
-                          {selectedProposal.collaborators?.length ? (
-                            <div className="space-y-2">
-                              {selectedProposal.collaborators
-                                .slice(0, 2)
-                                .map((c, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
-                                  >
-                                    <div className="min-w-0">
-                                      <div className="font-medium truncate">
-                                        {c.name}
-                                      </div>
-                                      {c.type ? (
-                                        <div className="text-xs text-muted-foreground truncate">
-                                          {c.type}
-                                        </div>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">
-                              No contributors.
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between gap-3 mb-2">
-                            <h4 className="font-medium text-sm text-muted-foreground">
-                              Invited Guests
-                            </h4>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                {selectedProposal.guests?.length || 0}
-                              </span>
-                              {(selectedProposal.guests?.length || 0) > 2 ? (
-                                <Button
-                                  variant="outline"
-                                  className="rounded-none h-8"
-                                  onClick={() => setGuestsOpen(true)}
-                                >
-                                  View all
-                                </Button>
-                              ) : null}
-                            </div>
-                          </div>
-                          {selectedProposal.guests?.length ? (
-                            <div className="space-y-2">
-                              {selectedProposal.guests
-                                .slice(0, 2)
-                                .map((g, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="p-3 bg-muted/30 rounded-none"
-                                  >
-                                    <div className="font-medium truncate">
-                                      {g.name}
-                                    </div>
-                                    {g.affiliation ? (
-                                      <div className="text-xs text-muted-foreground truncate">
-                                        {g.affiliation}
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                ))}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">
-                              No guests.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 pt-4">
+                      <div className="pt-4">
                         {canEditProposal(selectedProposal.status) && (
                           <Button
                             variant="outline"
-                            onClick={() =>
-                              router.push(
-                                `/proposals/${selectedProposal.id}/edit`
-                              )
-                            }
+                            onClick={() => router.push(`/proposals/${selectedProposal.id}/edit`)}
                             className="rounded-none"
                           >
                             Edit Proposal
-                          </Button>
-                        )}
-                        {canResubmitProposal(selectedProposal.status) && (
-                          <Button
-                            variant="outline"
-                            onClick={() => handleResubmit(selectedProposal.id)}
-                            disabled={resubmittingId === selectedProposal.id}
-                            className="rounded-none"
-                          >
-                            {resubmittingId === selectedProposal.id
-                              ? "Resubmitting..."
-                              : "Resubmit"}
                           </Button>
                         )}
                       </div>
@@ -753,7 +669,7 @@ export default function ProposalsPage() {
                 if (!open) setContributorsPage(1);
               }}
             >
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogTitle>Contributors</DialogTitle>
                 {selectedProposal
                   ? (() => {
@@ -835,7 +751,7 @@ export default function ProposalsPage() {
                 if (!open) setGuestsPage(1);
               }}
             >
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogTitle>Invited Guests</DialogTitle>
                 {selectedProposal
                   ? (() => {
