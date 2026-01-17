@@ -90,18 +90,10 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                   variant={
                     isActive(pathname, "/president/new") ? "default" : "outline"
                   }
-                  className="h-9 text-white bg-slate-900 hover:bg-slate-900"
+                  className="h-9 text-white bg-slate-900 hover:text-white hover:bg-salte-900 border-none"
                 >
-                  <span className="flex items-center gap-2">
-                    <Image
-                      src="/verified.png"
-                      alt="Verified president"
-                      width={16}
-                      height={16}
-                      className="h-4 w-4"
-                    />
-                    <span>New Proposal</span>
-                  </span>
+                 
+               New Proposal
                 </Button>
               </Link>
             </div>
@@ -207,7 +199,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                         }
                         className="h-10 w-full justify-start rounded-none"
                       >
-                        New Proposal
+                        New Proposal 
                       </Button>
                     </Link>
                   </nav>

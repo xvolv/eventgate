@@ -475,25 +475,37 @@ export default function ProposalsPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <CardTitle className="text-xl font-semibold">
-                            {selectedProposal.event?.title || "Untitled Proposal"}
+                            {selectedProposal.event?.title ||
+                              "Untitled Proposal"}
                           </CardTitle>
                           <CardDescription className="text-xs text-muted-foreground">
-                            {selectedProposal.club.name} • {new Date(selectedProposal.createdAt).toLocaleDateString()}
+                            {selectedProposal.club.name} •{" "}
+                            {new Date(
+                              selectedProposal.createdAt
+                            ).toLocaleDateString()}
                           </CardDescription>
                         </div>
                         <div className="shrink-0">
                           <Badge className="bg-muted text-foreground/70">
-                            {statusLabels[selectedProposal.status as keyof typeof statusLabels]}
+                            {
+                              statusLabels[
+                                selectedProposal.status as keyof typeof statusLabels
+                              ]
+                            }
                           </Badge>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-6 px-0 pb-0">
                       <section className="space-y-3">
-                        <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Core Facts</h4>
+                        <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                          Core Facts
+                        </h4>
                         <div className="space-y-2">
                           <div>
-                            <div className="text-xs text-muted-foreground">Date range</div>
+                            <div className="text-xs text-muted-foreground">
+                              Date range
+                            </div>
                             <div className="text-sm">
                               {(() => {
                                 const { western } = formatDualTimeRange(
@@ -505,15 +517,22 @@ export default function ProposalsPage() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground">Location</div>
+                            <div className="text-xs text-muted-foreground">
+                              Location
+                            </div>
                             <div className="text-sm">
-                              {selectedProposal.event?.location || "Not specified"}
+                              {selectedProposal.event?.location ||
+                                "Not specified"}
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground">Sessions</div>
+                            <div className="text-xs text-muted-foreground">
+                              Sessions
+                            </div>
                             <div className="text-sm">
-                              {Array.isArray(selectedProposal.event?.occurrences) && selectedProposal.event.occurrences.length > 1
+                              {Array.isArray(
+                                selectedProposal.event?.occurrences
+                              ) && selectedProposal.event.occurrences.length > 1
                                 ? selectedProposal.event.occurrences.length
                                 : 1}
                             </div>
@@ -521,10 +540,13 @@ export default function ProposalsPage() {
                         </div>
                       </section>
 
-                      {Array.isArray(selectedProposal.event?.occurrences) && selectedProposal.event.occurrences.length > 1 ? (
+                      {Array.isArray(selectedProposal.event?.occurrences) &&
+                      selectedProposal.event.occurrences.length > 1 ? (
                         <section className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Sessions</h4>
+                            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                              Sessions
+                            </h4>
                             <Button
                               variant="outline"
                               className="h-8 rounded-none"
@@ -538,28 +560,58 @@ export default function ProposalsPage() {
                               <table className="min-w-full text-sm">
                                 <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                                   <tr>
-                                    <th className="text-left px-3 py-2 font-semibold">Date</th>
-                                    <th className="text-left px-3 py-2 font-semibold">Start</th>
-                                    <th className="text-left px-3 py-2 font-semibold">End</th>
-                                    <th className="text-left px-3 py-2 font-semibold">Location</th>
+                                    <th className="text-left px-3 py-2 font-semibold">
+                                      Date
+                                    </th>
+                                    <th className="text-left px-3 py-2 font-semibold">
+                                      Start
+                                    </th>
+                                    <th className="text-left px-3 py-2 font-semibold">
+                                      End
+                                    </th>
+                                    <th className="text-left px-3 py-2 font-semibold">
+                                      Location
+                                    </th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {selectedProposal.event.occurrences
                                     .slice()
-                                    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+                                    .sort(
+                                      (a, b) =>
+                                        new Date(a.startTime).getTime() -
+                                        new Date(b.startTime).getTime()
+                                    )
                                     .map((occ, idx) => {
                                       const start = new Date(occ.startTime);
                                       const end = new Date(occ.endTime);
                                       const date = start.toLocaleDateString();
-                                      const startTime = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                                      const endTime = end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                                      const startTime =
+                                        start.toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        });
+                                      const endTime = end.toLocaleTimeString(
+                                        [],
+                                        { hour: "2-digit", minute: "2-digit" }
+                                      );
                                       return (
-                                        <tr key={idx} className="border-t border-border">
-                                          <td className="px-3 py-2 align-top">{date}</td>
-                                          <td className="px-3 py-2 align-top">{startTime}</td>
-                                          <td className="px-3 py-2 align-top">{endTime}</td>
-                                          <td className="px-3 py-2 align-top">{occ.location || "—"}</td>
+                                        <tr
+                                          key={idx}
+                                          className="border-t border-border"
+                                        >
+                                          <td className="px-3 py-2 align-top">
+                                            {date}
+                                          </td>
+                                          <td className="px-3 py-2 align-top">
+                                            {startTime}
+                                          </td>
+                                          <td className="px-3 py-2 align-top">
+                                            {endTime}
+                                          </td>
+                                          <td className="px-3 py-2 align-top">
+                                            {occ.location || "—"}
+                                          </td>
                                         </tr>
                                       );
                                     })}
@@ -571,29 +623,49 @@ export default function ProposalsPage() {
                       ) : null}
 
                       <section className="space-y-3">
-                        <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Approval Status</h4>
+                        <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                          Approval Status
+                        </h4>
                         <div className="divide-y divide-border border border-border">
-                          {selectedProposal.leadApprovals.map((approval, index) => (
-                            <div key={index} className="flex items-center justify-between px-3 py-2">
-                              <div className="min-w-0">
-                                <div className="text-sm font-medium truncate">{approval.leadRole}</div>
-                                <div className="text-xs text-muted-foreground truncate">{approval.leadEmail}</div>
+                          {selectedProposal.leadApprovals.map(
+                            (approval, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between px-3 py-2"
+                              >
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium truncate">
+                                    {approval.leadRole}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {approval.leadEmail}
+                                  </div>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {approval.approved ? "Approved" : "Pending"}
+                                </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                {approval.approved ? "Approved" : "Pending"}
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                         </div>
                       </section>
 
                       <section className="space-y-3">
                         <div className="flex items-center justify-between gap-3">
-                          <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Contributors</h4>
+                          <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                            Contributors
+                          </h4>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedProposal.collaborators?.length || 0}</span>
-                            {(selectedProposal.collaborators?.length || 0) > 2 ? (
-                              <Button variant="outline" className="rounded-none h-8" onClick={() => setContributorsOpen(true)}>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {selectedProposal.collaborators?.length || 0}
+                            </span>
+                            {(selectedProposal.collaborators?.length || 0) >
+                            2 ? (
+                              <Button
+                                variant="outline"
+                                className="rounded-none h-8"
+                                onClick={() => setContributorsOpen(true)}
+                              >
                                 View all
                               </Button>
                             ) : null}
@@ -601,29 +673,48 @@ export default function ProposalsPage() {
                         </div>
                         {selectedProposal.collaborators?.length ? (
                           <div className="space-y-2">
-                            {selectedProposal.collaborators.slice(0, 2).map((c, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-none">
-                                <div className="min-w-0">
-                                  <div className="font-medium truncate">{c.name}</div>
-                                  {c.type ? (
-                                    <div className="text-xs text-muted-foreground truncate">{c.type}</div>
-                                  ) : null}
+                            {selectedProposal.collaborators
+                              .slice(0, 2)
+                              .map((c, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                                >
+                                  <div className="min-w-0">
+                                    <div className="font-medium truncate">
+                                      {c.name}
+                                    </div>
+                                    {c.type ? (
+                                      <div className="text-xs text-muted-foreground truncate">
+                                        {c.type}
+                                      </div>
+                                    ) : null}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
                           </div>
                         ) : (
-                          <div className="text-sm text-muted-foreground">No contributors.</div>
+                          <div className="text-sm text-muted-foreground">
+                            No contributors.
+                          </div>
                         )}
                       </section>
 
                       <section className="space-y-3">
                         <div className="flex items-center justify-between gap-3">
-                          <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Invited Guests</h4>
+                          <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                            Invited Guests
+                          </h4>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedProposal.guests?.length || 0}</span>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {selectedProposal.guests?.length || 0}
+                            </span>
                             {(selectedProposal.guests?.length || 0) > 2 ? (
-                              <Button variant="outline" className="rounded-none h-8" onClick={() => setGuestsOpen(true)}>
+                              <Button
+                                variant="outline"
+                                className="rounded-none h-8"
+                                onClick={() => setGuestsOpen(true)}
+                              >
                                 View all
                               </Button>
                             ) : null}
@@ -631,17 +722,28 @@ export default function ProposalsPage() {
                         </div>
                         {selectedProposal.guests?.length ? (
                           <div className="space-y-2">
-                            {selectedProposal.guests.slice(0, 2).map((g, idx) => (
-                              <div key={idx} className="p-3 bg-muted/30 rounded-none">
-                                <div className="font-medium truncate">{g.name}</div>
-                                {g.affiliation ? (
-                                  <div className="text-xs text-muted-foreground truncate">{g.affiliation}</div>
-                                ) : null}
-                              </div>
-                            ))}
+                            {selectedProposal.guests
+                              .slice(0, 2)
+                              .map((g, idx) => (
+                                <div
+                                  key={idx}
+                                  className="p-3 bg-muted/30 rounded-none"
+                                >
+                                  <div className="font-medium truncate">
+                                    {g.name}
+                                  </div>
+                                  {g.affiliation ? (
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {g.affiliation}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ))}
                           </div>
                         ) : (
-                          <div className="text-sm text-muted-foreground">No guests.</div>
+                          <div className="text-sm text-muted-foreground">
+                            No guests.
+                          </div>
                         )}
                       </section>
 
@@ -649,7 +751,11 @@ export default function ProposalsPage() {
                         {canEditProposal(selectedProposal.status) && (
                           <Button
                             variant="outline"
-                            onClick={() => router.push(`/proposals/${selectedProposal.id}/edit`)}
+                            onClick={() =>
+                              router.push(
+                                `/proposals/${selectedProposal.id}/edit`
+                              )
+                            }
                             className="rounded-none"
                           >
                             Edit Proposal

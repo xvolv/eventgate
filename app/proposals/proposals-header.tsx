@@ -89,7 +89,7 @@ export function ProposalsHeader({ userEmail }: { userEmail: string }) {
                   }
                   className="h-9 bg-white text-slate-900 hover:bg-white/90"
                 >
-                  New Proposal
+                  New Proposal  
                 </Button>
               </Link>
             </div>
