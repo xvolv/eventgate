@@ -137,3 +137,25 @@
   animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   background-color: hsl(var(--muted));
 }
+
+/* Dialog content scrollbar styling: thinner, muted, accessible */
+[data-slot="dialog-content"] {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--border) var(--muted);
+}
+[data-slot="dialog-content"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+[data-slot="dialog-content"]::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 8px;
+}
+[data-slot="dialog-content"]::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+  border: 2px solid var(--muted);
+}
+[data-slot="dialog-content"]::-webkit-scrollbar-thumb:hover {
+  background: var(--ring);
+}
