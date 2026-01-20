@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     console.error("[verify/send] failed to send verification email", e);
     return NextResponse.json(
       { message: "Failed to send verification email" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

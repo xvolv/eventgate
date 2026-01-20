@@ -107,13 +107,13 @@ export default function AdminClubsPage() {
     setEditingClubId(club.id);
     setClubName(club.name);
     setPresidentEmail(
-      (club.roleGrants || []).find((g) => g.role === "PRESIDENT")?.email || ""
+      (club.roleGrants || []).find((g) => g.role === "PRESIDENT")?.email || "",
     );
     setVpEmail(
-      (club.roleGrants || []).find((g) => g.role === "VP")?.email || ""
+      (club.roleGrants || []).find((g) => g.role === "VP")?.email || "",
     );
     setSecretaryEmail(
-      (club.roleGrants || []).find((g) => g.role === "SECRETARY")?.email || ""
+      (club.roleGrants || []).find((g) => g.role === "SECRETARY")?.email || "",
     );
     setIsEditOpen(true);
   };
@@ -183,7 +183,7 @@ export default function AdminClubsPage() {
         `/api/admin/clubs?clubId=${encodeURIComponent(clubId)}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (!res.ok) {

@@ -41,7 +41,7 @@ const getFreshCache = (page: number, query: string) => {
 const setUsersCache = (
   page: number,
   query: string,
-  data: Omit<UsersCacheEntry, "timestamp">
+  data: Omit<UsersCacheEntry, "timestamp">,
 ) => {
   usersCache.set(cacheKey(page, query), {
     ...data,
@@ -52,9 +52,7 @@ const setUsersCache = (
 const clearUsersCache = () => usersCache.clear();
 
 export default function AdminUsersPage() {
-  const [loading, setLoading] = useState(
-    !Boolean(getFreshCache(1, ""))
-  );
+  const [loading, setLoading] = useState(!Boolean(getFreshCache(1, "")));
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
@@ -89,7 +87,7 @@ export default function AdminUsersPage() {
   const refresh = async (
     pageOverride?: number,
     queryOverride?: string,
-    opts?: { force?: boolean }
+    opts?: { force?: boolean },
   ) => {
     const pageToUse = pageOverride ?? page;
     const queryToUse = (queryOverride ?? query).trim();
@@ -110,9 +108,9 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(
         `/api/admin/users?page=${pageToUse}&q=${encodeURIComponent(
-          queryToUse
+          queryToUse,
         )}`,
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
       if (!res.ok) throw new Error("Failed to load users");
       const json = await res.json();
@@ -212,7 +210,7 @@ export default function AdminUsersPage() {
       "Delete User",
       `Delete user ${u.email}? This will remove their sessions/accounts too.`,
       () => {},
-      { variant: "destructive", confirmText: "Delete", cancelText: "Cancel" }
+      { variant: "destructive", confirmText: "Delete", cancelText: "Cancel" },
     );
     if (!confirmed) return;
 

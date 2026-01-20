@@ -17,7 +17,9 @@ function VerifyPageContent() {
   const search = useSearchParams();
   const router = useRouter();
   const email = search.get("email") || "";
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -38,11 +40,11 @@ function VerifyPageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      
+
       if (!res.ok) {
         throw new Error("Failed to send verification email");
       }
-      
+
       setStatus("sent");
       setLastSentAt(Date.now());
     } catch (e: any) {
@@ -74,7 +76,8 @@ function VerifyPageContent() {
             <div className="bg-blue-50 border border-blue-200 rounded p-4 text-sm">
               <p className="font-semibold mb-2">📧 Check your inbox</p>
               <p className="text-muted-foreground">
-                We sent a verification link to your email. Click the link in the email to verify your account.
+                We sent a verification link to your email. Click the link in the
+                email to verify your account.
               </p>
             </div>
 
@@ -110,9 +113,14 @@ function VerifyPageContent() {
 
             <div className="border-t pt-4">
               <p className="text-xs text-muted-foreground mb-3">
-                After clicking the verification link in your email, you&apos;ll be redirected back here to sign in.
+                After clicking the verification link in your email, you&apos;ll
+                be redirected back here to sign in.
               </p>
-              <Button variant="ghost" className="w-full rounded-none" onClick={handleBack}>
+              <Button
+                variant="ghost"
+                className="w-full rounded-none"
+                onClick={handleBack}
+              >
                 Back to login
               </Button>
             </div>
@@ -125,7 +133,11 @@ function VerifyPageContent() {
 
 export default function VerifyPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading…</div>}>
+    <Suspense
+      fallback={
+        <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+      }
+    >
       <VerifyPageContent />
     </Suspense>
   );

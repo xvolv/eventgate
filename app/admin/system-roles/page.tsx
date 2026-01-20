@@ -35,7 +35,7 @@ const getFreshCache = (page: number, query: string) => {
 const setRolesCache = (
   page: number,
   query: string,
-  data: Omit<RolesCacheEntry, "timestamp">
+  data: Omit<RolesCacheEntry, "timestamp">,
 ) => {
   rolesCache.set(cacheKey(page, query), {
     ...data,
@@ -52,8 +52,8 @@ const formatRole = (role: SystemRole) =>
   role === "ADMIN"
     ? "Admin"
     : role === "DIRECTOR"
-    ? "Director"
-    : "Student Union";
+      ? "Director"
+      : "Student Union";
 
 export default function AdminSystemRolesPage() {
   const [loading, setLoading] = useState(!Boolean(getFreshCache(1, "")));
@@ -64,7 +64,7 @@ export default function AdminSystemRolesPage() {
   const { requestConfirmation, ConfirmationComponent } = useConfirmation();
 
   const [systemRoleGrants, setSystemRoleGrants] = useState<SystemRoleGrant[]>(
-    []
+    [],
   );
 
   const [query, setQuery] = useState("");
@@ -105,7 +105,7 @@ export default function AdminSystemRolesPage() {
   const refresh = async (
     pageOverride?: number,
     queryOverride?: string,
-    opts?: { force?: boolean }
+    opts?: { force?: boolean },
   ) => {
     const pageToUse = pageOverride ?? page;
     const queryToUse = (queryOverride ?? query).trim();
@@ -127,11 +127,11 @@ export default function AdminSystemRolesPage() {
     try {
       const rolesRes = await fetch(
         `/api/admin/system-role-grants?page=${pageToUse}&q=${encodeURIComponent(
-          queryToUse
+          queryToUse,
         )}`,
         {
           signal: controller.signal,
-        }
+        },
       );
       if (!rolesRes.ok) throw new Error("Failed to load system roles");
       const rolesJson = await rolesRes.json();
@@ -159,7 +159,7 @@ export default function AdminSystemRolesPage() {
       "Delete System Role Grant",
       `Delete system role grant for ${grant.email} (${grant.role})?`,
       () => {},
-      { variant: "destructive", confirmText: "Delete", cancelText: "Cancel" }
+      { variant: "destructive", confirmText: "Delete", cancelText: "Cancel" },
     );
     if (!confirmed) return;
 
@@ -422,8 +422,10 @@ export default function AdminSystemRolesPage() {
               <thead className="bg-muted/60 text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">Role</th>
-                  <th className="px-4 py-3 text-left font-semibold">User Email</th>
-                  <th className="px-4 py-3 text-left font-semibold w-[140px]">
+                  <th className="px-4 py-3 text-left font-semibold">
+                    User Email
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold w-35">
                     Actions
                   </th>
                 </tr>
@@ -431,10 +433,7 @@ export default function AdminSystemRolesPage() {
               <tbody>
                 {systemRoleGrants.length === 0 ? (
                   <tr>
-                    <td
-                      className="px-4 py-4 text-muted-foreground"
-                      colSpan={3}
-                    >
+                    <td className="px-4 py-4 text-muted-foreground" colSpan={3}>
                       No system roles yet.
                     </td>
                   </tr>
@@ -465,7 +464,9 @@ export default function AdminSystemRolesPage() {
                           <Input
                             type="email"
                             value={editingGrantEmail}
-                            onChange={(e) => setEditingGrantEmail(e.target.value)}
+                            onChange={(e) =>
+                              setEditingGrantEmail(e.target.value)
+                            }
                             placeholder="user@school.edu"
                             className="py-2"
                           />
@@ -530,7 +531,9 @@ export default function AdminSystemRolesPage() {
               <Button
                 variant="outline"
                 onClick={() => goToPage(page + 1)}
-                disabled={(page - 1) * pageSize + systemRoleGrants.length >= total}
+                disabled={
+                  (page - 1) * pageSize + systemRoleGrants.length >= total
+                }
               >
                 Next
               </Button>

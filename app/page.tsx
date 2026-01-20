@@ -26,14 +26,14 @@ async function getDashboardHref(email: string | null | undefined) {
   return systemRoles.includes("ADMIN")
     ? "/admin/clubs"
     : systemRoles.includes("STUDENT_UNION")
-    ? "/student-union"
-    : systemRoles.includes("DIRECTOR")
-    ? "/director"
-    : clubRoles.includes("VP")
-    ? "/vp"
-    : clubRoles.includes("SECRETARY")
-    ? "/secretary"
-    : "/president";
+      ? "/student-union"
+      : systemRoles.includes("DIRECTOR")
+        ? "/director"
+        : clubRoles.includes("VP")
+          ? "/vp"
+          : clubRoles.includes("SECRETARY")
+            ? "/secretary"
+            : "/president";
 }
 
 export default async function HomePage() {

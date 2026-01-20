@@ -6,7 +6,6 @@ const runtimeBaseUrl =
   (typeof window !== "undefined" ? window.location.origin : undefined) ||
   process.env.NEXT_PUBLIC_APP_URL;
 
-export const authClient = createAuthClient({})
-
+export const authClient = createAuthClient({});
 
 export const { signIn, signUp, signOut, getSession, useSession } = authClient;
