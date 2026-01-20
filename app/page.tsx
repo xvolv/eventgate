@@ -24,7 +24,7 @@ async function getDashboardHref(email: string | null | undefined) {
   const clubRoles = clubRoleGrants.map((g) => g.role);
 
   return systemRoles.includes("ADMIN")
-    ? "/admin/clubs/new"
+    ? "/admin/clubs"
     : systemRoles.includes("STUDENT_UNION")
     ? "/student-union"
     : systemRoles.includes("DIRECTOR")

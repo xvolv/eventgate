@@ -38,7 +38,7 @@ export function ExistingClubsSection({
       <ConfirmationComponent />
       <Card>
         <CardHeader>
-          <CardTitle>Existing Clubs</CardTitle>
+          <CardTitle className="font-serif text-gray-900"> ADDIS ABABA UNIVERSITY CLUBS</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           {clubs.length === 0 ? (

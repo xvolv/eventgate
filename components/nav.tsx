@@ -46,7 +46,7 @@ export default async function Nav() {
       const clubRoles = clubGrants.map((g) => g.role);
 
       if (systemRoles.includes("ADMIN")) {
-        dashboardHref = "/admin/clubs/new";
+        dashboardHref = "/admin/clubs";
       } else if (systemRoles.includes("STUDENT_UNION")) {
         dashboardHref = "/student-union";
       } else if (systemRoles.includes("DIRECTOR")) {
