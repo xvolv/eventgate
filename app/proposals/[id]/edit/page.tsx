@@ -337,7 +337,7 @@ export default function ProposalEditPage() {
     if (e) e.preventDefault();
     const confirmed = await requestConfirmation(
       "Save Changes",
-      "Confirm updating the proposal. Leads will see the updated details. 'Resubmit' triggers the review workflow.",
+      "Confirm updating the proposal. Leads will see the updated details.",
       () => {},
       { confirmText: "Save", cancelText: "Cancel" }
     );
