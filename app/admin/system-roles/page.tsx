@@ -46,7 +46,14 @@ const setRolesCache = (
 const clearRolesCache = () => rolesCache.clear();
 
 const selectClassName =
-  "file:text-foreground  placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+  "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-input min-h-[44px] w-full min-w-0 rounded-none border bg-white text-foreground px-3 py-2 text-base leading-tight transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+
+const formatRole = (role: SystemRole) =>
+  role === "ADMIN"
+    ? "Admin"
+    : role === "DIRECTOR"
+    ? "Director"
+    : "Student Union";
 
 export default function AdminSystemRolesPage() {
   const [loading, setLoading] = useState(!Boolean(getFreshCache(1, "")));
@@ -267,12 +274,6 @@ export default function AdminSystemRolesPage() {
     await refresh(1, query, { force: true });
   };
 
-  const handleSearch = async () => {
-    setMessage(null);
-    setError(null);
-    await refresh(1, query);
-  };
-
   const goToPage = async (nextPage: number) => {
     setMessage(null);
     setError(null);
@@ -352,45 +353,19 @@ export default function AdminSystemRolesPage() {
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <ConfirmationComponent />
       {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Grant System Roles</CardTitle>
+      <Card className="border-border/60 bg-muted/40">
+        <CardHeader className="space-y-1">
+          <CardTitle>Grant System Role</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Assign a system-wide role to a user by email address.
+          </p>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end">
-            <div className="grid gap-2 md:flex-1">
-              <Label htmlFor="filter">Filter (email or role)</Label>
-              <Input
-                id="filter"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="admin or user@school.edu"
-              />
-            </div>
-            <Button className="md:self-end" onClick={handleSearch}>
-              Apply Filter
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="systemRole">Role</Label>
-              <select
-                id="systemRole"
-                className={`${selectClassName}`}
-                value={systemRole}
-                onChange={(e) => setSystemRole(e.target.value as SystemRole)}
-              >
-                <option value="DIRECTOR">Director</option>
-                <option value="STUDENT_UNION">Student Union</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
-
+          <div className="grid gap-4 md:grid-cols-[2fr_1fr_auto] md:items-end">
             <div className="grid gap-2">
               <Label htmlFor="systemRoleEmail">User Email</Label>
               <Input
@@ -399,103 +374,166 @@ export default function AdminSystemRolesPage() {
                 value={systemRoleEmail}
                 onChange={(e) => setSystemRoleEmail(e.target.value)}
                 placeholder="user@school.edu"
+                className="py-3"
               />
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="systemRole">Role</Label>
+              <select
+                id="systemRole"
+                className={`${selectClassName} py-3`}
+                value={systemRole}
+                onChange={(e) => setSystemRole(e.target.value as SystemRole)}
+              >
+                <option value="ADMIN">Admin</option>
+                <option value="DIRECTOR">Director</option>
+                <option value="STUDENT_UNION">Student Union</option>
+              </select>
+            </div>
+
+            <div className="flex md:justify-end">
+              <Button className="self-end" onClick={grant}>
+                Grant
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="space-y-2">
+          <CardTitle>Existing System Role Grants</CardTitle>
+          <div className="grid gap-2 md:w-1/2 lg:w-1/3">
+            <Label htmlFor="filter">Search grants (email or role)</Label>
+            <Input
+              id="filter"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="admin or user@school.edu"
+              className="py-3"
+            />
+          </div>
+        </CardHeader>
+
+        <CardContent className="grid gap-4">
+          <div className="overflow-x-auto border border-border/80 rounded-md">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-muted/60 text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Role</th>
+                  <th className="px-4 py-3 text-left font-semibold">User Email</th>
+                  <th className="px-4 py-3 text-left font-semibold w-[140px]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {systemRoleGrants.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-4 py-4 text-muted-foreground"
+                      colSpan={3}
+                    >
+                      No system roles yet.
+                    </td>
+                  </tr>
+                ) : (
+                  systemRoleGrants.map((g) => (
+                    <tr key={g.id} className="border-t border-border/60 h-14">
+                      <td className="px-4 py-2 align-middle">
+                        {editingGrantId === g.id ? (
+                          <select
+                            className={`${selectClassName} py-2`}
+                            value={editingGrantRole}
+                            onChange={(e) =>
+                              setEditingGrantRole(e.target.value as SystemRole)
+                            }
+                          >
+                            <option value="ADMIN">Admin</option>
+                            <option value="DIRECTOR">Director</option>
+                            <option value="STUDENT_UNION">Student Union</option>
+                          </select>
+                        ) : (
+                          <span className="font-medium text-foreground">
+                            {formatRole(g.role)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        {editingGrantId === g.id ? (
+                          <Input
+                            type="email"
+                            value={editingGrantEmail}
+                            onChange={(e) => setEditingGrantEmail(e.target.value)}
+                            placeholder="user@school.edu"
+                            className="py-2"
+                          />
+                        ) : (
+                          <span className="text-foreground">{g.email}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        {editingGrantId === g.id ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={saveGrant}>
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={cancelEditGrant}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => startEditGrant(g)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => deleteGrant(g)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
 
-          <Button onClick={grant}>Grant</Button>
-
-          <div
-            className={`grid gap-1 text-sm text-muted-foreground ${
-              isRefetching ? "opacity-60 transition-opacity" : ""
-            }`}
-          >
-            <div className="font-medium text-foreground">Existing grants</div>
-            {systemRoleGrants.length === 0 && <div>No system roles yet.</div>}
-            {systemRoleGrants.map((g) => (
-              <div
-                key={g.id}
-                className="flex flex-col gap-2 border border-border/50 p-3 md:flex-row md:items-center md:gap-3"
+          <div className="flex flex-col gap-3 border-t border-border/60 pt-3 md:flex-row md:items-center md:justify-between">
+            <div className="text-xs text-muted-foreground">
+              Showing {systemRoleGrants.length ? (page - 1) * pageSize + 1 : 0}-
+              {(page - 1) * pageSize + systemRoleGrants.length} of {total}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => goToPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
               >
-                {editingGrantId === g.id ? (
-                  <>
-                    <select
-                      className={selectClassName}
-                      value={editingGrantRole}
-                      onChange={(e) =>
-                        setEditingGrantRole(e.target.value as SystemRole)
-                      }
-                    >
-                      <option value="DIRECTOR">Director</option>
-                      <option value="STUDENT_UNION">Student Union</option>
-                      <option value="ADMIN">Admin</option>
-                    </select>
-                    <Input
-                      type="email"
-                      value={editingGrantEmail}
-                      onChange={(e) => setEditingGrantEmail(e.target.value)}
-                      placeholder="user@school.edu"
-                    />
-                    <div className="flex gap-2">
-                      <Button onClick={saveGrant}>Save</Button>
-                      <Button variant="outline" onClick={cancelEditGrant}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">
-                        {g.role}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {g.email}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => startEditGrant(g)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => deleteGrant(g)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pt-2 border-t border-border/60">
-              <div className="text-xs text-muted-foreground">
-                Showing{" "}
-                {systemRoleGrants.length ? (page - 1) * pageSize + 1 : 0}-
-                {(page - 1) * pageSize + systemRoleGrants.length} of {total}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => goToPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
-                >
-                  Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={
-                    (page - 1) * pageSize + systemRoleGrants.length >= total
-                  }
-                >
-                  Next
-                </Button>
-              </div>
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => goToPage(page + 1)}
+                disabled={(page - 1) * pageSize + systemRoleGrants.length >= total}
+              >
+                Next
+              </Button>
             </div>
           </div>
         </CardContent>
