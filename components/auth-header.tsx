@@ -26,10 +26,6 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
-  if (currentSessionEmail) {
-    return null;
-  }
-
   const currentSection = (() => {
     if (pathname === "/login") return "Sign In";
     if (pathname === "/sign-up") return "Create Account";
@@ -97,7 +93,7 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
             </div>
 
             {currentSessionEmail && (
-              <div className="hidden lg:block text-xs text-white/70 truncate max-w-[28rem]">
+              <div className="hidden lg:block text-xs text-white/70 truncate max-w-md">
                 {currentSessionEmail}
               </div>
             )}

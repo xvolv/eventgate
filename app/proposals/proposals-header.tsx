@@ -93,7 +93,7 @@ export function ProposalsHeader({ userEmail }: { userEmail: string }) {
                 </Button>
               </Link>
             </div>
-            <div className="hidden lg:block text-xs text-white/70 truncate max-w-[28rem]">
+            <div className="hidden lg:block text-xs text-white/70 truncate max-w-md">
               {currentSessionEmail}
             </div>
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>

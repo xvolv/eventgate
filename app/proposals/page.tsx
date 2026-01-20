@@ -267,6 +267,9 @@ export default function ProposalsPage() {
 
   return (
     <div className="min-h-svh bg-background rounded-none">
+      <div className="absolute left-52 top-16 font-serif text-slate-900 ">
+        PROPOSALS
+      </div>
       <main className="container mx-auto px-4 py-10 max-w-5xl rounded-none">
         {proposals.length === 0 ? (
           <Card className="shadow-none rounded-none">
@@ -286,7 +289,6 @@ export default function ProposalsPage() {
         ) : (
           <>
             <div className="space-y-2 rounded-none">
-          
               {proposals.map((proposal) => {
                 const { western, ethiopian } = formatDualTimeRange(
                   proposal.event?.startTime,
@@ -296,7 +298,6 @@ export default function ProposalsPage() {
 
                 return (
                   <Card key={proposal.id} className="shadow-none rounded-none">
-                    
                     <CardContent className="p-0 rounded-none">
                       <div
                         role="button"
