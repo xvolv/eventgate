@@ -9,11 +9,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { signIn, useSession, getSession, signOut } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -231,5 +232,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading…</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

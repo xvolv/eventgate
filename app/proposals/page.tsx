@@ -104,7 +104,7 @@ export default function ProposalsPage() {
     totalPages: number;
   } | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
-    null
+    null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [sessionsExpanded, setSessionsExpanded] = useState(false);
@@ -138,7 +138,7 @@ export default function ProposalsPage() {
         await fetchProposals(page);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch proposals"
+          err instanceof Error ? err.message : "Failed to fetch proposals",
         );
       } finally {
         setLoading(false);
@@ -286,15 +286,17 @@ export default function ProposalsPage() {
         ) : (
           <>
             <div className="space-y-2 rounded-none">
+          
               {proposals.map((proposal) => {
                 const { western, ethiopian } = formatDualTimeRange(
                   proposal.event?.startTime,
-                  proposal.event?.endTime
+                  proposal.event?.endTime,
                 );
                 const daysLeft = formatDaysLeft(proposal.event?.startTime);
 
                 return (
                   <Card key={proposal.id} className="shadow-none rounded-none">
+                    
                     <CardContent className="p-0 rounded-none">
                       <div
                         role="button"
@@ -442,7 +444,7 @@ export default function ProposalsPage() {
                     setPage((p) =>
                       pagination
                         ? Math.min(pagination.totalPages, p + 1)
-                        : p + 1
+                        : p + 1,
                     )
                   }
                   disabled={
@@ -481,7 +483,7 @@ export default function ProposalsPage() {
                           <CardDescription className="text-xs text-muted-foreground">
                             {selectedProposal.club.name} •{" "}
                             {new Date(
-                              selectedProposal.createdAt
+                              selectedProposal.createdAt,
                             ).toLocaleDateString()}
                           </CardDescription>
                         </div>
@@ -510,7 +512,7 @@ export default function ProposalsPage() {
                               {(() => {
                                 const { western } = formatDualTimeRange(
                                   selectedProposal.event?.startTime,
-                                  selectedProposal.event?.endTime
+                                  selectedProposal.event?.endTime,
                                 );
                                 return western;
                               })()}
@@ -531,7 +533,7 @@ export default function ProposalsPage() {
                             </div>
                             <div className="text-sm">
                               {Array.isArray(
-                                selectedProposal.event?.occurrences
+                                selectedProposal.event?.occurrences,
                               ) && selectedProposal.event.occurrences.length > 1
                                 ? selectedProposal.event.occurrences.length
                                 : 1}
@@ -580,7 +582,7 @@ export default function ProposalsPage() {
                                     .sort(
                                       (a, b) =>
                                         new Date(a.startTime).getTime() -
-                                        new Date(b.startTime).getTime()
+                                        new Date(b.startTime).getTime(),
                                     )
                                     .map((occ, idx) => {
                                       const start = new Date(occ.startTime);
@@ -593,7 +595,7 @@ export default function ProposalsPage() {
                                         });
                                       const endTime = end.toLocaleTimeString(
                                         [],
-                                        { hour: "2-digit", minute: "2-digit" }
+                                        { hour: "2-digit", minute: "2-digit" },
                                       );
                                       return (
                                         <tr
@@ -645,7 +647,7 @@ export default function ProposalsPage() {
                                   {approval.approved ? "Approved" : "Pending"}
                                 </div>
                               </div>
-                            )
+                            ),
                           )}
                         </div>
                       </section>
@@ -753,7 +755,7 @@ export default function ProposalsPage() {
                             variant="outline"
                             onClick={() =>
                               router.push(
-                                `/proposals/${selectedProposal.id}/edit`
+                                `/proposals/${selectedProposal.id}/edit`,
                               )
                             }
                             className="rounded-none"
@@ -783,12 +785,12 @@ export default function ProposalsPage() {
                       const limit = 10;
                       const totalPages = Math.max(
                         1,
-                        Math.ceil(items.length / limit)
+                        Math.ceil(items.length / limit),
                       );
                       const pageSafe = Math.min(contributorsPage, totalPages);
                       const slice = items.slice(
                         (pageSafe - 1) * limit,
-                        pageSafe * limit
+                        pageSafe * limit,
                       );
                       return (
                         <div className="space-y-3">
@@ -834,7 +836,7 @@ export default function ProposalsPage() {
                                 className="rounded-none"
                                 onClick={() =>
                                   setContributorsPage((p) =>
-                                    Math.min(totalPages, p + 1)
+                                    Math.min(totalPages, p + 1),
                                   )
                                 }
                                 disabled={pageSafe >= totalPages}
@@ -865,12 +867,12 @@ export default function ProposalsPage() {
                       const limit = 10;
                       const totalPages = Math.max(
                         1,
-                        Math.ceil(items.length / limit)
+                        Math.ceil(items.length / limit),
                       );
                       const pageSafe = Math.min(guestsPage, totalPages);
                       const slice = items.slice(
                         (pageSafe - 1) * limit,
-                        pageSafe * limit
+                        pageSafe * limit,
                       );
                       return (
                         <div className="space-y-3">
@@ -919,7 +921,7 @@ export default function ProposalsPage() {
                                 className="rounded-none"
                                 onClick={() =>
                                   setGuestsPage((p) =>
-                                    Math.min(totalPages, p + 1)
+                                    Math.min(totalPages, p + 1),
                                   )
                                 }
                                 disabled={pageSafe >= totalPages}

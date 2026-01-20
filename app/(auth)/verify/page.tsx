@@ -1,6 +1,7 @@
 ﻿"use client";
+export const dynamic = "force-dynamic";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { signOut } from "@/lib/auth-client";
 
-export default function VerifyPage() {
+function VerifyPageContent() {
   const search = useSearchParams();
   const router = useRouter();
   const email = search.get("email") || "";
@@ -119,5 +120,13 @@ export default function VerifyPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading…</div>}>
+      <VerifyPageContent />
+    </Suspense>
   );
 }
