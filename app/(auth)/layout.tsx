@@ -1,15 +1,19 @@
 "use client";
 
 import { AuthHeader } from "@/components/auth-header";
+import { usePathname } from "next/navigation";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const hideHeader = pathname === "/verify";
+
   return (
     <>
-      <AuthHeader userEmail="" />
+      {!hideHeader && <AuthHeader userEmail="" />}
       {children}
     </>
   );
