@@ -12,11 +12,44 @@ type SystemRole = "ADMIN" | "DIRECTOR" | "STUDENT_UNION";
 
 type SystemRoleGrant = { id: string; email: string; role: SystemRole };
 
+type RolesCacheEntry = {
+  grants: SystemRoleGrant[];
+  total: number;
+  page: number;
+  timestamp: number;
+};
+
+const ROLES_CACHE_TTL_MS = 60_000;
+const rolesCache = new Map<string, RolesCacheEntry>();
+
+const cacheKey = (page: number, query: string) =>
+  `${page}::${query.trim().toLowerCase()}`;
+
+const getFreshCache = (page: number, query: string) => {
+  const key = cacheKey(page, query);
+  const entry = rolesCache.get(key);
+  if (!entry) return null;
+  return Date.now() - entry.timestamp < ROLES_CACHE_TTL_MS ? entry : null;
+};
+
+const setRolesCache = (
+  page: number,
+  query: string,
+  data: Omit<RolesCacheEntry, "timestamp">
+) => {
+  rolesCache.set(cacheKey(page, query), {
+    ...data,
+    timestamp: Date.now(),
+  });
+};
+
+const clearRolesCache = () => rolesCache.clear();
+
 const selectClassName =
   "file:text-foreground  placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-none border bg-transparent px-3 py-1 text-base transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 export default function AdminSystemRolesPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!Boolean(getFreshCache(1, "")));
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
@@ -62,9 +95,21 @@ export default function AdminSystemRolesPage() {
   const [editingGrantRole, setEditingGrantRole] =
     useState<SystemRole>("DIRECTOR");
 
-  const refresh = async (pageOverride?: number, queryOverride?: string) => {
+  const refresh = async (
+    pageOverride?: number,
+    queryOverride?: string,
+    opts?: { force?: boolean }
+  ) => {
     const pageToUse = pageOverride ?? page;
     const queryToUse = (queryOverride ?? query).trim();
+
+    const cached = !opts?.force && getFreshCache(pageToUse, queryToUse);
+    if (cached) {
+      setSystemRoleGrants(cached.grants);
+      setTotal(cached.total);
+      setPage(cached.page);
+      return;
+    }
 
     if (abortRef.current) {
       abortRef.current.abort();
@@ -78,15 +123,24 @@ export default function AdminSystemRolesPage() {
           queryToUse
         )}`,
         {
-          cache: "no-store",
           signal: controller.signal,
         }
       );
       if (!rolesRes.ok) throw new Error("Failed to load system roles");
       const rolesJson = await rolesRes.json();
-      setSystemRoleGrants(rolesJson.grants || []);
-      setTotal(rolesJson.total || 0);
-      setPage(rolesJson.page || pageToUse);
+      const nextGrants = rolesJson.grants || [];
+      const nextTotal = rolesJson.total || 0;
+      const nextPage = rolesJson.page || pageToUse;
+
+      setSystemRoleGrants(nextGrants);
+      setTotal(nextTotal);
+      setPage(nextPage);
+
+      setRolesCache(pageToUse, queryToUse, {
+        grants: nextGrants,
+        total: nextTotal,
+        page: nextPage,
+      });
     } catch (e) {
       if (isAbortError(e)) return;
       throw e;
@@ -122,7 +176,8 @@ export default function AdminSystemRolesPage() {
 
       const nextPage =
         systemRoleGrants.length === 1 ? Math.max(1, page - 1) : page;
-      await refresh(nextPage);
+      clearRolesCache();
+      await refresh(nextPage, query, { force: true });
     } finally {
       setIsRefetching(false);
     }
@@ -133,7 +188,14 @@ export default function AdminSystemRolesPage() {
       setLoading(true);
       setError(null);
       try {
-        await refresh(1);
+        const cached = getFreshCache(1, "");
+        if (cached) {
+          setSystemRoleGrants(cached.grants);
+          setTotal(cached.total);
+          setPage(cached.page);
+        }
+
+        await refresh(1, "", { force: !cached });
         setInitialLoaded(true);
       } catch (e: any) {
         if (!isAbortError(e)) {
@@ -201,7 +263,8 @@ export default function AdminSystemRolesPage() {
 
     setSystemRoleEmail("");
     setMessage("System role granted.");
-    await refresh(1);
+    clearRolesCache();
+    await refresh(1, query, { force: true });
   };
 
   const handleSearch = async () => {
@@ -281,7 +344,8 @@ export default function AdminSystemRolesPage() {
     cancelEditGrant();
     setIsRefetching(true);
     try {
-      await refresh(page);
+      clearRolesCache();
+      await refresh(page, query, { force: true });
     } finally {
       setIsRefetching(false);
     }
