@@ -28,9 +28,16 @@ type Club = {
   }>;
 };
 
+const CLUBS_CACHE_TTL_MS = 60_000;
+let clubsCache: Club[] | null = null;
+let clubsCacheTimestamp = 0;
+
+const isClubsCacheFresh = () =>
+  Boolean(clubsCache) && Date.now() - clubsCacheTimestamp < CLUBS_CACHE_TTL_MS;
+
 export default function AdminClubsPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isClubsCacheFresh());
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
@@ -43,19 +50,31 @@ export default function AdminClubsPage() {
   const [secretaryEmail, setSecretaryEmail] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
 
-  const refresh = async () => {
-    const clubsRes = await fetch("/api/admin/clubs", { cache: "no-store" });
+  const refresh = async (opts?: { force?: boolean }) => {
+    if (!opts?.force && isClubsCacheFresh() && clubsCache) {
+      setClubs(clubsCache);
+      return;
+    }
+
+    const clubsRes = await fetch("/api/admin/clubs");
     if (!clubsRes.ok) throw new Error("Failed to load clubs");
     const clubsJson = await clubsRes.json();
-    setClubs(clubsJson.clubs || []);
+    const nextClubs = clubsJson.clubs || [];
+    clubsCache = nextClubs;
+    clubsCacheTimestamp = Date.now();
+    setClubs(nextClubs);
   };
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
+      if (isClubsCacheFresh() && clubsCache) {
+        setClubs(clubsCache);
+      }
+
+      setLoading(!isClubsCacheFresh());
       setError(null);
       try {
-        await refresh();
+        await refresh({ force: !isClubsCacheFresh() });
       } catch (e: any) {
         setError(e?.message || "Failed to load clubs");
       } finally {
@@ -152,7 +171,7 @@ export default function AdminClubsPage() {
 
     setMessage("Club updated.");
     closeEdit();
-    await refresh();
+    await refresh({ force: true });
   };
 
   const deleteClub = async (clubId: string) => {
@@ -174,7 +193,7 @@ export default function AdminClubsPage() {
       }
 
       setMessage("Club deleted.");
-      await refresh();
+      await refresh({ force: true });
     } catch (e: any) {
       setError(e?.message || "Failed to delete club");
     }
