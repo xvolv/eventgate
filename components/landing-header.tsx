@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { MenuIcon } from "lucide-react";
+import { MenuIcon, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,9 +22,11 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const { data: session } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
+  const isAuthed = Boolean(currentSessionEmail);
 
   const currentSection = (() => {
     return "Welcome";
@@ -62,7 +64,7 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {!currentSessionEmail && (
+            {!isAuthed && (
               <div className="hidden lg:flex items-center gap-2">
                 <Link href="/login" onClick={() => setMenuOpen(false)}>
                   <Button
@@ -87,10 +89,42 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
               </div>
             )}
 
-            {currentSessionEmail && (
-              <div className="hidden lg:block text-xs text-white/70 truncate max-w-[28rem]">
-                {currentSessionEmail}
-              </div>
+            {isAuthed && (
+              <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="hidden md:inline-flex h-9 w-9 p-0 bg-transparent text-white hover:bg-white/10"
+                    aria-label="Open account settings"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="fixed right-4 top-16 left-auto bottom-auto w-[18rem] max-w-[calc(100%-2rem)] translate-x-0 translate-y-0 rounded-none p-0">
+                  <div className="flex flex-col">
+                    <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
+                      <DialogTitle className="text-sm font-semibold tracking-wide">
+                        Account
+                      </DialogTitle>
+                      <div className="mt-1 text-xs text-white/70 truncate">
+                        {currentSessionEmail}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border p-3">
+                      <Button
+                        onClick={() => {
+                          setAccountOpen(false);
+                          handleSignOut();
+                        }}
+                        className="h-10 w-full rounded-none"
+                      >
+                        Sign out
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogTrigger asChild>
@@ -108,7 +142,7 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
                     <DialogTitle className="text-sm font-semibold tracking-wide">
                       Landing Menu
                     </DialogTitle>
-                    {currentSessionEmail && (
+                    {isAuthed && (
                       <div className="mt-1 text-xs text-white/70 truncate">
                         {currentSessionEmail}
                       </div>
@@ -116,61 +150,59 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
                   </div>
 
                   <nav aria-label="Landing navigation" className="flex-1 p-2">
-                    <Link
-                      href="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="block"
-                    >
-                      <Button
-                        variant={
-                          isActive(pathname, "/login") ? "default" : "ghost"
-                        }
-                        className="h-10 w-full justify-start rounded-none"
-                      >
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link
-                      href="/sign-up"
-                      onClick={() => setMenuOpen(false)}
-                      className="block"
-                    >
-                      <Button
-                        variant={
-                          isActive(pathname, "/sign-up") ? "default" : "ghost"
-                        }
-                        className="h-10 w-full justify-start rounded-none"
-                      >
-                        Create Account
-                      </Button>
-                    </Link>
-                  </nav>
+                    {!isAuthed && (
+                      <>
+                        <Link
+                          href="/login"
+                          onClick={() => setMenuOpen(false)}
+                          className="block"
+                        >
+                          <Button
+                            variant={
+                              isActive(pathname, "/login") ? "default" : "ghost"
+                            }
+                            className="h-10 w-full justify-start rounded-none"
+                          >
+                            Sign In
+                          </Button>
+                        </Link>
+                        <Link
+                          href="/sign-up"
+                          onClick={() => setMenuOpen(false)}
+                          className="block"
+                        >
+                          <Button
+                            variant={
+                              isActive(pathname, "/sign-up") ? "default" : "ghost"
+                            }
+                            className="h-10 w-full justify-start rounded-none"
+                          >
+                            Create Account
+                          </Button>
+                        </Link>
+                      </>
+                    )}
 
-                  {currentSessionEmail && (
-                    <div className="border-t border-border p-3">
-                      <Button
-                        onClick={() => {
-                          setMenuOpen(false);
-                          handleSignOut();
-                        }}
-                        className="h-10 w-full rounded-none"
-                      >
-                        Sign out
-                      </Button>
-                    </div>
-                  )}
+                    {isAuthed && (
+                      <div className="grid gap-2">
+                        <div className="rounded border border-border bg-muted/40 px-3 py-2 text-xs text-foreground/70 truncate">
+                          {currentSessionEmail}
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            handleSignOut();
+                          }}
+                          className="h-10 w-full rounded-none"
+                        >
+                          Sign out
+                        </Button>
+                      </div>
+                    )}
+                  </nav>
                 </div>
               </DialogContent>
             </Dialog>
-            {currentSessionEmail && (
-              <Button
-                onClick={handleSignOut}
-                variant="secondary"
-                className="hidden md:inline-flex h-9 bg-white text-slate-900 hover:bg-white/90"
-              >
-                Sign out
-              </Button>
-            )}
           </div>
         </div>
       </div>
