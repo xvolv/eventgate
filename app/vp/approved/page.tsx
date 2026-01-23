@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDualTimeRange } from "@/lib/utils";
 
 interface Proposal {
@@ -81,6 +82,10 @@ export default function VPApprovedPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
+    null,
+  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (isPending) return;
@@ -96,7 +101,7 @@ export default function VPApprovedPage() {
         setProposals(body.proposals || []);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch proposals"
+          err instanceof Error ? err.message : "Failed to fetch proposals",
         );
       } finally {
         setLoading(false);
@@ -143,195 +148,245 @@ export default function VPApprovedPage() {
       ) : (
         <div className="space-y-6">
           {proposals.map((proposal) => (
-            <Card key={proposal.id} className="shadow-none rounded-none">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {proposal.event?.title || "Untitled Proposal"}
-                    </CardTitle>
-                    <CardDescription>
-                      {proposal.club.name} •{" "}
-                      {new Date(proposal.createdAt).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  <Badge
-                    className={`${
-                      statusColors[proposal.status as keyof typeof statusColors]
-                    }`}
-                  >
-                    {statusLabels[proposal.status as keyof typeof statusLabels]}
-                  </Badge>
+            <Card
+              key={proposal.id}
+              className="shadow-none rounded-none cursor-pointer group"
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                setSelectedProposal(proposal);
+                setDetailsOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedProposal(proposal);
+                  setDetailsOpen(true);
+                }
+              }}
+            >
+              <CardContent className="relative p-4 flex items-start gap-3">
+                <div className="pointer-events-none absolute inset-0 bg-muted/70 text-[11px] font-medium text-foreground/80 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                  Click to see details
                 </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                      Event Details
-                    </h4>
-                    <div className="space-y-2">
-                      <p>
-                        <strong>Location:</strong>{" "}
-                        {proposal.event?.location || "Not specified"}
-                      </p>
-                      {Array.isArray(proposal.event?.occurrences) &&
-                      proposal.event.occurrences.length > 1 ? (
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">
-                            <strong>Sessions:</strong>{" "}
-                            {proposal.event.occurrences.length}
-                          </p>
-                          <div className="space-y-2">
-                            {proposal.event.occurrences
-                              .slice()
-                              .sort(
-                                (a, b) =>
-                                  new Date(a.startTime || 0).getTime() -
-                                  new Date(b.startTime || 0).getTime()
-                              )
-                              .map((occ, idx) => {
-                                const { western, ethiopian } =
-                                  formatDualTimeRange(
-                                    occ.startTime,
-                                    occ.endTime
-                                  );
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="p-3 bg-muted/30 rounded"
-                                  >
-                                    <div className="text-sm">{western}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {ethiopian ? `LT: [${ethiopian}]` : null}
-                                      {occ.location
-                                        ? `${ethiopian ? " • " : ""}${
-                                            occ.location
-                                          }`
-                                        : null}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </div>
-                      ) : null}
-                      <div>
-                        <strong>Description:</strong>{" "}
-                        <div className="max-h-32 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                          {proposal.event?.description ||
-                            "No description provided"}
-                        </div>
-                      </div>
-                      <p>
-                        <strong>Time:</strong>{" "}
-                        {(() => {
-                          const { western, ethiopian } = formatDualTimeRange(
-                            proposal.event?.startTime,
-                            proposal.event?.endTime
-                          );
-                          return ethiopian ? (
-                            <span>
-                              {western}
-                              <span className="block text-xs text-muted-foreground">
-                                LT: [{ethiopian}]
-                              </span>
-                            </span>
-                          ) : (
-                            western
-                          );
-                        })()}
-                      </p>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <CardTitle className="text-base truncate">
+                        {proposal.event?.title || "Untitled Proposal"}
+                      </CardTitle>
+                      <CardDescription className="truncate">
+                        {proposal.club.name} • {new Date(proposal.createdAt).toLocaleDateString()}
+                      </CardDescription>
                     </div>
+                    <Badge
+                      className={`${
+                        statusColors[proposal.status as keyof typeof statusColors]
+                      } whitespace-nowrap`}
+                    >
+                      {statusLabels[proposal.status as keyof typeof statusLabels]}
+                    </Badge>
                   </div>
-
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                      Lead Review Status
-                    </h4>
-                    <div className="space-y-2">
-                      {proposal.leadApprovals.map((approval) => (
-                        <div
-                          key={approval.leadRole}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="text-sm font-medium">
-                            {approval.leadRole}
-                          </span>
-                          <Badge
-                            className={`${
-                              approval.approved
-                                ? "bg-green-100 text-green-800 border-green-300"
-                                : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                            }`}
-                          >
-                            {approval.approved ? "Approved" : "Pending"}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {approval.leadEmail}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {(() => {
+                      const { western, ethiopian } = formatDualTimeRange(
+                        proposal.event?.startTime,
+                        proposal.event?.endTime,
+                      );
+                      return ethiopian
+                        ? `${western} • LT: [${ethiopian}]`
+                        : western;
+                    })()}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    Location: {proposal.event?.location || "Not specified"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Lead approvals: {proposal.leadApprovals.length} • Guests: {proposal.guests.length}
                   </div>
                 </div>
-
-                {proposal.collaborators?.length > 0 && (
-                  <div className="border-t border-border pt-4">
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                      Collaborating Organizations
-                    </h4>
-                    <div className="space-y-2">
-                      {proposal.collaborators.map((collaborator) => (
-                        <div
-                          key={collaborator.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <span className="font-medium">
-                            {collaborator.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {collaborator.type}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {proposal.guests?.length > 0 && (
-                  <div className="border-t border-border pt-4">
-                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
-                      Invited Guests
-                    </h4>
-                    <div className="space-y-2">
-                      {proposal.guests.map((guest) => (
-                        <div
-                          key={guest.id}
-                          className="border border-border p-3 rounded"
-                        >
-                          <p className="text-sm">
-                            <strong>Name:</strong> {guest.name}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Affiliation:</strong>{" "}
-                            {guest.affiliation || "Not specified"}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Reason:</strong>{" "}
-                            {guest.reason || "Not specified"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="text-[11px] text-muted-foreground">Click to review</div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedProposal(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Proposal Details</DialogTitle>
+          {selectedProposal ? (
+            <Card className="shadow-none rounded-none border-0">
+              <CardHeader className="px-0 pt-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl font-semibold">
+                      {selectedProposal.event?.title || "Untitled Proposal"}
+                    </CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">
+                      {selectedProposal.club.name} • {new Date(selectedProposal.createdAt).toLocaleDateString()}
+                    </CardDescription>
+                  </div>
+                  <Badge
+                    className={`${
+                      statusColors[selectedProposal.status as keyof typeof statusColors]
+                    } whitespace-nowrap`}
+                  >
+                    {statusLabels[selectedProposal.status as keyof typeof statusLabels]}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-6 px-0 pb-0">
+                <section className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Event Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Location:</span> {selectedProposal.event?.location || "Not specified"}
+                    </div>
+                    {Array.isArray(selectedProposal.event?.occurrences) &&
+                    selectedProposal.event.occurrences.length > 1 ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          Sessions: {selectedProposal.event.occurrences.length}
+                        </p>
+                        <div className="space-y-2">
+                          {selectedProposal.event.occurrences
+                            .slice()
+                            .sort(
+                              (a, b) =>
+                                new Date(a.startTime || 0).getTime() -
+                                new Date(b.startTime || 0).getTime(),
+                            )
+                            .map((occ, idx) => {
+                              const { western, ethiopian } = formatDualTimeRange(
+                                occ.startTime,
+                                occ.endTime,
+                              );
+                              return (
+                                <div key={idx} className="p-3 bg-muted/30 rounded">
+                                  <div className="text-sm">{western}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {ethiopian ? `LT: [${ethiopian}]` : null}
+                                    {occ.location ? `${ethiopian ? " • " : ""}${occ.location}` : null}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ) : null}
+                    <div>
+                      <span className="font-medium">Description:</span>
+                      <div className="mt-1 max-h-40 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                        {selectedProposal.event?.description || "No description provided"}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium">Time:</span>{" "}
+                      {(() => {
+                        const { western, ethiopian } = formatDualTimeRange(
+                          selectedProposal.event?.startTime,
+                          selectedProposal.event?.endTime,
+                        );
+                        return ethiopian ? (
+                          <span>
+                            {western}
+                            <span className="block text-xs text-muted-foreground">LT: [{ethiopian}]</span>
+                          </span>
+                        ) : (
+                          western
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Lead Review Status
+                  </h4>
+                  <div className="space-y-3">
+                    {selectedProposal.leadApprovals.map((approval, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                      >
+                        <div>
+                          <p className="font-medium">{approval.leadRole}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {approval.leadEmail}
+                          </p>
+                        </div>
+                        <Badge
+                          className={
+                            approval.approved
+                              ? "bg-green-100 text-green-800 border-green-300"
+                              : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                          }
+                        >
+                          {approval.approved ? "Approved" : "Pending"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {selectedProposal.collaborators?.length > 0 && (
+                  <section className="space-y-2 border-t border-border pt-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Collaborating Organizations
+                    </h4>
+                    <div className="space-y-2">
+                      {selectedProposal.collaborators.map((collaborator) => (
+                        <div
+                          key={collaborator.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <span className="font-medium">{collaborator.name}</span>
+                          <span className="text-xs text-muted-foreground">{collaborator.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {selectedProposal.guests?.length > 0 && (
+                  <section className="space-y-2 border-t border-border pt-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Invited Guests
+                    </h4>
+                    <div className="space-y-2">
+                      {selectedProposal.guests.map((guest) => (
+                        <div key={guest.id} className="border border-border p-3 rounded">
+                          <p className="text-sm">
+                            <strong>Name:</strong> {guest.name}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Affiliation:</strong> {guest.affiliation || "Not specified"}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Reason:</strong> {guest.reason || "Not specified"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
+ 
