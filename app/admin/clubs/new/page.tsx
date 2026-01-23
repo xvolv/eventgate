@@ -85,57 +85,82 @@ export default function AdminAddClubPage() {
         <CardHeader>
           <CardTitle>Add Club</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="clubName">Club Name</Label>
-            <Input
-              id="clubName"
-              value={clubName}
-              onChange={(e) => setClubName(e.target.value)}
-              placeholder="Computer Science Society"
-            />
+        <CardContent className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="clubName">Club Name</Label>
+                <span className="text-xs text-muted-foreground">Required</span>
+              </div>
+              <Input
+                id="clubName"
+                value={clubName}
+                onChange={(e) => setClubName(e.target.value)}
+                placeholder="Computer Science Society"
+              />
+              <p className="text-xs text-muted-foreground">
+                Use the official club name that appears on proposals.
+              </p>
+            </div>
+
+            <div className="rounded border border-border bg-muted/40 p-4">
+              <p className="text-sm font-medium mb-3">Leadership emails</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="presidentEmail">President (optional)</Label>
+                  <Input
+                    id="presidentEmail"
+                    type="email"
+                    value={presidentEmail}
+                    onChange={(e) => setPresidentEmail(e.target.value)}
+                    placeholder="president@club.edu"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Receives status updates.
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="vpEmail">Vice President (optional)</Label>
+                  <Input
+                    id="vpEmail"
+                    type="email"
+                    value={vpEmail}
+                    onChange={(e) => setVpEmail(e.target.value)}
+                    placeholder="vp@club.edu"
+                  />
+                </div>
+
+                <div className="grid gap-2 md:col-span-2">
+                  <Label htmlFor="secretaryEmail">Secretary (optional)</Label>
+                  <Input
+                    id="secretaryEmail"
+                    type="email"
+                    value={secretaryEmail}
+                    onChange={(e) => setSecretaryEmail(e.target.value)}
+                    placeholder="secretary@club.edu"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={save}>Create</Button>
+              <Button variant="outline" onClick={clear}>
+                Clear
+              </Button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="grid gap-2">
-              <Label htmlFor="presidentEmail">President Email (optional)</Label>
-              <Input
-                id="presidentEmail"
-                type="email"
-                value={presidentEmail}
-                onChange={(e) => setPresidentEmail(e.target.value)}
-                placeholder="president@club.edu"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="vpEmail">VP Email (optional)</Label>
-              <Input
-                id="vpEmail"
-                type="email"
-                value={vpEmail}
-                onChange={(e) => setVpEmail(e.target.value)}
-                placeholder="vp@club.edu"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="secretaryEmail">Secretary Email (optional)</Label>
-              <Input
-                id="secretaryEmail"
-                type="email"
-                value={secretaryEmail}
-                onChange={(e) => setSecretaryEmail(e.target.value)}
-                placeholder="secretary@club.edu"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={save}>Create</Button>
-            <Button variant="outline" onClick={clear}>
-              Clear
-            </Button>
+          <div className="rounded border border-dashed border-border bg-muted/30 p-4 space-y-3 text-sm text-muted-foreground">
+            <p className="text-foreground font-medium">Tips</p>
+            <ul className="list-disc pl-4 space-y-2">
+              <li>Only the club name is required to create a club record.</li>
+              <li>
+                Add leader emails now to auto-notify them on proposal changes.
+              </li>
+              <li>You can edit these contacts later.</li>
+            </ul>
           </div>
         </CardContent>
       </Card>

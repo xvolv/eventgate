@@ -173,7 +173,9 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
                         >
                           <Button
                             variant={
-                              isActive(pathname, "/sign-up") ? "default" : "ghost"
+                              isActive(pathname, "/sign-up")
+                                ? "default"
+                                : "ghost"
                             }
                             className="h-10 w-full justify-start rounded-none"
                           >

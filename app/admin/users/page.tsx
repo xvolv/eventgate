@@ -290,7 +290,12 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="destructive" onClick={() => deleteUser(u)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => deleteUser(u)}
+                  >
                     Delete
                   </Button>
                 </div>

@@ -103,7 +103,7 @@ export default function SecretaryPage() {
         setProposals(data.approvals || []);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch proposals"
+          err instanceof Error ? err.message : "Failed to fetch proposals",
         );
       } finally {
         setLoading(false);
@@ -146,7 +146,7 @@ export default function SecretaryPage() {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to submit approval"
+        err instanceof Error ? err.message : "Failed to submit approval",
       );
     } finally {
       setApproving(null);
@@ -202,15 +202,22 @@ export default function SecretaryPage() {
                         {proposal.event?.title || "Untitled Proposal"}
                       </CardTitle>
                       <CardDescription className="truncate">
-                        {proposal.club.name} • {new Date(proposal.createdAt).toLocaleDateString()}
+                        {proposal.club.name} •{" "}
+                        {new Date(proposal.createdAt).toLocaleDateString()}
                       </CardDescription>
                     </div>
                     <Badge
                       className={`${
-                        statusColors[proposal.status as keyof typeof statusColors]
+                        statusColors[
+                          proposal.status as keyof typeof statusColors
+                        ]
                       } whitespace-nowrap`}
                     >
-                      {statusLabels[proposal.status as keyof typeof statusLabels]}
+                      {
+                        statusLabels[
+                          proposal.status as keyof typeof statusLabels
+                        ]
+                      }
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
@@ -228,10 +235,13 @@ export default function SecretaryPage() {
                     Location: {proposal.event?.location || "Not specified"}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    Lead approvals: {proposal.leadApprovals.length} • Guests: {proposal.guests.length}
+                    Lead approvals: {proposal.leadApprovals.length} • Guests:{" "}
+                    {proposal.guests.length}
                   </div>
                 </div>
-                <div className="text-[11px] text-muted-foreground">Click to review</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Click to review
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -256,15 +266,24 @@ export default function SecretaryPage() {
                       {selectedProposal.event?.title || "Untitled Proposal"}
                     </CardTitle>
                     <CardDescription className="text-xs text-muted-foreground">
-                      {selectedProposal.club.name} • {new Date(selectedProposal.createdAt).toLocaleDateString()}
+                      {selectedProposal.club.name} •{" "}
+                      {new Date(
+                        selectedProposal.createdAt,
+                      ).toLocaleDateString()}
                     </CardDescription>
                   </div>
                   <Badge
                     className={`${
-                      statusColors[selectedProposal.status as keyof typeof statusColors]
+                      statusColors[
+                        selectedProposal.status as keyof typeof statusColors
+                      ]
                     } whitespace-nowrap`}
                   >
-                    {statusLabels[selectedProposal.status as keyof typeof statusLabels]}
+                    {
+                      statusLabels[
+                        selectedProposal.status as keyof typeof statusLabels
+                      ]
+                    }
                   </Badge>
                 </div>
               </CardHeader>
@@ -276,7 +295,8 @@ export default function SecretaryPage() {
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="font-medium">Location:</span> {selectedProposal.event?.location || "Not specified"}
+                      <span className="font-medium">Location:</span>{" "}
+                      {selectedProposal.event?.location || "Not specified"}
                     </div>
                     {Array.isArray(selectedProposal.event?.occurrences) &&
                     selectedProposal.event.occurrences.length > 1 ? (
@@ -293,16 +313,19 @@ export default function SecretaryPage() {
                                 new Date(b.startTime || 0).getTime(),
                             )
                             .map((occ, idx) => {
-                              const { western, ethiopian } = formatDualTimeRange(
-                                occ.startTime,
-                                occ.endTime,
-                              );
+                              const { western, ethiopian } =
+                                formatDualTimeRange(occ.startTime, occ.endTime);
                               return (
-                                <div key={idx} className="p-3 bg-muted/30 rounded">
+                                <div
+                                  key={idx}
+                                  className="p-3 bg-muted/30 rounded"
+                                >
                                   <div className="text-sm">{western}</div>
                                   <div className="text-xs text-muted-foreground">
                                     {ethiopian ? `LT: [${ethiopian}]` : null}
-                                    {occ.location ? `${ethiopian ? " • " : ""}${occ.location}` : null}
+                                    {occ.location
+                                      ? `${ethiopian ? " • " : ""}${occ.location}`
+                                      : null}
                                   </div>
                                 </div>
                               );
@@ -313,7 +336,8 @@ export default function SecretaryPage() {
                     <div>
                       <span className="font-medium">Description:</span>
                       <div className="mt-1 max-h-40 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                        {selectedProposal.event?.description || "No description provided"}
+                        {selectedProposal.event?.description ||
+                          "No description provided"}
                       </div>
                     </div>
                     <div>
@@ -326,7 +350,9 @@ export default function SecretaryPage() {
                         return ethiopian ? (
                           <span>
                             {western}
-                            <span className="block text-xs text-muted-foreground">LT: [{ethiopian}]</span>
+                            <span className="block text-xs text-muted-foreground">
+                              LT: [{ethiopian}]
+                            </span>
                           </span>
                         ) : (
                           western
@@ -377,8 +403,12 @@ export default function SecretaryPage() {
                           key={collaborator.id}
                           className="flex items-center gap-2 text-sm"
                         >
-                          <span className="font-medium">{collaborator.name}</span>
-                          <span className="text-xs text-muted-foreground">{collaborator.type}</span>
+                          <span className="font-medium">
+                            {collaborator.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {collaborator.type}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -392,15 +422,20 @@ export default function SecretaryPage() {
                     </h4>
                     <div className="space-y-2">
                       {selectedProposal.guests.map((guest) => (
-                        <div key={guest.id} className="border border-border p-3 rounded">
+                        <div
+                          key={guest.id}
+                          className="border border-border p-3 rounded"
+                        >
                           <p className="text-sm">
                             <strong>Name:</strong> {guest.name}
                           </p>
                           <p className="text-sm">
-                            <strong>Affiliation:</strong> {guest.affiliation || "Not specified"}
+                            <strong>Affiliation:</strong>{" "}
+                            {guest.affiliation || "Not specified"}
                           </p>
                           <p className="text-sm">
-                            <strong>Reason:</strong> {guest.reason || "Not specified"}
+                            <strong>Reason:</strong>{" "}
+                            {guest.reason || "Not specified"}
                           </p>
                         </div>
                       ))}
@@ -410,7 +445,9 @@ export default function SecretaryPage() {
 
                 <section className="space-y-4 border-t border-border pt-4">
                   <div>
-                    <Label htmlFor={`comments-${selectedProposal.id}`}>Comments</Label>
+                    <Label htmlFor={`comments-${selectedProposal.id}`}>
+                      Comments
+                    </Label>
                     <Textarea
                       id={`comments-${selectedProposal.id}`}
                       placeholder="Add your comments (optional)"
@@ -431,7 +468,9 @@ export default function SecretaryPage() {
                       disabled={approving === selectedProposal.id}
                       className="rounded-none"
                     >
-                      {approving === selectedProposal.id ? "Submitting..." : "Approve"}
+                      {approving === selectedProposal.id
+                        ? "Submitting..."
+                        : "Approve"}
                     </Button>
                     <Button
                       variant="outline"
@@ -439,7 +478,9 @@ export default function SecretaryPage() {
                       disabled={approving === selectedProposal.id}
                       className="rounded-none"
                     >
-                      {approving === selectedProposal.id ? "Submitting..." : "Reject"}
+                      {approving === selectedProposal.id
+                        ? "Submitting..."
+                        : "Reject"}
                     </Button>
                   </div>
                 </section>
