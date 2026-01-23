@@ -122,7 +122,10 @@ export default async function HomePage() {
       </main>
 
       <footer className="border-t border-border mt-16 py-6 text-center text-sm text-muted-foreground">
-        <p>EventGate - Professional Event Proposal System</p>
+        <p>EventGate – Clubs Administration System</p>
+        <p className="mt-1">
+          © 2026 Addis Ababa University. All rights reserved.
+        </p>
       </footer>
     </div>
   );

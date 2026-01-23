@@ -301,7 +301,7 @@ export default function NewProposalPage() {
       <main className="container mx-auto px-4 max-w-5xl">
         <Card className="shadow-none rounded-none">
           <CardHeader>
-            <CardTitle className="text-xl">Event Details</CardTitle>
+            <CardTitle className="text-xl text-gray-700">Event Details</CardTitle>
             <CardDescription>
               Fill out the information below.
             </CardDescription>
@@ -447,7 +447,7 @@ export default function NewProposalPage() {
                             )}
                           </div>
 
-                          <div className="grid gap-2">
+                          <div className="grid gap-2 pt-4">
                             <Label htmlFor={`endDateTime-${idx}`}>
                               End Date &amp; Time
                             </Label>
@@ -644,7 +644,7 @@ export default function NewProposalPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="description">Summary</Label>
+                <Label htmlFor="description"> Event Description: Please provide Specific Details of your event</Label>
                 <Textarea
                   id="description"
                   required
@@ -666,8 +666,8 @@ export default function NewProposalPage() {
               </div>
 
               {/* Collaborators Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4  bg-gray-500/5 p-4 rounded-none">
+                <div className="flex items-center justify-start gap-3">
                   <Label className="text-base font-medium">
                     Collaborating Organizations
                   </Label>
@@ -678,7 +678,7 @@ export default function NewProposalPage() {
                     onClick={() => setIsCollaboratorModalOpen(true)}
                     className="rounded-none"
                   >
-                    Collaborators
+                    + Collaborators
                   </Button>
                 </div>
                 {collaborators.length > 0 ? (
@@ -695,14 +695,14 @@ export default function NewProposalPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    No collaborators
+                    No collaborators added yet
                   </p>
                 )}
               </div>
 
               {/* Guests Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4 bg-gray-500/5 p-4 rounded-none">
+                <div className="flex items-center justify-start gap-3">
                   <Label className="text-base font-medium">
                     Invited Guests
                   </Label>
@@ -713,7 +713,7 @@ export default function NewProposalPage() {
                     onClick={() => setIsGuestModalOpen(true)}
                     className="rounded-none"
                   >
-                    Guests
+                    + Guests
                   </Button>
                 </div>
                 {guests.length > 0 ? (
@@ -740,7 +740,7 @@ export default function NewProposalPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    No guests
+                    No guests added yet
                   </p>
                 )}
               </div>

@@ -526,7 +526,7 @@ export default function ProposalEditPage() {
 
                           <div className="grid gap-2">
                             <Label htmlFor={`endDateTime-${idx}`}>
-                              End Date &amp; Time
+                              End Date &amp; Time 
                             </Label>
                             <Input
                               id={`endDateTime-${idx}`}
