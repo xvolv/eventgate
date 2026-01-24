@@ -58,9 +58,7 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
       <div className="w-full bg-slate-900 text-white">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="font-semibold tracking-wide">
-              EventGate
-            </Link>
+            <Link href="/" className="font-semibold tracking-wide"></Link>
             <div className="hidden sm:block h-5 w-px bg-white/20" />
             <div className="min-w-0">
               <div className="text-sm font-medium leading-5">

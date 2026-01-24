@@ -92,8 +92,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                   }
                   className="h-9 text-white bg-slate-900 hover:text-white hover:bg-salte-900 border-none"
                 >
-                 
-               New Proposal
+                  New Proposal
                 </Button>
               </Link>
             </div>
@@ -199,7 +198,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                         }
                         className="h-10 w-full justify-start rounded-none"
                       >
-                        New Proposal 
+                        New Proposal
                       </Button>
                     </Link>
                   </nav>

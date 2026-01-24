@@ -15,7 +15,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-svh items-center justify-center p-6 text-sm text-muted-foreground">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-svh items-center justify-center p-6 text-sm text-muted-foreground">
+          Loading...
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

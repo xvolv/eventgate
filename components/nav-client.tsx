@@ -94,7 +94,7 @@ export default function NavClient({
 
           <div className="flex items-center gap-2">
             {currentIsAuthed && (
-              <div className="hidden lg:block text-xs text-white/70 truncate max-w-[28rem]">
+              <div className="hidden lg:block text-xs text-white/70 truncate max-w-md">
                 {currentUserEmail}
               </div>
             )}
