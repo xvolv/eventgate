@@ -502,7 +502,7 @@ export default function ProposalsPage() {
                 {selectedProposal ? (
                   <Card className="shadow-none rounded-none border-0">
                     <CardHeader className="px-0 pt-0">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start justify-between gap-4 bg-gray-100 p-2 border">
                         <div>
                           <CardTitle className="text-xl font-semibold">
                             {selectedProposal.event?.title ||
@@ -526,12 +526,12 @@ export default function ProposalsPage() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-6 px-0 pb-0">
+                    <CardContent className="space-y-6 px-0 pb-0 ">
                       <section className="space-y-3">
                         <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                           Core Facts
                         </h4>
-                        <div className="space-y-2">
+                        <div className="space-y-2  bg-gray-100 p-2 border">
                           <div>
                             <div className="text-xs text-muted-foreground">
                               Date range
@@ -550,7 +550,7 @@ export default function ProposalsPage() {
                             <div className="text-xs text-muted-foreground">
                               Location
                             </div>
-                            <div className="text-sm">
+                            <div className="text-sm  ">
                               {selectedProposal.event?.location ||
                                 "Not specified"}
                             </div>
@@ -559,7 +559,7 @@ export default function ProposalsPage() {
                             <div className="text-xs text-muted-foreground">
                               Sessions
                             </div>
-                            <div className="text-sm">
+                            <div className="text-sm ">
                               {Array.isArray(
                                 selectedProposal.event?.occurrences,
                               ) && selectedProposal.event.occurrences.length > 1
@@ -572,8 +572,8 @@ export default function ProposalsPage() {
 
                       {Array.isArray(selectedProposal.event?.occurrences) &&
                       selectedProposal.event.occurrences.length > 1 ? (
-                        <section className="space-y-3">
-                          <div className="flex items-center justify-between">
+                        <section className="space-y-3 ">
+                          <div className="flex items-center justify-between ">
                             <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                               Sessions
                             </h4>
@@ -652,7 +652,7 @@ export default function ProposalsPage() {
                         </section>
                       ) : null}
 
-                      <section className="space-y-3">
+                      <section className="space-y-3 bg-gray-100 p-2 border">
                         <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                           Approval Status
                         </h4>
