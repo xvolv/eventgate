@@ -112,6 +112,7 @@ export default function ProposalsPage() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [contributorsPage, setContributorsPage] = useState(1);
   const [guestsPage, setGuestsPage] = useState(1);
+  const [clubName, setClubName] = useState("");
 
   const fetchProposals = async (nextPage: number) => {
     const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`, {
@@ -131,10 +132,30 @@ export default function ProposalsPage() {
   };
 
   useEffect(() => {
+    //fetch the club info
+    const fetchClubInfo = async () => {
+      try {
+        const clubResponse = await fetch("/api/club", {
+          cache: "no-store",
+        });
+        if (!clubResponse.ok) {
+          throw new Error("Failed to fetch club info");
+        }
+        const clubData = await clubResponse.json();
+        const clubLabel = clubData?.club?.name;
+        if (clubLabel) {
+          setClubName(String(clubLabel.toUpperCase()));
+        }
+      } catch {
+        setError("Failed to fetch club info");
+      }
+    };
+
     if (isPending) return;
 
     const run = async () => {
       try {
+        await fetchClubInfo();
         await fetchProposals(page);
       } catch (err) {
         setError(
@@ -266,9 +287,15 @@ export default function ProposalsPage() {
   }
 
   return (
-    <div className="min-h-svh bg-background rounded-none">
-      <div className="absolute left-52 top-16 font-serif text-slate-900 ">
-        PROPOSALS
+    <div className="min-h-svh bg-background rounded-none  ">
+
+      <div className="absolute top-22 left-20 font-serif text-slate-900 flex">
+        <div>
+          <span>{clubName ? `${clubName} ` : ""}</span>
+          <div className="text-[10px] font-sans text-gray-600 absolute left-22 top-5">
+            <span>Proposals</span>
+          </div>
+        </div>
       </div>
       <main className="container mx-auto px-4 py-10 max-w-5xl rounded-none">
         {proposals.length === 0 ? (
