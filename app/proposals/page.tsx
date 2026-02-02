@@ -288,7 +288,6 @@ export default function ProposalsPage() {
 
   return (
     <div className="min-h-svh bg-background rounded-none  ">
-
       <div className="absolute top-22 left-20 font-serif text-slate-900 flex">
         <div>
           <span>{clubName ? `${clubName} ` : ""}</span>
@@ -497,18 +496,21 @@ export default function ProposalsPage() {
                 }
               }}
             >
-              <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+              <DialogContent
+                className="w-full max-h-[85vh] overflow-y-auto"
+                style={{ width: "70vw", maxWidth: "1200px" }}
+              >
                 <DialogTitle className="sr-only">Proposal Details</DialogTitle>
                 {selectedProposal ? (
                   <Card className="shadow-none rounded-none border-0">
                     <CardHeader className="px-0 pt-0">
                       <div className="flex items-start justify-between gap-4 bg-gray-100 p-2 border">
                         <div>
-                          <CardTitle className="text-xl font-semibold">
+                          <CardTitle className="text-xl font-semibold ">
                             {selectedProposal.event?.title ||
                               "Untitled Proposal"}
                           </CardTitle>
-                          <CardDescription className="text-xs text-muted-foreground">
+                          <CardDescription className="text-xs text-muted-foreground ">
                             {selectedProposal.club.name} •{" "}
                             {new Date(
                               selectedProposal.createdAt,
@@ -516,7 +518,7 @@ export default function ProposalsPage() {
                           </CardDescription>
                         </div>
                         <div className="shrink-0">
-                          <Badge className="bg-muted text-foreground/70">
+                          <Badge className="rounded-none text-foreground/70  p-2 border">
                             {
                               statusLabels[
                                 selectedProposal.status as keyof typeof statusLabels
