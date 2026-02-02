@@ -164,7 +164,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                             ? "default"
                             : "ghost"
                         }
-                        className="h-10 w-full justify-start rounded-none"
+                        className="h-10 w-full justify-start rounded-none "
                       >
                         Add Club
                       </Button>
@@ -234,7 +234,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                   variant={
                     isActive(pathname, "/admin/clubs") ? "default" : "outline"
                   }
-                  className="h-9 w-full justify-start md:w-auto"
+                  className="h-9 w-full justify-start md:w-auto  border-none "
                 >
                   Clubs
                 </Button>
@@ -246,7 +246,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                       ? "default"
                       : "outline"
                   }
-                  className="h-9 w-full justify-start md:w-auto"
+                  className="h-9 w-full justify-start md:w-auto border-none "
                 >
                   Add Club
                 </Button>
@@ -261,7 +261,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                       ? "default"
                       : "outline"
                   }
-                  className="h-9 w-full justify-start md:w-auto"
+                  className="h-9 w-full justify-start md:w-auto  border-none "
                 >
                   System Roles
                 </Button>
@@ -271,7 +271,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                   variant={
                     isActive(pathname, "/admin/users") ? "default" : "outline"
                   }
-                  className="h-9 w-full justify-start md:w-auto"
+                  className="h-9 w-full justify-start md:w-auto  border-none "
                 >
                   Users
                 </Button>
