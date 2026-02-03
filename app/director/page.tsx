@@ -72,7 +72,7 @@ export default function DirectorPage() {
   } | null>(null);
   const [comments, setComments] = useState<{ [key: string]: string }>({});
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
-    null
+    null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -92,10 +92,44 @@ export default function DirectorPage() {
       setProposals(body.proposals || []);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to fetch proposals"
+        err instanceof Error ? err.message : "Failed to fetch proposals",
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDecision = async (proposalId: string, approve: boolean) => {
+    setActing({ proposalId, action: approve ? "approve" : "reject" });
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/proposals/${proposalId}/director-review`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            directorApproval: approve ? "Approved" : "Rejected",
+            directorComments: comments[proposalId] || "",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || "Failed to submit decision");
+      }
+
+      setComments((prev) => ({ ...prev, [proposalId]: "" }));
+      setDetailsOpen(false);
+      setSelectedProposal(null);
+      await fetchProposals();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to submit decision"
+      );
+    } finally {
+      setActing(null);
     }
   };
 
@@ -187,7 +221,7 @@ export default function DirectorPage() {
                       {(() => {
                         const { western, ethiopian } = formatDualTimeRange(
                           proposal.event?.startTime,
-                          proposal.event?.endTime
+                          proposal.event?.endTime,
                         );
                         return ethiopian
                           ? `${western} • LT: [${ethiopian}]`
@@ -198,7 +232,8 @@ export default function DirectorPage() {
                       Location: {proposal.event?.location || "Not specified"}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      Student Union decision: {suReview?.recommendation || "Recommended"}
+                      Student Union decision:{" "}
+                      {suReview?.recommendation || "Recommended"}
                     </div>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
@@ -231,7 +266,7 @@ export default function DirectorPage() {
                     <CardDescription className="text-xs text-muted-foreground">
                       {selectedProposal.club.name} •{" "}
                       {new Date(
-                        selectedProposal.createdAt
+                        selectedProposal.createdAt,
                       ).toLocaleDateString()}
                     </CardDescription>
                   </div>
@@ -271,7 +306,7 @@ export default function DirectorPage() {
                             .sort(
                               (a, b) =>
                                 new Date(a.startTime || 0).getTime() -
-                                new Date(b.startTime || 0).getTime()
+                                new Date(b.startTime || 0).getTime(),
                             )
                             .map((occ, idx) => {
                               const { western, ethiopian } =
@@ -306,7 +341,7 @@ export default function DirectorPage() {
                       {(() => {
                         const { western, ethiopian } = formatDualTimeRange(
                           selectedProposal.event?.startTime,
-                          selectedProposal.event?.endTime
+                          selectedProposal.event?.endTime,
                         );
                         return ethiopian ? (
                           <span>
@@ -414,7 +449,9 @@ export default function DirectorPage() {
                     </div>
                     <div className="flex flex-wrap gap-3">
                       <Button
-                        onClick={() => handleDecision(selectedProposal.id, true)}
+                        onClick={() =>
+                          handleDecision(selectedProposal.id, true)
+                        }
                         disabled={acting?.proposalId === selectedProposal.id}
                         className="rounded-none"
                       >
@@ -424,7 +461,9 @@ export default function DirectorPage() {
                           : "Approve"}
                       </Button>
                       <Button
-                        onClick={() => handleDecision(selectedProposal.id, false)}
+                        onClick={() =>
+                          handleDecision(selectedProposal.id, false)
+                        }
                         disabled={acting?.proposalId === selectedProposal.id}
                         variant="destructive"
                         className="rounded-none"

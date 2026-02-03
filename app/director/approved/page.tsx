@@ -77,7 +77,7 @@ export default function DirectorApprovedPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
-    null
+    null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export default function DirectorApprovedPage() {
         setProposals(body.proposals || []);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch proposals"
+          err instanceof Error ? err.message : "Failed to fetch proposals",
         );
       } finally {
         setLoading(false);
@@ -119,7 +119,7 @@ export default function DirectorApprovedPage() {
         `/api/director-approved-proposals/${proposalId}`,
         {
           method: "DELETE",
-        }
+        },
       );
       const body = await res.json().catch(() => null);
       if (!res.ok) {
@@ -175,10 +175,10 @@ export default function DirectorApprovedPage() {
         <div className="space-y-6">
           {proposals.map((proposal) => {
             const directorReview = proposal.reviews?.find(
-              (r) => r.reviewerRole === "DIRECTOR"
+              (r) => r.reviewerRole === "DIRECTOR",
             );
             const suReview = proposal.reviews?.find(
-              (r) => r.reviewerRole === "STUDENT_UNION"
+              (r) => r.reviewerRole === "STUDENT_UNION",
             );
 
             return (
@@ -226,7 +226,7 @@ export default function DirectorApprovedPage() {
                       {(() => {
                         const { western, ethiopian } = formatDualTimeRange(
                           proposal.event?.startTime,
-                          proposal.event?.endTime
+                          proposal.event?.endTime,
                         );
                         return ethiopian
                           ? `${western} • LT: [${ethiopian}]`
@@ -237,7 +237,9 @@ export default function DirectorApprovedPage() {
                       Location: {proposal.event?.location || "Not specified"}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      SU: {suReview?.recommendation || "Recommended"} • Director: {directorReview?.recommendation || "Recommended"}
+                      SU: {suReview?.recommendation || "Recommended"} •
+                      Director:{" "}
+                      {directorReview?.recommendation || "Recommended"}
                     </div>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
@@ -263,229 +265,244 @@ export default function DirectorApprovedPage() {
             <Card className="shadow-none rounded-none border-0">
               {(() => {
                 const dialogSuReview = selectedProposal.reviews?.find(
-                  (r) => r.reviewerRole === "STUDENT_UNION"
+                  (r) => r.reviewerRole === "STUDENT_UNION",
                 );
                 const dialogDirectorReview = selectedProposal.reviews?.find(
-                  (r) => r.reviewerRole === "DIRECTOR"
+                  (r) => r.reviewerRole === "DIRECTOR",
                 );
                 return (
                   <>
-              <CardHeader className="px-0 pt-0">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-xl font-semibold">
-                      {selectedProposal.event?.title || "Untitled Proposal"}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">
-                      {selectedProposal.club.name} •{" "}
-                      {new Date(
-                        selectedProposal.createdAt
-                      ).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  <Badge
-                    className={`${
-                      statusColors[
-                        selectedProposal.status as keyof typeof statusColors
-                      ] || "bg-muted text-foreground"
-                    } whitespace-nowrap`}
-                  >
-                    {statusLabels[
-                      selectedProposal.status as keyof typeof statusLabels
-                    ] || selectedProposal.status}
-                  </Badge>
-                </div>
-              </CardHeader>
+                    <CardHeader className="px-0 pt-0">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <CardTitle className="text-xl font-semibold">
+                            {selectedProposal.event?.title ||
+                              "Untitled Proposal"}
+                          </CardTitle>
+                          <CardDescription className="text-xs text-muted-foreground">
+                            {selectedProposal.club.name} •{" "}
+                            {new Date(
+                              selectedProposal.createdAt,
+                            ).toLocaleDateString()}
+                          </CardDescription>
+                        </div>
+                        <Badge
+                          className={`${
+                            statusColors[
+                              selectedProposal.status as keyof typeof statusColors
+                            ] || "bg-muted text-foreground"
+                          } whitespace-nowrap`}
+                        >
+                          {statusLabels[
+                            selectedProposal.status as keyof typeof statusLabels
+                          ] || selectedProposal.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
 
-              <CardContent className="space-y-6 px-0 pb-0">
-                <section className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Event Details
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="font-medium">Location:</span>{" "}
-                      {selectedProposal.event?.location || "Not specified"}
-                    </div>
-                    {Array.isArray(selectedProposal.event?.occurrences) &&
-                    selectedProposal.event.occurrences.length > 1 ? (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">
-                          Sessions: {selectedProposal.event.occurrences.length}
-                        </p>
-                        <div className="space-y-2">
-                          {selectedProposal.event.occurrences
-                            .slice()
-                            .sort(
-                              (a, b) =>
-                                new Date(a.startTime || 0).getTime() -
-                                new Date(b.startTime || 0).getTime()
-                            )
-                            .map((occ, idx) => {
+                    <CardContent className="space-y-6 px-0 pb-0">
+                      <section className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Event Details
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">Location:</span>{" "}
+                            {selectedProposal.event?.location ||
+                              "Not specified"}
+                          </div>
+                          {Array.isArray(selectedProposal.event?.occurrences) &&
+                          selectedProposal.event.occurrences.length > 1 ? (
+                            <div className="space-y-2">
+                              <p className="text-xs text-muted-foreground">
+                                Sessions:{" "}
+                                {selectedProposal.event.occurrences.length}
+                              </p>
+                              <div className="space-y-2">
+                                {selectedProposal.event.occurrences
+                                  .slice()
+                                  .sort(
+                                    (a, b) =>
+                                      new Date(a.startTime || 0).getTime() -
+                                      new Date(b.startTime || 0).getTime(),
+                                  )
+                                  .map((occ, idx) => {
+                                    const { western, ethiopian } =
+                                      formatDualTimeRange(
+                                        occ.startTime,
+                                        occ.endTime,
+                                      );
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-muted/30 rounded"
+                                      >
+                                        <div className="text-sm">{western}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {ethiopian
+                                            ? `LT: [${ethiopian}]`
+                                            : null}
+                                          {occ.location
+                                            ? `${ethiopian ? " • " : ""}${occ.location}`
+                                            : null}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          ) : null}
+                          <div>
+                            <span className="font-medium">Description:</span>
+                            <div className="mt-1 max-h-40 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                              {selectedProposal.event?.description ||
+                                "No description provided"}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium">Time:</span>{" "}
+                            {(() => {
                               const { western, ethiopian } =
-                                formatDualTimeRange(occ.startTime, occ.endTime);
-                              return (
-                                <div
-                                  key={idx}
-                                  className="p-3 bg-muted/30 rounded"
-                                >
-                                  <div className="text-sm">{western}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {ethiopian ? `LT: [${ethiopian}]` : null}
-                                    {occ.location
-                                      ? `${ethiopian ? " • " : ""}${occ.location}`
-                                      : null}
-                                  </div>
-                                </div>
+                                formatDualTimeRange(
+                                  selectedProposal.event?.startTime,
+                                  selectedProposal.event?.endTime,
+                                );
+                              return ethiopian ? (
+                                <span>
+                                  {western}
+                                  <span className="block text-xs text-muted-foreground">
+                                    LT: [{ethiopian}]
+                                  </span>
+                                </span>
+                              ) : (
+                                western
                               );
-                            })}
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
-                    <div>
-                      <span className="font-medium">Description:</span>
-                      <div className="mt-1 max-h-40 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                        {selectedProposal.event?.description ||
-                          "No description provided"}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="font-medium">Time:</span>{" "}
-                      {(() => {
-                        const { western, ethiopian } = formatDualTimeRange(
-                          selectedProposal.event?.startTime,
-                          selectedProposal.event?.endTime
-                        );
-                        return ethiopian ? (
-                          <span>
-                            {western}
-                            <span className="block text-xs text-muted-foreground">
-                              LT: [{ethiopian}]
-                            </span>
-                          </span>
-                        ) : (
-                          western
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </section>
+                      </section>
 
-                <section className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Decisions
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <p className="font-medium">Student Union</p>
-                      <p className="text-muted-foreground">
-                        {dialogSuReview?.recommendation || "Recommended"}
-                      </p>
-                      {dialogSuReview?.comments ? (
-                        <p className="text-muted-foreground">
-                          {dialogSuReview.comments}
-                        </p>
-                      ) : null}
-                    </div>
+                      <section className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Decisions
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <p className="font-medium">Student Union</p>
+                            <p className="text-muted-foreground">
+                              {dialogSuReview?.recommendation || "Recommended"}
+                            </p>
+                            {dialogSuReview?.comments ? (
+                              <p className="text-muted-foreground">
+                                {dialogSuReview.comments}
+                              </p>
+                            ) : null}
+                          </div>
 
-                    <div className="pt-2 border-t border-border">
-                      <p className="font-medium">Director</p>
-                      <p className="text-muted-foreground">
-                        {dialogDirectorReview?.recommendation ||
-                          "Recommended"}
-                      </p>
-                      {dialogDirectorReview?.comments ? (
-                        <p className="text-muted-foreground">
-                          {dialogDirectorReview.comments}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                </section>
-
-                {selectedProposal.collaborators?.length > 0 && (
-                  <section className="space-y-2 border-t border-border pt-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Collaborating Organizations
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedProposal.collaborators.map((collaborator) => (
-                        <div
-                          key={collaborator.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <span className="font-medium">
-                            {collaborator.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {collaborator.type}
-                          </span>
+                          <div className="pt-2 border-t border-border">
+                            <p className="font-medium">Director</p>
+                            <p className="text-muted-foreground">
+                              {dialogDirectorReview?.recommendation ||
+                                "Recommended"}
+                            </p>
+                            {dialogDirectorReview?.comments ? (
+                              <p className="text-muted-foreground">
+                                {dialogDirectorReview.comments}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                      </section>
 
-                {selectedProposal.guests?.length > 0 && (
-                  <section className="space-y-2 border-t border-border pt-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Invited Guests
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedProposal.guests.map((guest) => (
-                        <div
-                          key={guest.id}
-                          className="border border-border p-3 rounded"
-                        >
-                          <p className="text-sm">
-                            <strong>Name:</strong> {guest.name}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Affiliation:</strong>{" "}
-                            {guest.affiliation || "Not specified"}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Reason:</strong>{" "}
-                            {guest.reason || "Not specified"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                      {selectedProposal.collaborators?.length > 0 && (
+                        <section className="space-y-2 border-t border-border pt-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Collaborating Organizations
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedProposal.collaborators.map(
+                              (collaborator) => (
+                                <div
+                                  key={collaborator.id}
+                                  className="flex items-center gap-2 text-sm"
+                                >
+                                  <span className="font-medium">
+                                    {collaborator.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {collaborator.type}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </section>
+                      )}
 
-                <section className="border-t border-border pt-4">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        className="rounded-none"
-                        disabled={deletingId === selectedProposal.id}
-                      >
-                        {deletingId === selectedProposal.id
-                          ? "Deleting..."
-                          : "Delete Proposal"}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete proposal?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete the proposal.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(selectedProposal.id)}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </section>
-              </CardContent>
+                      {selectedProposal.guests?.length > 0 && (
+                        <section className="space-y-2 border-t border-border pt-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Invited Guests
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedProposal.guests.map((guest) => (
+                              <div
+                                key={guest.id}
+                                className="border border-border p-3 rounded"
+                              >
+                                <p className="text-sm">
+                                  <strong>Name:</strong> {guest.name}
+                                </p>
+                                <p className="text-sm">
+                                  <strong>Affiliation:</strong>{" "}
+                                  {guest.affiliation || "Not specified"}
+                                </p>
+                                <p className="text-sm">
+                                  <strong>Reason:</strong>{" "}
+                                  {guest.reason || "Not specified"}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+
+                      <section className="border-t border-border pt-4">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              className="rounded-none"
+                              disabled={deletingId === selectedProposal.id}
+                            >
+                              {deletingId === selectedProposal.id
+                                ? "Deleting..."
+                                : "Delete Proposal"}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete proposal?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the proposal.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  handleDelete(selectedProposal.id)
+                                }
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </section>
+                    </CardContent>
                   </>
                 );
               })()}

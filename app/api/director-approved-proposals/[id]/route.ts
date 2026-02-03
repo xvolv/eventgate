@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: proposalId } = await params;
   const session = await auth.api.getSession({ headers: request.headers });
@@ -13,7 +13,7 @@ export async function DELETE(
   if (!proposalId) {
     return NextResponse.json(
       { message: "Missing proposal id" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -24,7 +24,7 @@ export async function DELETE(
   if (!user.emailVerified) {
     return NextResponse.json(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -40,7 +40,7 @@ export async function DELETE(
   if (!directorGrant) {
     return NextResponse.json(
       { message: "Only Directors can delete proposals" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -52,7 +52,7 @@ export async function DELETE(
   if (!proposal) {
     return NextResponse.json(
       { message: "Proposal not found" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 

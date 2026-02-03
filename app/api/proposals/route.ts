@@ -47,7 +47,7 @@ function parseOccurrences(body: any) {
 }
 
 function validateOccurrences(
-  occurrences: Array<{ startTime: Date; endTime: Date; location: string }>
+  occurrences: Array<{ startTime: Date; endTime: Date; location: string }>,
 ) {
   if (!occurrences || occurrences.length === 0) {
     return "At least one event date/time is required";
@@ -70,7 +70,7 @@ function validateOccurrences(
 
   // Disallow overlaps across all sessions (including same day)
   const sorted = [...occurrences].sort(
-    (a, b) => a.startTime.getTime() - b.startTime.getTime()
+    (a, b) => a.startTime.getTime() - b.startTime.getTime(),
   );
   for (let i = 0; i < sorted.length - 1; i++) {
     const current = sorted[i];
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     });
     return jsonNoStore(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     });
     return jsonNoStore(
       { message: "Only club presidents can submit proposals" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -134,13 +134,13 @@ export async function POST(request: Request) {
     }
 
     const summaryStart = new Date(
-      Math.min(...occurrences.map((o) => o.startTime.getTime()))
+      Math.min(...occurrences.map((o) => o.startTime.getTime())),
     );
     const summaryEnd = new Date(
-      Math.max(...occurrences.map((o) => o.endTime.getTime()))
+      Math.max(...occurrences.map((o) => o.endTime.getTime())),
     );
     const summaryLocation = String(
-      body?.eventLocation ?? occurrences[0]?.location ?? ""
+      body?.eventLocation ?? occurrences[0]?.location ?? "",
     ).trim();
 
     // Create the proposal first
@@ -287,7 +287,7 @@ export async function POST(request: Request) {
           })),
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Proposal submission error:", error);
@@ -295,7 +295,7 @@ export async function POST(request: Request) {
       {
         message: "Failed to submit proposal",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -315,7 +315,7 @@ export async function GET(request: Request) {
     });
     return jsonNoStore(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -337,7 +337,7 @@ export async function GET(request: Request) {
     });
     return jsonNoStore(
       { message: "Only club presidents can view proposals" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -433,7 +433,7 @@ export async function GET(request: Request) {
       {
         message: "Failed to fetch proposals",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
