@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+
 function jsonNoStore(body: unknown, init?: ResponseInit) {
   const res = NextResponse.json(body, init);
   res.headers.set("Cache-Control", "no-store");
@@ -346,7 +349,30 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
-    const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const archiveCutoff = new Date(Date.now() - ONE_DAY_MS);
+    await prisma.proposal.updateMany({
+      where: {
+        clubId: presidentGrant.clubId,
+        archivedAt: null,
+        event: {
+          OR: [
+            {
+              occurrences: { none: {} },
+              endTime: { lt: archiveCutoff },
+            },
+            {
+              occurrences: {
+                some: {},
+                none: { endTime: { gte: archiveCutoff } },
+              },
+            },
+          ],
+        },
+      },
+      data: { archivedAt: new Date() },
+    });
+
+    const cutoff = new Date(Date.now() - TWO_DAYS_MS);
     await prisma.proposal.deleteMany({
       where: {
         clubId: presidentGrant.clubId,
