@@ -84,7 +84,7 @@ export default function PresidentArchivePage() {
 
   const fetchArchived = async (nextPage: number) => {
     const res = await fetch(
-      `/api/proposals?archived=1&page=${nextPage}&limit=10`
+      `/api/proposals?archived=1&page=${nextPage}&limit=10`,
     );
     const body = await res.json().catch(() => null);
     if (!res.ok) {
@@ -256,7 +256,7 @@ export default function PresidentArchivePage() {
               {proposals.map((proposal) => {
                 const { western, ethiopian } = formatDualTimeRange(
                   proposal.event?.startTime,
-                  proposal.event?.endTime
+                  proposal.event?.endTime,
                 );
                 const sessionCount = Array.isArray(proposal.event?.occurrences)
                   ? proposal.event.occurrences.length
@@ -392,7 +392,7 @@ export default function PresidentArchivePage() {
                     setPage((p) =>
                       pagination
                         ? Math.min(pagination.totalPages, p + 1)
-                        : p + 1
+                        : p + 1,
                     )
                   }
                   disabled={

@@ -32,7 +32,7 @@ export default function NewProposalPage() {
   };
 
   const [clubInfo, setClubInfo] = useState<{ id: string; name: string } | null>(
-    null
+    null,
   );
   const [officers, setOfficers] = useState<{
     president: { email: string; name: string | null } | null;
@@ -149,7 +149,7 @@ export default function NewProposalPage() {
       }))
       .filter(
         (o) =>
-          !Number.isNaN(o.start.getTime()) && !Number.isNaN(o.end.getTime())
+          !Number.isNaN(o.start.getTime()) && !Number.isNaN(o.end.getTime()),
       )
       .sort((a, b) => a.start.getTime() - b.start.getTime());
 
@@ -219,7 +219,7 @@ export default function NewProposalPage() {
       }
 
       setMessage(
-        "Proposal submitted successfully and sent to club leads for review!"
+        "Proposal submitted successfully and sent to club leads for review!",
       );
 
       // Clear form state immediately
@@ -239,7 +239,7 @@ export default function NewProposalPage() {
       }, 2000);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Failed to submit proposal"
+        error instanceof Error ? error.message : "Failed to submit proposal",
       );
     } finally {
       setSubmitting(false);
@@ -248,7 +248,7 @@ export default function NewProposalPage() {
 
   const updateOccurrence = (
     index: number,
-    patch: Partial<EventOccurrenceForm>
+    patch: Partial<EventOccurrenceForm>,
   ) => {
     setOccurrences((prev) => {
       const next = [...prev];
@@ -285,14 +285,14 @@ export default function NewProposalPage() {
 
   return (
     <div className="min-h-svh bg-background">
-      <div className="container mx-auto px-4 py-10 max-w-5xl">
+      <div className="container  px-4 py-10 max-w-5xl ">
         <div className="">
           {clubInfo && (
-            <div className="text-right">
+            <div className="absolute top-22 left-20 font-serif text-slate-900 flex">
               <p className="text-sm font-medium text-gray-700">
                 {clubInfo.name.toUpperCase()}
               </p>
-              <p className="text-xs text-muted-foreground">President Account</p>
+              <p className="text-[10px] absolute top-5 left-7 text-muted-foreground">President Account</p>
             </div>
           )}
         </div>
@@ -301,10 +301,10 @@ export default function NewProposalPage() {
       <main className="container mx-auto px-4 max-w-5xl">
         <Card className="shadow-none rounded-none">
           <CardHeader>
-            <CardTitle className="text-xl text-gray-700">Event Details</CardTitle>
-            <CardDescription>
-              Fill out the information below.
-            </CardDescription>
+            <CardTitle className="text-xl text-gray-700">
+              Event Details
+            </CardTitle>
+            <CardDescription>Fill out the information below.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-6">
@@ -644,7 +644,11 @@ export default function NewProposalPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="description"> Event Description: Please provide Specific Details of your event</Label>
+                <Label htmlFor="description">
+                  {" "}
+                  Event Description: Please provide Specific Details of your
+                  event
+                </Label>
                 <Textarea
                   id="description"
                   required
