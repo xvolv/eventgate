@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDualTimeRange } from "@/lib/utils";
+import { statusColors } from "@/lib/proposal-status";
 
 interface Proposal {
   id: string;
@@ -57,10 +58,6 @@ interface Proposal {
     updatedAt: string;
   }>;
 }
-
-const statusColors = {
-  SU_APPROVED: "bg-emerald-100 text-emerald-800 border-emerald-300",
-} as const;
 
 export default function StudentUnionApprovedPage() {
   const { data, isPending } = useSession();
