@@ -222,7 +222,7 @@ export async function GET(request: Request) {
             in: userRoleGrants.map((g) => g.clubId),
           },
           status: {
-            in: ["LEAD_REVIEW", "LEAD_APPROVED"],
+            in: ["LEAD_REVIEW", "LEAD_APPROVED", "LEAD_REJECTED"],
           },
         },
         include: {

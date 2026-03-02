@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendProposalStatusEmail } from "@/lib/email";
 
 const RESUBMITTABLE_STATUSES = new Set([
   "LEAD_REJECTED",
@@ -75,25 +76,13 @@ export async function POST(
     );
   }
 
-  const nextStatus =
-    proposal.status === "LEAD_REJECTED" || proposal.status === "SU_REJECTED"
-      ? "LEAD_REVIEW"
-      : "PENDING";
+  const nextStatus = "LEAD_REVIEW";
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
-      if (
-        proposal.status === "LEAD_REJECTED" ||
-        proposal.status === "SU_REJECTED"
-      ) {
-        await tx.proposalLeadApproval.updateMany({
-          where: { proposalId },
-          data: {
-            approved: false,
-            comments: null,
-          },
-        });
-      }
+      await tx.proposalLeadApproval.deleteMany({
+        where: { proposalId },
+      });
 
       return tx.proposal.update({
         where: { id: proposalId },
@@ -112,6 +101,30 @@ export async function POST(
         },
       });
     });
+
+    const leadGrants = await prisma.clubRoleGrant.findMany({
+      where: {
+        clubId: presidentGrant.clubId,
+        role: { in: ["VP", "SECRETARY"] },
+      },
+      select: { email: true, role: true },
+    });
+
+    await Promise.all(
+      leadGrants.map((grant) =>
+        sendProposalStatusEmail({
+          to: grant.email,
+          proposalId,
+          eventTitle: updated.event?.title || "Untitled Event",
+          subject: "EventGate: Proposal resubmitted for lead review",
+          heading: "Proposal resubmitted",
+          message:
+            "A proposal you previously reviewed has been updated and resubmitted. Please review the changes.",
+          actionLabel: "Review Proposal",
+          actionPath: grant.role === "VP" ? "/vp" : "/secretary",
+        })
+      )
+    );
 
     return NextResponse.json({
       message: "Proposal resubmitted",

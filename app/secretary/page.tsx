@@ -21,6 +21,7 @@ interface Proposal {
   id: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
   event: {
     title?: string;
     description?: string;
@@ -52,11 +53,13 @@ interface Proposal {
     leadEmail: string;
     approved: boolean;
     comments?: string;
+    updatedAt?: string;
   }>;
 }
 
 export default function SecretaryPage() {
   const { data, isPending } = useSession();
+  const userEmail = data?.user?.email?.toLowerCase();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +69,7 @@ export default function SecretaryPage() {
     null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showRejectReason, setShowRejectReason] = useState(false);
 
   useEffect(() => {
     if (isPending) return;
@@ -117,6 +121,7 @@ export default function SecretaryPage() {
 
       // Clear comments for this proposal and close dialog if open
       setComments((prev) => ({ ...prev, [proposalId]: "" }));
+      setShowRejectReason(false);
       if (selectedProposal?.id === proposalId) {
         setSelectedProposal(null);
         setDetailsOpen(false);
@@ -128,6 +133,25 @@ export default function SecretaryPage() {
     } finally {
       setApproving(null);
     }
+  };
+
+  const openDetails = (proposal: Proposal) => {
+    setSelectedProposal(proposal);
+    setDetailsOpen(true);
+    setShowRejectReason(false);
+  };
+
+  const handleReject = (proposalId: string) => {
+    if (!showRejectReason) {
+      setShowRejectReason(true);
+      return;
+    }
+    const reason = (comments[proposalId] || "").trim();
+    if (!reason) {
+      setError("Please add a rejection reason before submitting.");
+      return;
+    }
+    handleApproval(proposalId, false);
   };
 
   if (loading) {
@@ -156,15 +180,11 @@ export default function SecretaryPage() {
               className="shadow-none rounded-none cursor-pointer group"
               role="button"
               tabIndex={0}
-              onClick={() => {
-                setSelectedProposal(proposal);
-                setDetailsOpen(true);
-              }}
+              onClick={() => openDetails(proposal)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setSelectedProposal(proposal);
-                  setDetailsOpen(true);
+                  openDetails(proposal);
                 }
               }}
             >
@@ -236,6 +256,27 @@ export default function SecretaryPage() {
           <DialogTitle className="sr-only">Proposal Details</DialogTitle>
           {selectedProposal ? (
             <Card className="shadow-none rounded-none border-0">
+              {(() => {
+                const currentLeadDecision = userEmail
+                  ? selectedProposal.leadApprovals.find(
+                      (approval) =>
+                        approval.leadRole === "SECRETARY" &&
+                        approval.leadEmail?.toLowerCase() === userEmail,
+                    ) || null
+                  : null;
+                const decisionIsFresh = Boolean(
+                  currentLeadDecision?.updatedAt && selectedProposal.updatedAt
+                    ? new Date(currentLeadDecision.updatedAt).getTime() >=
+                      new Date(selectedProposal.updatedAt).getTime()
+                    : currentLeadDecision,
+                );
+                const hasDecision = Boolean(
+                  decisionIsFresh &&
+                    (currentLeadDecision?.approved === true ||
+                      currentLeadDecision?.comments?.trim()),
+                );
+                return (
+                  <>
               <CardHeader className="px-0 pt-0">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -420,48 +461,75 @@ export default function SecretaryPage() {
                   </section>
                 )}
 
-                <section className="space-y-4 border-t border-border pt-4">
-                  <div>
-                    <Label htmlFor={`comments-${selectedProposal.id}`}>
-                      Comments
-                    </Label>
-                    <Textarea
-                      id={`comments-${selectedProposal.id}`}
-                      placeholder="Add your comments (optional)"
-                      value={comments[selectedProposal.id] || ""}
-                      onChange={(e) =>
-                        setComments((prev) => ({
-                          ...prev,
-                          [selectedProposal.id]: e.target.value,
-                        }))
-                      }
-                      className="mt-2"
-                    />
-                  </div>
+                {hasDecision ? (
+                  <section className="space-y-2 border-t border-border pt-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      Your decision
+                    </h4>
+                    <div className="text-sm">
+                      {currentLeadDecision?.approved === true
+                        ? "Approved"
+                        : "Rejected"}
+                    </div>
+                    {currentLeadDecision?.comments ? (
+                      <p className="text-sm text-muted-foreground">
+                        {currentLeadDecision.comments}
+                      </p>
+                    ) : null}
+                  </section>
+                ) : (
+                  <section className="space-y-4 border-t border-border pt-4">
+                    {showRejectReason ? (
+                      <div>
+                        <Label htmlFor={`comments-${selectedProposal.id}`}>
+                          Why are you rejecting this proposal?
+                        </Label>
+                        <Textarea
+                          id={`comments-${selectedProposal.id}`}
+                          placeholder="Add a clear reason so the club president understands the rejection."
+                          value={comments[selectedProposal.id] || ""}
+                          onChange={(e) =>
+                            setComments((prev) => ({
+                              ...prev,
+                              [selectedProposal.id]: e.target.value,
+                            }))
+                          }
+                          className="mt-2"
+                        />
+                      </div>
+                    ) : null}
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      onClick={() => handleApproval(selectedProposal.id, true)}
-                      disabled={approving === selectedProposal.id}
-                      className="rounded-none"
-                    >
-                      {approving === selectedProposal.id
-                        ? "Submitting..."
-                        : "Approve"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleApproval(selectedProposal.id, false)}
-                      disabled={approving === selectedProposal.id}
-                      className="rounded-none"
-                    >
-                      {approving === selectedProposal.id
-                        ? "Submitting..."
-                        : "Reject"}
-                    </Button>
-                  </div>
-                </section>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        onClick={() =>
+                          handleApproval(selectedProposal.id, true)
+                        }
+                        disabled={approving === selectedProposal.id}
+                        className="rounded-none"
+                      >
+                        {approving === selectedProposal.id
+                          ? "Submitting..."
+                          : "Approve"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleReject(selectedProposal.id)}
+                        disabled={approving === selectedProposal.id}
+                        className="rounded-none"
+                      >
+                        {approving === selectedProposal.id
+                          ? "Submitting..."
+                          : showRejectReason
+                            ? "Submit Rejection"
+                            : "Reject"}
+                      </Button>
+                    </div>
+                  </section>
+                )}
               </CardContent>
+                  </>
+                );
+              })()}
             </Card>
           ) : null}
         </DialogContent>
