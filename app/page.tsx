@@ -6,7 +6,12 @@ import { HomeActions } from "./home-actions";
 import { LandingHeader } from "@/components/landing-header";
 import { PublicEvents } from "@/components/public-events";
 import Image from "next/image";
-import { CalendarCheck, ShieldCheck, ArrowRight } from "lucide-react";
+import {
+  CalendarCheck,
+  ShieldCheck,
+  ArrowRight,
+  ArrowUpRight,
+} from "lucide-react";
 
 async function getDashboardHref(email: string | null | undefined) {
   const safeEmail = (email || "").trim();
@@ -173,17 +178,17 @@ export default async function HomePage() {
             <div className="relative hidden lg:flex items-center justify-center py-10">
               {/* Background decorative circle */}
               <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-[480px] rounded-full opacity-10"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 rounded-full opacity-10"
                 style={{ backgroundColor: "var(--aau-blue)" }}
               />
               {/* Decorative ring */}
               <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full border-2 opacity-20"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-130 h-130 rounded-full border-2 opacity-20"
                 style={{ borderColor: "var(--aau-blue)" }}
               />
 
               {/* Main image — circular crop like AAU site */}
-              <div className="relative w-[400px] h-[400px] rounded-full overflow-hidden shadow-2xl border-4 border-white z-10">
+              <div className="relative w-100 h-100 rounded-full overflow-hidden shadow-2xl border-4 border-white z-10">
                 <Image
                   src="/hero-campus.png"
                   alt="Addis Ababa University Campus"
@@ -230,19 +235,19 @@ export default async function HomePage() {
         </div>
 
         {/* Mobile hero image fallback */}
-        <div className="lg:hidden relative w-full h-[240px] overflow-hidden">
+        <div className="lg:hidden relative w-full h-60 overflow-hidden">
           <div
             className="absolute inset-0 opacity-10"
             style={{ backgroundColor: "var(--aau-blue)" }}
           />
           <Image
-            src="/hero-campus.png"
+            src="/hero-campuss.png"
             alt="Addis Ababa University Campus"
             fill
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-white via-transparent to-transparent" />
         </div>
       </section>
 
@@ -314,27 +319,42 @@ export default async function HomePage() {
                   alt="AAU Logo"
                   className="h-40 w-auto object-contain"
                 />
-                <div>
-                  <div className="font-bold text-lg">EventGate</div>
-                  <div className="text-xs text-white/60">
-                    Addis Ababa University
-                  </div>
-                </div>
               </div>
             </div>
 
             {/* Column 3: Resources */}
             <div>
               <h4 className="font-semibold text-sm mb-4 tracking-wider uppercase">
+                Members
+              </h4>
+              <div className="flex gap-0 mb-4">
+                <div
+                  className="h-0.5 w-6 rounded-full"
+                  style={{ backgroundColor: "var(--aau-red)" }}
+                />
+                <div
+                  className="h-0.5 w-10 rounded-full ml-0.5"
+                  style={{ backgroundColor: "var(--aau-blue-light)" }}
+                />
+              </div>
+              <a
+                href={`${process.env.NEXT_PUBLIC_APP_URL}/login`}
+                className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors"
+              >
+                Login <ArrowUpRight className="h-3 w-3" />
+              </a>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm mb-4 tracking-wider uppercase">
                 Resources
               </h4>
               <div className="flex gap-0 mb-4">
                 <div
-                  className="h-[2px] w-6 rounded-full"
+                  className="h-0.5 w-6 rounded-full"
                   style={{ backgroundColor: "var(--aau-red)" }}
                 />
                 <div
-                  className="h-[2px] w-10 rounded-full ml-0.5"
+                  className="h-0.5 w-10 rounded-full ml-0.5"
                   style={{ backgroundColor: "var(--aau-blue-light)" }}
                 />
               </div>
@@ -352,32 +372,7 @@ export default async function HomePage() {
               </ul>
             </div>
 
-            {/* Column 4: Contact */}
-            <div>
-              <h4 className="font-semibold text-sm mb-4 tracking-wider uppercase">
-                Contact
-              </h4>
-              <div className="flex gap-0 mb-4">
-                <div
-                  className="h-[2px] w-6 rounded-full"
-                  style={{ backgroundColor: "var(--aau-red)" }}
-                />
-                <div
-                  className="h-[2px] w-10 rounded-full ml-0.5"
-                  style={{ backgroundColor: "var(--aau-blue-light)" }}
-                />
-              </div>
-              <ul className="space-y-2.5 text-sm text-white/60">
-                <li className="pt-1">
-                  <a
-                    href="mailto:info@aau.edu.et"
-                    className="hover:text-white transition-colors"
-                  >
-                    info@aau.edu.et
-                  </a>
-                </li>
-              </ul>
-            </div>
+         
           </div>
         </div>
 

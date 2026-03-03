@@ -22,13 +22,20 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
-  if (currentSessionEmail) {
+  // Don't hide header while session is loading - this prevents flicker during auth
+  // Only hide header when session is fully loaded AND we're not on auth pages
+  const isAuthPage = pathname === "/login" || pathname === "/sign-up";
+  if (currentSessionEmail && !isPending && !isAuthPage) {
     return null;
   }
+
+  // On auth pages, hide authenticated elements (email, sign out) so the header
+  // doesn't flash to authenticated state before redirect completes
+  const showAuthenticatedUI = currentSessionEmail && !isAuthPage;
 
   const currentSection = (() => {
     if (pathname === "/login") return "Sign In";
@@ -96,7 +103,7 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
               </Link>
             </div>
 
-            {currentSessionEmail && (
+            {showAuthenticatedUI && (
               <div className="hidden lg:block text-xs text-white/70 truncate max-w-md">
                 {currentSessionEmail}
               </div>
@@ -117,7 +124,7 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
                     <DialogTitle className="text-sm font-semibold tracking-wide">
                       Auth Menu
                     </DialogTitle>
-                    {currentSessionEmail && (
+                    {showAuthenticatedUI && (
                       <div className="mt-1 text-xs text-white/70 truncate">
                         {currentSessionEmail}
                       </div>
@@ -155,7 +162,7 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
                     </Link>
                   </nav>
 
-                  {currentSessionEmail && (
+                  {showAuthenticatedUI && (
                     <div className="border-t border-border p-3">
                       <Button
                         onClick={() => {
@@ -171,7 +178,7 @@ export function AuthHeader({ userEmail }: { userEmail: string }) {
                 </div>
               </DialogContent>
             </Dialog>
-            {currentSessionEmail && (
+            {showAuthenticatedUI && (
               <Button
                 onClick={handleSignOut}
                 variant="secondary"

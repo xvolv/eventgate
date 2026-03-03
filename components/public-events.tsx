@@ -64,7 +64,7 @@ function EventCard({
     >
       {/* Date badge */}
       <div
-        className="flex flex-col items-center justify-center px-4 py-3 min-w-[72px] text-white"
+        className="flex flex-col items-center justify-center px-4 py-3 min-w-18 text-white"
         style={{ backgroundColor: isPast ? "#94a3b8" : "var(--aau-red)" }}
       >
         <span className="text-[11px] font-bold tracking-wider uppercase">
@@ -77,11 +77,11 @@ function EventCard({
       <div className="flex-1 p-4 min-w-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h4 className="font-semibold text-base text-gray-900 truncate group-hover:text-[var(--aau-blue)] transition-colors">
+            <h4 className="font-semibold text-base text-gray-900 truncate group-hover:text-(--aau-blue) transition-colors">
               {event.title}
             </h4>
             <div className="flex items-center gap-1.5 mt-1">
-              <Users className="h-3.5 w-3.5 text-[var(--aau-blue)] flex-shrink-0" />
+              <Users className="h-3.5 w-3.5 text-(--aau-blue) shrink-0" />
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded-full"
                 style={{
@@ -123,11 +123,11 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
       <h3 className="text-xl font-bold text-gray-900">{children}</h3>
       <div className="flex gap-0 mt-2">
         <div
-          className="h-[3px] w-10 rounded-full"
+          className="h-0.75 w-10 rounded-full"
           style={{ backgroundColor: "var(--aau-red)" }}
         />
         <div
-          className="h-[3px] w-16 rounded-full ml-1"
+          className="h-0.75 w-16 rounded-full ml-1"
           style={{ backgroundColor: "var(--aau-blue)" }}
         />
       </div>
