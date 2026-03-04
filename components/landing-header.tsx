@@ -41,7 +41,7 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
   return (
     <header role="banner" className="sticky top-0 z-30 w-full">
       {/* Main header bar */}
-      <div className="w-full text-gray-900 shadow-sm bg-white border-b border-gray-200">
+      <div className="w-full text-gray-900  bg-white border-b border-gray-200">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-2 lg:px-8">
           {/* Left: Logo + Title */}
           <Link href="/" className="flex items-center gap-3 group">

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { HomeActions } from "./home-actions";
 import { LandingHeader } from "@/components/landing-header";
 import { PublicEvents } from "@/components/public-events";
+import { ClubLogosCarousel } from "@/components/club-logos-carousel";
 import Image from "next/image";
 import {
   CalendarCheck,
@@ -251,45 +252,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== CAMPUS LIFE IMAGE STRIP ===== */}
-      <section className="relative overflow-hidden">
-        <div className="grid grid-cols-3 h-[200px] sm:h-[260px]">
-          <div className="relative overflow-hidden">
-            <Image
-              src="/hero-campus.png"
-              alt="Campus Life"
-              fill
-              className="object-cover hover:scale-105 transition-transform duration-500"
-            />
-            <div
-              className="absolute inset-0"
-              style={{ backgroundColor: "rgba(0,86,145,0.3)" }}
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <Image
-              src="/hero-event.png"
-              alt="University Event"
-              fill
-              className="object-cover hover:scale-105 transition-transform duration-500"
-            />
-            <div
-              className="absolute inset-0"
-              style={{ backgroundColor: "rgba(200,16,46,0.2)" }}
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <Image
-              src="/hero-students.png"
-              alt="Students Collaborating"
-              fill
-              className="object-cover hover:scale-105 transition-transform duration-500"
-            />
-            <div
-              className="absolute inset-0"
-              style={{ backgroundColor: "rgba(0,86,145,0.3)" }}
-            />
-          </div>
+      {/* ===== CLUB LOGOS CAROUSEL ===== */}
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <ClubLogosCarousel />
         </div>
       </section>
 
@@ -323,27 +289,7 @@ export default async function HomePage() {
             </div>
 
             {/* Column 3: Resources */}
-            <div>
-              <h4 className="font-semibold text-sm mb-4 tracking-wider uppercase">
-                Members
-              </h4>
-              <div className="flex gap-0 mb-4">
-                <div
-                  className="h-0.5 w-6 rounded-full"
-                  style={{ backgroundColor: "var(--aau-red)" }}
-                />
-                <div
-                  className="h-0.5 w-10 rounded-full ml-0.5"
-                  style={{ backgroundColor: "var(--aau-blue-light)" }}
-                />
-              </div>
-              <a
-                href={`${process.env.NEXT_PUBLIC_APP_URL}/login`}
-                className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors"
-              >
-                Login <ArrowUpRight className="h-3 w-3" />
-              </a>
-            </div>
+
             <div>
               <h4 className="font-semibold text-sm mb-4 tracking-wider uppercase">
                 Resources
@@ -366,13 +312,25 @@ export default async function HomePage() {
                     rel="noopener noreferrer"
                     className="hover:text-white transition-colors flex items-center gap-2"
                   >
-                    <ArrowRight className="h-3 w-3" /> AAU Website
+                    <ArrowRight className="h-4 w-4" /> AAU Website
                   </a>
+                </li>
+                <li>
+                  {" "}
+                  {!isAuthed && (
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_APP_URL}/login`}
+                      className="inline-flex items-center gap-1 text-sm text-white/60  transition-colors"
+                    >
+                      <ArrowRight className="h-4 w-4 mr-1" />{" "}
+                      <span className="hover:text-white flex">
+                        Login <ArrowUpRight className="h-3 w-3" />{" "}
+                      </span>
+                    </a>
+                  )}
                 </li>
               </ul>
             </div>
-
-         
           </div>
         </div>
 

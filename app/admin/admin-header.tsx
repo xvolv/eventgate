@@ -26,7 +26,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
@@ -38,12 +38,12 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
     return "Admin";
   })();
 
-  // If session is null (signed out), redirect to home immediately
+  // If session is null (signed out) AND not still loading, redirect to home
   React.useEffect(() => {
-    if (session === null) {
+    if (!isPending && session === null) {
       router.push("/");
     }
-  }, [session, router]);
+  }, [session, isPending, router]);
 
   const handleSignOut = async () => {
     try {
