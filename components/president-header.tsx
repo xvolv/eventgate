@@ -50,10 +50,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-2 lg:px-8">
           {/* Left: Logo + Title */}
           <div className="flex items-center min-w-0">
-            <Link
-              href="/president"
-              className="flex items-center gap-3 group min-w-0"
-            >
+            <Link href="/" className="flex items-center gap-3 group min-w-0">
               <img
                 src="/aauLogo.png"
                 alt="AAU Logo"
@@ -107,7 +104,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
               <DialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="hidden md:inline-flex h-9 px-3 gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md border border-gray-200"
+                  className="hidden md:inline-flex h-9 px-3 gap-2  text-gray-700  border-none bg-white hover:bg-white "
                   aria-label="Open account settings"
                 >
                   <Settings className="h-4 w-4" />
@@ -138,7 +135,7 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                             ? "default"
                             : "ghost"
                         }
-                        className="h-10 w-full justify-start rounded-none"
+                        className="h-10 w-full justify-center rounded-none border border-red-200"
                       >
                         Archive
                       </Button>

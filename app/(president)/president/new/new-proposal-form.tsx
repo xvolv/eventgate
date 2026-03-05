@@ -61,6 +61,12 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Locations for dropdown
+  const [locations, setLocations] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+
   useEffect(() => {
     const fetchClubInfo = async () => {
       try {
@@ -90,6 +96,22 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
       }
     };
     fetchClubInfo();
+
+    // Fetch locations for dropdown
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch("/api/locations", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          setLocations(data.locations || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch locations:", error);
+      } finally {
+        setLocationsLoading(false);
+      }
+    };
+    fetchLocations();
   }, []);
 
   const validate = () => {
@@ -353,7 +375,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     if (errors.title)
                       setErrors((prev) => ({ ...prev, title: "" }));
                   }}
-                  className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
+                  className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
                 />
                 {errors.title && (
                   <p className="text-xs text-red-600">{errors.title}</p>
@@ -369,7 +391,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     type="button"
                     variant="outline"
                     onClick={addOccurrence}
-                    className="rounded-lg border-[var(--aau-blue)] text-[var(--aau-blue)] hover:bg-[var(--aau-blue)] hover:text-white"
+                    className="rounded-none border-(--aau-blue) text-(--aau-blue) hover:bg-(--aau-blue) hover:text-white"
                   >
                     + Add Another Day/Session
                   </Button>
@@ -436,7 +458,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                     }));
                                   }
                                 }}
-                                className={`rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] ${
+                                className={`rounded-none border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue) ${
                                   !o.startDateTime
                                     ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
                                     : ""
@@ -481,7 +503,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                     }));
                                   }
                                 }}
-                                className={`rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] ${
+                                className={`rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] ${
                                   !o.endDateTime
                                     ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
                                     : ""
@@ -508,24 +530,57 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                           >
                             Location
                           </Label>
-                          <Input
-                            id={`location-${idx}`}
-                            required
-                            placeholder="Conference Hall A"
-                            value={o.location}
-                            onChange={(e) => {
-                              updateOccurrence(idx, {
-                                location: e.target.value,
-                              });
-                              if (errors[locationKey]) {
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  [locationKey]: "",
-                                }));
-                              }
-                            }}
-                            className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
-                          />
+                          {locationsLoading ? (
+                            <Input
+                              id={`location-${idx}`}
+                              disabled
+                              placeholder="Loading locations..."
+                              className="rounded-lg border-gray-200"
+                            />
+                          ) : locations.length > 0 ? (
+                            <select
+                              id={`location-${idx}`}
+                              value={o.location}
+                              onChange={(e) => {
+                                updateOccurrence(idx, {
+                                  location: e.target.value,
+                                });
+                                if (errors[locationKey]) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    [locationKey]: "",
+                                  }));
+                                }
+                              }}
+                              className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[var(--aau-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--aau-blue)]"
+                            >
+                              <option value="">Select a location</option>
+                              {locations.map((loc) => (
+                                <option key={loc.id} value={loc.name}>
+                                  {loc.name}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <Input
+                              id={`location-${idx}`}
+                              required
+                              placeholder="Conference Hall A"
+                              value={o.location}
+                              onChange={(e) => {
+                                updateOccurrence(idx, {
+                                  location: e.target.value,
+                                });
+                                if (errors[locationKey]) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    [locationKey]: "",
+                                  }));
+                                }
+                              }}
+                              className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
+                            />
+                          )}
                           {errors[locationKey] && (
                             <p className="text-xs text-red-600">
                               {errors[locationKey]}
@@ -557,7 +612,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                         if (errors.presidentName)
                           setErrors((prev) => ({ ...prev, presidentName: "" }));
                       }}
-                      className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
+                      className="rounded-none border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue) pr-10"
                     />
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
                       <div
@@ -598,7 +653,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                       placeholder="Jane Smith"
                       value={vpName}
                       onChange={(e) => setVpName(e.target.value)}
-                      className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
+                      className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
                     />
                     {officers.vicePresident && (
                       <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -642,7 +697,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                       placeholder="Bob Johnson"
                       value={secretaryName}
                       onChange={(e) => setSecretaryName(e.target.value)}
-                      className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
+                      className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
                     />
                     {officers.secretary && (
                       <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -693,7 +748,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     if (errors.description)
                       setErrors((prev) => ({ ...prev, description: "" }));
                   }}
-                  className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
+                  className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
                 />
                 {errors.description && (
                   <p className="text-xs text-red-600">{errors.description}</p>
@@ -701,7 +756,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
               </div>
 
               {/* Collaborators Section */}
-              <div className="space-y-4 p-5 rounded-xl border border-gray-200">
+              <div className="space-y-4 p-5 rounded-none border border-gray-200">
                 <div className="flex items-center justify-start gap-3">
                   <Label className="text-base font-semibold text-gray-800">
                     Collaborating Organizations
@@ -711,7 +766,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsCollaboratorModalOpen(true)}
-                    className="rounded-lg border-gray-300 text-gray-700 hover:bg-gray-100"
+                    className="rounded-none border-gray-300 text-gray-700 hover:bg-gray-100"
                   >
                     + Collaborators
                   </Button>
@@ -741,7 +796,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
               </div>
 
               {/* Guests Section */}
-              <div className="space-y-4 p-5 rounded-xl border border-gray-200">
+              <div className="space-y-4 p-5 rounded-none border border-gray-200">
                 <div className="flex items-center justify-start gap-3">
                   <Label className="text-base font-semibold text-gray-800">
                     Invited Guests
@@ -751,7 +806,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsGuestModalOpen(true)}
-                    className="rounded-lg border-gray-300 text-gray-700 hover:bg-gray-100"
+                    className="rounded-none border-gray-300 text-gray-700 hover:bg-gray-100"
                   >
                     + Guests
                   </Button>
@@ -799,7 +854,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
 
               <Button
                 type="submit"
-                className="w-full md:w-auto rounded-lg text-white font-medium py-6"
+                className="w-full md:w-auto rounded-none text-white font-medium py-6"
                 style={{ backgroundColor: "var(--aau-blue)" }}
                 disabled={submitting}
               >

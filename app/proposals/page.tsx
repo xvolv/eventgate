@@ -354,7 +354,7 @@ export default function ProposalsPage() {
                 return (
                   <Card
                     key={proposal.id}
-                    className="border border-gray-200 rounded-none hover:shadow-xl transition-shadow"
+                    className="border border-gray-200 rounded-none  transition-shadow"
                   >
                     <CardContent className="p-0">
                       <div
@@ -369,7 +369,7 @@ export default function ProposalsPage() {
                         }}
                         className="relative flex items-center gap-3 px-4 py-3 cursor-pointer group"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-gray-100 text-xs font-medium text-gray-700 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100 w-xl">
+                        <div className="pointer-events-none absolute inset-0 bg-gray-100/70 text-xs font-medium text-gray-700 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                           Click to see details
                         </div>
                         <div className="min-w-0 flex-1">
@@ -422,7 +422,10 @@ export default function ProposalsPage() {
                             </Button>
                           )}
                           <AlertDialog>
-                            <AlertDialogTrigger asChild className="rounded-none">
+                            <AlertDialogTrigger
+                              asChild
+                              className="rounded-none"
+                            >
                               <Button
                                 variant="destructive"
                                 disabled={

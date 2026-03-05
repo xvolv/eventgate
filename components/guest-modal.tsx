@@ -147,6 +147,7 @@ export function GuestModal({
             type="button"
             onClick={handleAddGuest}
             className="w-full rounded-none"
+            style={{ backgroundColor: "var(--aau-blue)" }}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Guest
@@ -203,6 +204,7 @@ export function GuestModal({
             type="button"
             onClick={handleSaveAndClose}
             className="rounded-none"
+            style={{ backgroundColor: "var(--aau-blue)" }}
           >
             Done ({tempGuests.length} guests)
           </Button>

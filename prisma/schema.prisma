@@ -270,3 +270,14 @@ enum ProposalStatus {
   DIRECTOR_REJECTED
   RESUBMISSION_REQUIRED
 }
+
+// Location model for predefined event venues
+model Location {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  capacity    Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -91,7 +91,7 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
                 <DialogTrigger asChild>
                   <Button
                     variant="secondary"
-                    className="hidden md:inline-flex h-9 px-3 gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md border border-gray-200"
+                    className="hidden md:inline-flex h-9 px-3 gap-2 bg-white hover:bg-white text-gray-700"
                     aria-label="Open account settings"
                   >
                     <Settings className="h-4 w-4" />
