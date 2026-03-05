@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendProposalStatusEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -270,8 +271,25 @@ export async function POST(request: Request) {
       });
     }
 
-    // Send notifications to club leads
-    // TODO: Implement email notification system for club leads
+    // Notify club leads (VP / Secretary) about the new proposal
+    if (clubLeads.length > 0) {
+      const eventTitle = String(body.eventTitle || "Untitled Event");
+      await Promise.all(
+        clubLeads.map((lead) =>
+          sendProposalStatusEmail({
+            to: lead.email,
+            proposalId: proposal.id,
+            eventTitle,
+            subject: "EventGate: New proposal awaiting your review",
+            heading: "New Proposal Submitted",
+            message:
+              "A new event proposal has been submitted and requires your review. Please review it at your earliest convenience.",
+            actionLabel: "Review Proposal",
+            actionPath: lead.role === "VP" ? "/vp" : "/secretary",
+          }),
+        ),
+      );
+    }
 
     return jsonNoStore(
       {

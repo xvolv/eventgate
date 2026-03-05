@@ -118,6 +118,41 @@ export async function POST(
       }
     }
 
+    // When SU approves → notify Director(s)
+    if (suApproved) {
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          event: { select: { title: true } },
+        },
+      });
+
+      const directorGrants = await prisma.systemRoleGrant.findMany({
+        where: { role: "DIRECTOR" },
+        select: { email: true },
+      });
+
+      if (directorGrants.length > 0) {
+        const eventTitle = proposal?.event?.title || "Untitled Event";
+        await Promise.all(
+          directorGrants.map((grant) =>
+            sendProposalStatusEmail({
+              to: grant.email,
+              proposalId,
+              eventTitle,
+              subject: "EventGate: Proposal awaiting Director review",
+              heading: "Proposal Ready for Director Review",
+              message:
+                "A proposal has been approved by the Student Union and is now awaiting your review.",
+              actionLabel: "Review Proposal",
+              actionPath: "/director",
+            }),
+          ),
+        );
+      }
+    }
+
     return NextResponse.json({
       message: `Proposal ${
         suApproved ? "approved" : "rejected"

@@ -42,27 +42,50 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
     <header role="banner" className="sticky top-0 z-30 w-full">
       {/* Main header bar */}
       <div className="w-full text-gray-900  bg-white border-b border-gray-200">
-        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-2 lg:px-8">
+        <div className="container mx-auto flex items-center gap-4 px-4 py-2 lg:px-8">
           {/* Left: Logo + Title */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <img
-              src="https://aau.edu.et/images/aauLogo.png"
-              alt="AAU Logo"
-              className="h-12 w-auto object-contain"
-            />
-            <div className="h-10 w-0.5 mx-1 bg-cyan-700" />
-            <div className="min-w-0">
-              <div className="font-bold text-lg sm:text-xl tracking-wide leading-tight">
-                EventGate
+          <div className="flex items-center min-w-0">
+            <Link href="/" className="flex items-center gap-3 group min-w-0">
+              <img
+                src="/aauLogo.png"
+                alt="AAU Logo"
+                className="h-12 w-auto object-contain"
+              />
+              <div className="h-10 w-0.5 mx-1 bg-cyan-700" />
+              <div className="min-w-0">
+                <div className="font-bold text-lg sm:text-xl tracking-wide leading-tight">
+                  EventGate
+                </div>
+                <div className="text-[11px] sm:text-xs text-gray-500 tracking-wider uppercase">
+                  Addis Ababa University
+                </div>
               </div>
-              <div className="text-[11px] sm:text-xs text-gray-500 tracking-wider uppercase">
-                Addis Ababa University
-              </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
+
+          {/* Center: CTAs (home page only) */}
+          {pathname === "/" && (
+            <nav className="hidden md:flex flex-1 items-center justify-center gap-2">
+              <a
+                href="#upcoming-events"
+                className="relative inline-flex items-center h-9 px-2 text-sm font-medium text-gray-700 hover:text-(--aau-blue) transition-colors after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-0.5 after:h-[2px] after:bg-(--aau-blue) after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100"
+              >
+                Upcoming Events
+              </a>
+              <a
+                href="#past-events"
+                className="relative inline-flex items-center h-9 px-2 text-sm font-medium text-gray-700 hover:text-(--aau-blue) transition-colors after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-0.5 after:h-[2px] after:bg-(--aau-blue) after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100"
+              >
+                Past Events
+              </a>
+            </nav>
+          )}
+
+          {/* Spacer when CTAs are hidden (keeps account aligned right) */}
+          {pathname !== "/" && <div className="flex-1" />}
 
           {/* Right: Account (only show if logged in) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
             {isAuthed && (
               <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
                 <DialogTrigger asChild>

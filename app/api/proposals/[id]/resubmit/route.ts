@@ -110,6 +110,18 @@ export async function POST(
       select: { email: true, role: true },
     });
 
+    // Recreate lead approval tracking entries so the approval count is correct
+    if (leadGrants.length > 0) {
+      await prisma.proposalLeadApproval.createMany({
+        data: leadGrants.map((lead) => ({
+          proposalId,
+          leadRole: lead.role,
+          leadEmail: lead.email,
+          approved: false,
+        })),
+      });
+    }
+
     await Promise.all(
       leadGrants.map((grant) =>
         sendProposalStatusEmail({

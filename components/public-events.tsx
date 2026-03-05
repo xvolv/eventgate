@@ -258,17 +258,20 @@ export function PublicEvents({
   return (
     <>
       {initialUpcomingEvents.length > 0 && (
-        <div>
+        <section id="upcoming-events" className="scroll-mt-24">
           <SectionTitle>Upcoming Events</SectionTitle>
           <EventsSlider events={initialUpcomingEvents} />
-        </div>
+        </section>
       )}
 
       {initialPassedEvents.length > 0 && (
-        <div className={initialUpcomingEvents.length > 0 ? "mt-10" : ""}>
+        <section
+          id="past-events"
+          className={`${initialUpcomingEvents.length > 0 ? "mt-10 " : ""}scroll-mt-24`}
+        >
           <SectionTitle>Past Events</SectionTitle>
           <EventsSlider events={initialPassedEvents} isPast />
-        </div>
+        </section>
       )}
     </>
   );

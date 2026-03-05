@@ -91,6 +91,35 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
+
+    // Capture phone number before delegating to better-auth
+    const phoneNumber = normalizeString(body?.phoneNumber);
+
+    if (!phoneNumber) {
+      return NextResponse.json(
+        {
+          message: "Phone number is required for club leads.",
+          code: "PHONE_REQUIRED",
+        },
+        { status: 400 }
+      );
+    }
+
+    const response = await handler.POST(request);
+
+    // After successful signup, persist the phone number
+    if (phoneNumber && response.ok) {
+      try {
+        await prisma.user.update({
+          where: { email },
+          data: { phoneNumber },
+        });
+      } catch {
+        // Non-critical — don't fail signup if phone update fails
+      }
+    }
+
+    return response;
   }
 
   return handler.POST(request);

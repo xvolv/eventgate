@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { HomeActions } from "./home-actions";
 import { LandingHeader } from "@/components/landing-header";
 import { PublicEvents } from "@/components/public-events";
-import { ClubLogosCarousel } from "@/components/club-logos-carousel";
-import Image from "next/image";
 import {
   CalendarCheck,
   ShieldCheck,
@@ -141,121 +139,39 @@ export default async function HomePage() {
 
       {/* ===== HERO SECTION ===== */}
       <section className="relative overflow-hidden">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-0 min-h-130">
-            {/* Left: Content */}
-            <div className="flex flex-col justify-center py-12 lg:py-20 lg:pr-12">
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold leading-tight text-gray-900">
-                AAU Campus{" "}
-                <span style={{ color: "var(--aau-blue)" }}>Events</span>
-              </h1>
+        {/* {image on the left section} */}
 
-              {/* Dual-color underline */}
-              <div className="flex gap-0 mt-4 mb-6">
-                <div
-                  className="h-1 w-12 rounded-full"
-                  style={{ backgroundColor: "var(--aau-red)" }}
-                />
-                <div
-                  className="h-1 w-20 rounded-full ml-1"
-                  style={{ backgroundColor: "var(--aau-blue)" }}
-                />
-              </div>
+        <div className="container mx-auto px-12">
+          <div className="flex flex-col justify-center py-12 lg:py-20">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold leading-tight text-gray-900">
+              AAU Campus{" "}
+              <span style={{ color: "var(--aau-blue)" }}>Events</span>
+            </h1>
 
-              <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
-                Discover upcoming events happening across Addis Ababa University
-                campus. Stay informed about clubs, activities, and campus life.
-              </p>
-
-              <HomeActions
-                isAuthed={isAuthed}
-                isVerified={isVerified}
-                userEmail={userEmail}
-                dashboardHref={dashboardHref}
-              />
-            </div>
-
-            {/* Right: Hero image with decorative shape */}
-            <div className="relative hidden lg:flex items-center justify-center py-10">
-              {/* Background decorative circle */}
+            {/* Dual-color underline */}
+            <div className="flex gap-0 mt-4 mb-6">
               <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 rounded-full opacity-10"
+                className="h-1 w-12 rounded-full"
+                style={{ backgroundColor: "var(--aau-red)" }}
+              />
+              <div
+                className="h-1 w-20 rounded-full ml-1"
                 style={{ backgroundColor: "var(--aau-blue)" }}
               />
-              {/* Decorative ring */}
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-130 h-130 rounded-full border-2 opacity-20"
-                style={{ borderColor: "var(--aau-blue)" }}
-              />
-
-              {/* Main image — circular crop like AAU site */}
-              <div className="relative w-100 h-100 rounded-full overflow-hidden shadow-2xl border-4 border-white z-10">
-                <Image
-                  src="/hero-campus.png"
-                  alt="Addis Ababa University Campus"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-
-              {/* Floating accent cards */}
-              <div
-                className="absolute top-12 right-4 bg-white rounded-lg shadow-lg px-4 py-3 z-20 flex items-center gap-3 border-l-4"
-                style={{ borderColor: "var(--aau-red)" }}
-              >
-                <CalendarCheck
-                  className="h-8 w-8"
-                  style={{ color: "var(--aau-red)" }}
-                />
-                <div>
-                  <div className="text-sm font-bold text-gray-900">Campus</div>
-                  <div className="text-xs text-gray-500">Activities</div>
-                </div>
-              </div>
-
-              <div
-                className="absolute bottom-16 left-0 bg-white rounded-lg shadow-lg px-4 py-3 z-20 flex items-center gap-3 border-l-4"
-                style={{ borderColor: "var(--aau-blue)" }}
-              >
-                <ShieldCheck
-                  className="h-8 w-8"
-                  style={{ color: "var(--aau-blue)" }}
-                />
-                <div>
-                  <div className="text-sm font-bold text-gray-900">
-                    Discover Events
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Explore Campus Life
-                  </div>
-                </div>
-              </div>
             </div>
+
+            <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
+              Discover upcoming events happening across Addis Ababa University
+              campus. Stay informed about clubs, activities, and campus life.
+            </p>
+
+            <HomeActions
+              isAuthed={isAuthed}
+              isVerified={isVerified}
+              userEmail={userEmail}
+              dashboardHref={dashboardHref}
+            />
           </div>
-        </div>
-
-        {/* Mobile hero image fallback */}
-        <div className="lg:hidden relative w-full h-60 overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{ backgroundColor: "var(--aau-blue)" }}
-          />
-          <Image
-            src="/hero-campuss.png"
-            alt="Addis Ababa University Campus"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-linear-to-t from-white via-transparent to-transparent" />
-        </div>
-      </section>
-
-      {/* ===== CLUB LOGOS CAROUSEL ===== */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <ClubLogosCarousel />
         </div>
       </section>
 
@@ -281,7 +197,7 @@ export default async function HomePage() {
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-3 mb-4">
                 <img
-                  src="https://aau.edu.et/images/logoWhite.svg"
+                  src="logoWhite.svg"
                   alt="AAU Logo"
                   className="h-40 w-auto object-contain"
                 />
