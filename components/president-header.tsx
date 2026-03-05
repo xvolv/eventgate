@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { MenuIcon, Settings } from "lucide-react";
@@ -28,13 +27,6 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
-  const currentSection = (() => {
-    if (pathname === "/president") return "My Proposals";
-    if (pathname === "/president/new") return "New Proposal";
-    if (pathname === "/president/archive") return "Archive";
-    return "Event Proposals";
-  })();
-
   // If session is null (signed out), redirect to home immediately
   React.useEffect(() => {
     if (!isPending && session === null) {
@@ -52,72 +44,88 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
   };
 
   return (
-    <header
-      className="sticky top-0 z-30 w-full border-b border-border bg-background"
-      role="banner"
-    >
-      <div className="w-full bg-slate-900 text-white">
-        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="font-semibold tracking-wide">
-              EventGate
+    <header role="banner" className="sticky top-0 z-30 w-full">
+      {/* Main header bar - white like landing page */}
+      <div className="w-full text-gray-900 bg-white border-b border-gray-200">
+        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-2 lg:px-8">
+          {/* Left: Logo + Title */}
+          <div className="flex items-center min-w-0">
+            <Link
+              href="/president"
+              className="flex items-center gap-3 group min-w-0"
+            >
+              <img
+                src="/aauLogo.png"
+                alt="AAU Logo"
+                className="h-12 w-auto object-contain"
+              />
+              <div className="h-10 w-0.5 mx-1 bg-cyan-700" />
+              <div className="min-w-0">
+                <div className="font-bold text-lg sm:text-xl tracking-wide leading-tight">
+                  EventGate
+                </div>
+                <div className="text-[11px] sm:text-xs text-gray-500 tracking-wider uppercase">
+                  Addis Ababa University
+                </div>
+              </div>
             </Link>
-            <div className="hidden sm:block h-5 w-px bg-white/20" />
-            <div className="min-w-0">
-              <div className="text-sm font-medium leading-5">
-                Event Proposal Portal
-              </div>
-              <div className="hidden md:block text-xs text-white/70 truncate ">
-                {currentSection}
-              </div>
-            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-2 ">
-              <Link href="/president" onClick={() => setMenuOpen(false)}>
-                <Button
-                  variant={
-                    isActive(pathname, "/president") ? "default" : "outline"
-                  }
-                  className="border-none h-9 text-white bg-slate-900 hover:bg-slate-900 hover:text-white"
-                >
-                  My Proposals
-                </Button>
-              </Link>
-              <Link href="/president/new" onClick={() => setMenuOpen(false)}>
-                <Button
-                  variant={
-                    isActive(pathname, "/president/new") ? "default" : "outline"
-                  }
-                  className="h-9 text-white bg-slate-900 hover:text-white hover:bg-salte-900 border-none"
-                >
-                  New Proposal
-                </Button>
-              </Link>
-            </div>
+          {/* Center: Navigation Links */}
+          <nav className="hidden md:flex flex-1 items-center justify-center gap-2">
+            <Link
+              href="/president"
+              className={`relative inline-flex items-center h-9 px-3 text-sm font-medium transition-colors ${
+                isActive(pathname, "/president")
+                  ? "text-[var(--aau-blue)]"
+                  : "text-gray-700 hover:text-[var(--aau-blue)]"
+              }`}
+            >
+              My Proposals
+              {isActive(pathname, "/president") && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[2px] bg-[var(--aau-blue)]" />
+              )}
+            </Link>
+            <Link
+              href="/president/new"
+              className={`relative inline-flex items-center h-9 px-3 text-sm font-medium transition-colors ${
+                isActive(pathname, "/president/new")
+                  ? "text-[var(--aau-blue)]"
+                  : "text-gray-700 hover:text-[var(--aau-blue)]"
+              }`}
+            >
+              New Proposal
+              {isActive(pathname, "/president/new") && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[2px] bg-[var(--aau-blue)]" />
+              )}
+            </Link>
+          </nav>
 
+          {/* Right: Account and actions */}
+          <div className="flex items-center gap-2 justify-end">
             <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="hidden lg:inline-flex h-9 w-9 p-0 bg-transparent text-white hover:bg-transparent"
+                  className="hidden md:inline-flex h-9 px-3 gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md border border-gray-200"
                   aria-label="Open account settings"
                 >
-                  <Settings className="h-5 w-5" />
+                  <Settings className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="fixed right-4 top-16 left-auto bottom-auto w-[18rem] max-w-[calc(100%-2rem)] translate-x-0 translate-y-0 rounded-none p-0">
                 <div className="flex flex-col">
-                  <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
+                  <div
+                    className="px-5 py-4 text-white"
+                    style={{ backgroundColor: "var(--aau-blue)" }}
+                  >
                     <DialogTitle className="text-sm font-semibold tracking-wide">
                       Account
                     </DialogTitle>
-                    <div className="mt-1 text-xs text-white/70 truncate">
+                    <div className="mt-1.5 text-xs text-white/70 truncate">
                       {currentSessionEmail}
                     </div>
                   </div>
-
                   <div className="p-2">
                     <Link
                       href="/president/archive"
@@ -136,14 +144,14 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                       </Button>
                     </Link>
                   </div>
-
                   <div className="border-t border-border p-2">
                     <Button
                       onClick={() => {
                         setAccountOpen(false);
                         handleSignOut();
                       }}
-                      className="h-10 w-full rounded-none"
+                      variant="outline"
+                      className="h-10 w-full rounded-none gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                     >
                       Sign out
                     </Button>
@@ -152,22 +160,26 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
               </DialogContent>
             </Dialog>
 
+            {/* Mobile menu */}
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="md:hidden h-9 w-9 p-0 bg-white text-slate-900 hover:bg-white/90"
-                  aria-label="Open proposals menu"
+                  className="md:hidden h-9 w-9 p-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  aria-label="Open menu"
                 >
                   <MenuIcon className="h-5 w-5" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="fixed right-0 top-0 left-auto bottom-0 h-dvh w-[20rem] max-w-[calc(100%-3rem)] translate-x-0 translate-y-0 rounded-none p-0 sm:max-w-[20rem]">
                 <div className="flex h-full flex-col">
-                  <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
+                  <div className="border-b border-gray-200 bg-white px-4 py-4 text-gray-900">
                     <DialogTitle className="text-sm font-semibold tracking-wide">
-                      Proposals Menu
+                      Menu
                     </DialogTitle>
+                    <div className="mt-1 text-xs text-gray-500 truncate">
+                      {currentSessionEmail}
+                    </div>
                   </div>
 
                   <nav aria-label="Proposals navigation" className="flex-1 p-2">
@@ -201,15 +213,6 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                         New Proposal
                       </Button>
                     </Link>
-                  </nav>
-
-                  <div className="border-t border-border p-3">
-                    <div className="text-xs text-muted-foreground px-1 pb-2">
-                      Account
-                    </div>
-                    <div className="text-xs text-muted-foreground px-1 pb-3 truncate">
-                      {currentSessionEmail}
-                    </div>
                     <Link
                       href="/president/archive"
                       onClick={() => setMenuOpen(false)}
@@ -219,19 +222,23 @@ export function PresidentHeader({ userEmail }: { userEmail: string }) {
                         variant={
                           isActive(pathname, "/president/archive")
                             ? "default"
-                            : "outline"
+                            : "ghost"
                         }
                         className="h-10 w-full justify-start rounded-none"
                       >
                         Archive
                       </Button>
                     </Link>
+                  </nav>
+
+                  <div className="border-t border-gray-200 p-3">
                     <Button
                       onClick={() => {
                         setMenuOpen(false);
                         handleSignOut();
                       }}
-                      className="h-10 w-full rounded-none mt-2"
+                      variant="outline"
+                      className="h-10 w-full rounded-none gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                     >
                       Sign out
                     </Button>
