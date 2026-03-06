@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// Cache club info for 60 seconds
+export const revalidate = 60;
+
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   const user = session?.user;
@@ -13,7 +16,7 @@ export async function GET(request: Request) {
   if (!user.emailVerified) {
     return NextResponse.json(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -44,13 +47,13 @@ export async function GET(request: Request) {
   if (!presidentGrant) {
     return NextResponse.json(
       { message: "Only club presidents can access this endpoint" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
   // Get user information for all officers
   const officerEmails = presidentGrant.club.roleGrants.map(
-    (grant) => grant.email
+    (grant) => grant.email,
   );
   const users = await prisma.user.findMany({
     where: {
@@ -65,21 +68,24 @@ export async function GET(request: Request) {
   });
 
   // Create a map for quick lookup
-  const userMap = users.reduce((acc, user) => {
-    acc[user.email] = user;
-    return acc;
-  }, {} as Record<string, { name: string; email: string }>);
+  const userMap = users.reduce(
+    (acc, user) => {
+      acc[user.email] = user;
+      return acc;
+    },
+    {} as Record<string, { name: string; email: string }>,
+  );
 
   // Extract officer information with user names
   const officers = {
     president: presidentGrant.club.roleGrants.find(
-      (g: any) => g.role === "PRESIDENT"
+      (g: any) => g.role === "PRESIDENT",
     ),
     vicePresident: presidentGrant.club.roleGrants.find(
-      (g: any) => g.role === "VP"
+      (g: any) => g.role === "VP",
     ),
     secretary: presidentGrant.club.roleGrants.find(
-      (g: any) => g.role === "SECRETARY"
+      (g: any) => g.role === "SECRETARY",
     ),
   };
 

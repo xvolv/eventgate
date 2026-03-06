@@ -23,7 +23,7 @@ export default function NewProposalPage() {
   const { data } = useSession();
   const router = useRouter();
 
-  const minDateTimeValue = addDays(new Date(), 7).toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM for datetime-local
+  const minDateTimeValue = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM for datetime-local
 
   type EventOccurrenceForm = {
     startDateTime: string;
@@ -61,8 +61,6 @@ export default function NewProposalPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Fetch club information on component mount
   useEffect(() => {
     const fetchClubInfo = async () => {
       try {
@@ -154,12 +152,7 @@ export default function NewProposalPage() {
       .sort((a, b) => a.start.getTime() - b.start.getTime());
 
     if (parsed.length > 0) {
-      const earliest = parsed[0].start;
-      const minStart = addDays(new Date(), 7);
-      if (isBefore(earliest, minStart)) {
-        nextErrors["occurrences.0.startDateTime"] =
-          "Event must be at least 7 days from now.";
-      }
+      // Removed: Event must be at least 7 days from now validation
 
       for (let i = 0; i < parsed.length - 1; i++) {
         if (parsed[i].end.getTime() > parsed[i + 1].start.getTime()) {
@@ -292,7 +285,9 @@ export default function NewProposalPage() {
               <p className="text-sm font-medium text-gray-700">
                 {clubInfo.name.toUpperCase()}
               </p>
-              <p className="text-[10px] absolute top-5 left-7 text-muted-foreground">President Account</p>
+              <p className="text-[10px] absolute top-5 left-7 text-muted-foreground">
+                President Account
+              </p>
             </div>
           )}
         </div>

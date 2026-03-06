@@ -12,6 +12,7 @@ model User {
   email         String              @unique
   emailVerified Boolean             @default(false)
   name          String
+  phoneNumber   String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   accounts      Account[]
@@ -268,4 +269,15 @@ enum ProposalStatus {
   DIRECTOR_APPROVED
   DIRECTOR_REJECTED
   RESUBMISSION_REQUIRED
+}
+
+// Location model for predefined event venues
+model Location {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  capacity    Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

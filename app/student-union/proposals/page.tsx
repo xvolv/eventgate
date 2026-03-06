@@ -297,7 +297,7 @@ export default function StudentUnionProposalsPage() {
                         <Textarea
                           id={`comments-${proposal.id}`}
                           placeholder="Enter your comments and reasoning..."
-                          className="w-full min-h-[80px] p-3 border border-input bg-background text-sm"
+                          className="w-full min-h-20 p-3 border border-input bg-background text-sm"
                         />
                       </div>
 
@@ -371,7 +371,7 @@ export default function StudentUnionProposalsPage() {
       {/* Toast Notification */}
       {(message || error) && toastOpen && (
         <div
-          className="fixed bottom-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]"
+          className="fixed bottom-4 right-4 z-50 w-88 max-w-[calc(100vw-2rem)]"
           role="status"
           aria-live={error ? "assertive" : "polite"}
         >

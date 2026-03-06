@@ -21,6 +21,7 @@ interface Proposal {
   id: string;
   status: string;
   createdAt: string;
+  updatedAt?: string;
   event: {
     title?: string;
     description?: string;
@@ -52,20 +53,24 @@ interface Proposal {
     leadEmail: string;
     approved: boolean;
     comments?: string;
+    updatedAt?: string;
   }>;
 }
 
 export default function SecretaryPage() {
   const { data, isPending } = useSession();
+  const userEmail = data?.user?.email?.toLowerCase();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [comments, setComments] = useState<{ [key: string]: string }>({});
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
     null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showRejectReason, setShowRejectReason] = useState(false);
 
   useEffect(() => {
     if (isPending) return;
@@ -77,6 +82,10 @@ export default function SecretaryPage() {
           throw new Error("Failed to fetch proposals");
         }
         const data = await response.json();
+        console.log(
+          "[Secretary] Fetched proposals:",
+          JSON.stringify(data.approvals, null, 2),
+        );
         setProposals(data.approvals || []);
       } catch (err) {
         setError(
@@ -93,21 +102,30 @@ export default function SecretaryPage() {
   const handleApproval = async (proposalId: string, approved: boolean) => {
     setApproving(proposalId);
     try {
+      const requestBody = {
+        proposalId,
+        approved,
+        comments: comments[proposalId] || "",
+        leadRole: "SECRETARY",
+      };
+      console.log(
+        "[Secretary] Submitting approval:",
+        JSON.stringify(requestBody),
+      );
+
       const response = await fetch("/api/lead-approvals", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          proposalId,
-          approved,
-          comments: comments[proposalId] || "",
-          leadRole: "SECRETARY",
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      const result = await response.json();
+      console.log("[Secretary] Approval response:", JSON.stringify(result));
+
       if (!response.ok) {
-        throw new Error("Failed to submit approval");
+        throw new Error(result.message || "Failed to submit approval");
       }
 
       // Refresh the proposals list
@@ -117,6 +135,7 @@ export default function SecretaryPage() {
 
       // Clear comments for this proposal and close dialog if open
       setComments((prev) => ({ ...prev, [proposalId]: "" }));
+      setShowRejectReason(false);
       if (selectedProposal?.id === proposalId) {
         setSelectedProposal(null);
         setDetailsOpen(false);
@@ -128,6 +147,29 @@ export default function SecretaryPage() {
     } finally {
       setApproving(null);
     }
+  };
+
+  const openDetails = (proposal: Proposal) => {
+    setSelectedProposal(proposal);
+    setDetailsOpen(true);
+    setShowRejectReason(false);
+    setValidationError(null);
+  };
+
+  const handleReject = (proposalId: string) => {
+    // First step: show the rejection reason textarea
+    if (!showRejectReason) {
+      setShowRejectReason(true);
+      return;
+    }
+    // Second step: validate and submit
+    const reason = (comments[proposalId] || "").trim();
+    if (!reason) {
+      setValidationError("Please add a rejection reason before submitting.");
+      return;
+    }
+    setValidationError(null);
+    handleApproval(proposalId, false);
   };
 
   if (loading) {
@@ -156,15 +198,11 @@ export default function SecretaryPage() {
               className="shadow-none rounded-none cursor-pointer group"
               role="button"
               tabIndex={0}
-              onClick={() => {
-                setSelectedProposal(proposal);
-                setDetailsOpen(true);
-              }}
+              onClick={() => openDetails(proposal)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setSelectedProposal(proposal);
-                  setDetailsOpen(true);
+                  openDetails(proposal);
                 }
               }}
             >
@@ -236,232 +274,302 @@ export default function SecretaryPage() {
           <DialogTitle className="sr-only">Proposal Details</DialogTitle>
           {selectedProposal ? (
             <Card className="shadow-none rounded-none border-0">
-              <CardHeader className="px-0 pt-0">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-xl font-semibold">
-                      {selectedProposal.event?.title || "Untitled Proposal"}
-                    </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">
-                      {selectedProposal.club.name} •{" "}
-                      {new Date(
-                        selectedProposal.createdAt,
-                      ).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  <Badge
-                    className={`${
-                      statusColors[
-                        selectedProposal.status as keyof typeof statusColors
-                      ]
-                    } whitespace-nowrap`}
-                  >
-                    {
-                      statusLabels[
-                        selectedProposal.status as keyof typeof statusLabels
-                      ]
-                    }
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-6 px-0 pb-0">
-                <section className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Event Details
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="font-medium">Location:</span>{" "}
-                      {selectedProposal.event?.location || "Not specified"}
-                    </div>
-                    {Array.isArray(selectedProposal.event?.occurrences) &&
-                    selectedProposal.event.occurrences.length > 1 ? (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">
-                          Sessions: {selectedProposal.event.occurrences.length}
-                        </p>
-                        <div className="space-y-2">
-                          {selectedProposal.event.occurrences
-                            .slice()
-                            .sort(
-                              (a, b) =>
-                                new Date(a.startTime || 0).getTime() -
-                                new Date(b.startTime || 0).getTime(),
-                            )
-                            .map((occ, idx) => {
-                              const { western, ethiopian } =
-                                formatDualTimeRange(occ.startTime, occ.endTime);
-                              return (
-                                <div
-                                  key={idx}
-                                  className="p-3 bg-muted/30 rounded"
-                                >
-                                  <div className="text-sm">{western}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {ethiopian ? `LT: [${ethiopian}]` : null}
-                                    {occ.location
-                                      ? `${ethiopian ? " • " : ""}${occ.location}`
-                                      : null}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    ) : null}
-                    <div>
-                      <span className="font-medium">Description:</span>
-                      <div className="mt-1 max-h-40 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                        {selectedProposal.event?.description ||
-                          "No description provided"}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="font-medium">Time:</span>{" "}
-                      {(() => {
-                        const { western, ethiopian } = formatDualTimeRange(
-                          selectedProposal.event?.startTime,
-                          selectedProposal.event?.endTime,
-                        );
-                        return ethiopian ? (
-                          <span>
-                            {western}
-                            <span className="block text-xs text-muted-foreground">
-                              LT: [{ethiopian}]
-                            </span>
-                          </span>
-                        ) : (
-                          western
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Lead Review Status
-                  </h4>
-                  <div className="space-y-3">
-                    {selectedProposal.leadApprovals.map((approval, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
-                      >
+              {(() => {
+                const currentLeadDecision =
+                  selectedProposal.leadApprovals.find(
+                    (approval) => approval.leadRole === "SECRETARY",
+                  ) || null;
+                const hasDecision = Boolean(
+                  currentLeadDecision &&
+                  (currentLeadDecision.approved === true ||
+                    currentLeadDecision.comments?.trim()),
+                );
+                return (
+                  <>
+                    <CardHeader className="px-0 pt-0">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-medium">{approval.leadRole}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {approval.leadEmail}
-                          </p>
+                          <CardTitle className="text-xl font-semibold">
+                            {selectedProposal.event?.title ||
+                              "Untitled Proposal"}
+                          </CardTitle>
+                          <CardDescription className="text-xs text-muted-foreground">
+                            {selectedProposal.club.name} •{" "}
+                            {new Date(
+                              selectedProposal.createdAt,
+                            ).toLocaleDateString()}
+                          </CardDescription>
                         </div>
                         <Badge
-                          className={
-                            approval.approved
-                              ? "bg-green-100 text-green-800 border-green-300"
-                              : "bg-yellow-100 text-yellow-800 border-yellow-300"
-                          }
+                          className={`${
+                            statusColors[
+                              selectedProposal.status as keyof typeof statusColors
+                            ]
+                          } whitespace-nowrap`}
                         >
-                          {approval.approved ? "Approved" : "Pending"}
+                          {
+                            statusLabels[
+                              selectedProposal.status as keyof typeof statusLabels
+                            ]
+                          }
                         </Badge>
                       </div>
-                    ))}
-                  </div>
-                </section>
+                    </CardHeader>
 
-                {selectedProposal.collaborators?.length > 0 && (
-                  <section className="space-y-2 border-t border-border pt-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Collaborating Organizations
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedProposal.collaborators.map((collaborator) => (
-                        <div
-                          key={collaborator.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <span className="font-medium">
-                            {collaborator.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {collaborator.type}
-                          </span>
+                    <CardContent className="space-y-6 px-0 pb-0">
+                      <section className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Event Details
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">Location:</span>{" "}
+                            {selectedProposal.event?.location ||
+                              "Not specified"}
+                          </div>
+                          {Array.isArray(selectedProposal.event?.occurrences) &&
+                          selectedProposal.event.occurrences.length > 1 ? (
+                            <div className="space-y-2">
+                              <p className="text-xs text-muted-foreground">
+                                Sessions:{" "}
+                                {selectedProposal.event.occurrences.length}
+                              </p>
+                              <div className="space-y-2">
+                                {selectedProposal.event.occurrences
+                                  .slice()
+                                  .sort(
+                                    (a, b) =>
+                                      new Date(a.startTime || 0).getTime() -
+                                      new Date(b.startTime || 0).getTime(),
+                                  )
+                                  .map((occ, idx) => {
+                                    const { western, ethiopian } =
+                                      formatDualTimeRange(
+                                        occ.startTime,
+                                        occ.endTime,
+                                      );
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-muted/30 rounded"
+                                      >
+                                        <div className="text-sm">{western}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {ethiopian
+                                            ? `LT: [${ethiopian}]`
+                                            : null}
+                                          {occ.location
+                                            ? `${ethiopian ? " • " : ""}${occ.location}`
+                                            : null}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          ) : null}
+                          <div>
+                            <span className="font-medium">Description:</span>
+                            <div className="mt-1 max-h-40 overflow-y-auto text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                              {selectedProposal.event?.description ||
+                                "No description provided"}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium">Time:</span>{" "}
+                            {(() => {
+                              const { western, ethiopian } =
+                                formatDualTimeRange(
+                                  selectedProposal.event?.startTime,
+                                  selectedProposal.event?.endTime,
+                                );
+                              return ethiopian ? (
+                                <span>
+                                  {western}
+                                  <span className="block text-xs text-muted-foreground">
+                                    LT: [{ethiopian}]
+                                  </span>
+                                </span>
+                              ) : (
+                                western
+                              );
+                            })()}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                      </section>
 
-                {selectedProposal.guests?.length > 0 && (
-                  <section className="space-y-2 border-t border-border pt-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Invited Guests
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedProposal.guests.map((guest) => (
-                        <div
-                          key={guest.id}
-                          className="border border-border p-3 rounded"
-                        >
-                          <p className="text-sm">
-                            <strong>Name:</strong> {guest.name}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Affiliation:</strong>{" "}
-                            {guest.affiliation || "Not specified"}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Reason:</strong>{" "}
-                            {guest.reason || "Not specified"}
-                          </p>
+                      <section className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Lead Review Status
+                        </h4>
+                        <div className="space-y-3">
+                          {selectedProposal.leadApprovals.map(
+                            (approval, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-3 bg-muted/30 rounded-none"
+                              >
+                                <div>
+                                  <p className="font-medium">
+                                    {approval.leadRole}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {approval.leadEmail}
+                                  </p>
+                                </div>
+                                <Badge
+                                  className={
+                                    approval.approved
+                                      ? "bg-green-100 text-green-800 border-green-300"
+                                      : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                                  }
+                                >
+                                  {approval.approved ? "Approved" : "Pending"}
+                                </Badge>
+                              </div>
+                            ),
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                      </section>
 
-                <section className="space-y-4 border-t border-border pt-4">
-                  <div>
-                    <Label htmlFor={`comments-${selectedProposal.id}`}>
-                      Comments
-                    </Label>
-                    <Textarea
-                      id={`comments-${selectedProposal.id}`}
-                      placeholder="Add your comments (optional)"
-                      value={comments[selectedProposal.id] || ""}
-                      onChange={(e) =>
-                        setComments((prev) => ({
-                          ...prev,
-                          [selectedProposal.id]: e.target.value,
-                        }))
-                      }
-                      className="mt-2"
-                    />
-                  </div>
+                      {selectedProposal.collaborators?.length > 0 && (
+                        <section className="space-y-2 border-t border-border pt-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Collaborating Organizations
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedProposal.collaborators.map(
+                              (collaborator) => (
+                                <div
+                                  key={collaborator.id}
+                                  className="flex items-center gap-2 text-sm"
+                                >
+                                  <span className="font-medium">
+                                    {collaborator.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {collaborator.type}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </section>
+                      )}
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      onClick={() => handleApproval(selectedProposal.id, true)}
-                      disabled={approving === selectedProposal.id}
-                      className="rounded-none"
-                    >
-                      {approving === selectedProposal.id
-                        ? "Submitting..."
-                        : "Approve"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleApproval(selectedProposal.id, false)}
-                      disabled={approving === selectedProposal.id}
-                      className="rounded-none"
-                    >
-                      {approving === selectedProposal.id
-                        ? "Submitting..."
-                        : "Reject"}
-                    </Button>
-                  </div>
-                </section>
-              </CardContent>
+                      {selectedProposal.guests?.length > 0 && (
+                        <section className="space-y-2 border-t border-border pt-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Invited Guests
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedProposal.guests.map((guest) => (
+                              <div
+                                key={guest.id}
+                                className="border border-border p-3 rounded"
+                              >
+                                <p className="text-sm">
+                                  <strong>Name:</strong> {guest.name}
+                                </p>
+                                <p className="text-sm">
+                                  <strong>Affiliation:</strong>{" "}
+                                  {guest.affiliation || "Not specified"}
+                                </p>
+                                <p className="text-sm">
+                                  <strong>Reason:</strong>{" "}
+                                  {guest.reason || "Not specified"}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+
+                      {hasDecision ? (
+                        <section className="space-y-2 border-t border-border pt-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">
+                            Your decision
+                          </h4>
+                          <div className="text-sm">
+                            {currentLeadDecision?.approved === true
+                              ? "Approved"
+                              : "Rejected"}
+                          </div>
+                          {currentLeadDecision?.comments ? (
+                            <p className="text-sm text-muted-foreground">
+                              {currentLeadDecision.comments}
+                            </p>
+                          ) : null}
+                        </section>
+                      ) : (
+                        <section className="space-y-4 border-t border-border pt-4">
+                          {showRejectReason ? (
+                            <div>
+                              <Label
+                                htmlFor={`comments-${selectedProposal.id}`}
+                              >
+                                Why are you rejecting this proposal?
+                              </Label>
+                              <Textarea
+                                id={`comments-${selectedProposal.id}`}
+                                placeholder="Add a clear reason so the club president understands the rejection."
+                                value={comments[selectedProposal.id] || ""}
+                                onChange={(e) =>
+                                  setComments((prev) => ({
+                                    ...prev,
+                                    [selectedProposal.id]: e.target.value,
+                                  }))
+                                }
+                                className="mt-2"
+                                required
+                              />
+                              {validationError && (
+                                <p className="text-sm text-destructive mt-1">
+                                  {validationError}
+                                </p>
+                              )}
+                            </div>
+                          ) : null}
+
+                          <div className="flex flex-wrap gap-3">
+                            <Button
+                              onClick={() => {
+                                // If rejection reason is being written, warn user that approving will discard it
+                                if (showRejectReason && comments[selectedProposal.id]?.trim()) {
+                                  if (!confirm("Are you sure you want to approve? This will discard your rejection reason.")) {
+                                    return;
+                                  }
+                                  setShowRejectReason(false);
+                                  setComments((prev) => ({ ...prev, [selectedProposal.id]: "" }));
+                                }
+                                handleApproval(selectedProposal.id, true);
+                              }}
+                              disabled={approving === selectedProposal.id}
+                              className="rounded-none"
+                            >
+                              {approving === selectedProposal.id
+                                ? "Submitting..."
+                                : "Approve"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleReject(selectedProposal.id)}
+                              disabled={approving === selectedProposal.id}
+                              className="rounded-none"
+                            >
+                              {approving === selectedProposal.id
+                                ? "Submitting..."
+                                : showRejectReason
+                                  ? "Submit Rejection"
+                                  : "Reject"}
+                            </Button>
+                          </div>
+                        </section>
+                      )}
+                    </CardContent>
+                  </>
+                );
+              })()}
             </Card>
           ) : null}
         </DialogContent>

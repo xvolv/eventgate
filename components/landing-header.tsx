@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { MenuIcon, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ function isActive(pathname: string, href: string) {
 }
 
 export function LandingHeader({ userEmail }: { userEmail: string }) {
-  const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -28,96 +27,97 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
   const currentSessionEmail = session?.user?.email || userEmail;
   const isAuthed = Boolean(currentSessionEmail);
 
-  const currentSection = (() => {
-    return "Welcome";
-  })();
+  const currentSection = "Welcome";
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.push("/");
+      window.location.href = "/";
     } finally {
       // Let useEffect handle redirect after session clears
     }
   };
 
   return (
-    <header
-      className="sticky top-0 z-30 w-full border-b border-border bg-background"
-      role="banner"
-    >
-      <div className="w-full bg-slate-900 text-white">
-        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="font-semibold tracking-wide">
-              EventGate
+    <header role="banner" className="sticky top-0 z-30 w-full">
+      {/* Main header bar */}
+      <div className="w-full text-gray-900  bg-white border-b border-gray-200">
+        <div className="container mx-auto flex items-center gap-4 px-4 py-2 lg:px-8">
+          {/* Left: Logo + Title */}
+          <div className="flex items-center min-w-0">
+            <Link href="/" className="flex items-center gap-3 group min-w-0">
+              <img
+                src="/aauLogo.png"
+                alt="AAU Logo"
+                className="h-12 w-auto object-contain"
+              />
+              <div className="h-10 w-0.5 mx-1 bg-cyan-700" />
+              <div className="min-w-0">
+                <div className="font-bold text-lg sm:text-xl tracking-wide leading-tight">
+                  EventGate
+                </div>
+                <div className="text-[11px] sm:text-xs text-gray-500 tracking-wider uppercase">
+                  Addis Ababa University
+                </div>
+              </div>
             </Link>
-            <div className="hidden sm:block h-5 w-px bg-white/20" />
-            <div className="min-w-0">
-              <div className="text-sm font-medium leading-5">
-                Event Proposal Portal
-              </div>
-              <div className="hidden md:block text-xs text-white/70 truncate">
-                {currentSection}
-              </div>
-            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {!isAuthed && (
-              <div className="hidden lg:flex items-center gap-2">
-                <Link href="/login" onClick={() => setMenuOpen(false)}>
-                  <Button
-                    variant={
-                      isActive(pathname, "/login") ? "default" : "outline"
-                    }
-                    className="h-9 bg-white text-slate-900 hover:bg-white/90"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/sign-up" onClick={() => setMenuOpen(false)}>
-                  <Button
-                    variant={
-                      isActive(pathname, "/sign-up") ? "default" : "outline"
-                    }
-                    className="h-9 bg-white text-slate-900 hover:bg-white/90"
-                  >
-                    Create Account
-                  </Button>
-                </Link>
-              </div>
-            )}
+          {/* Center: CTAs (home page only) */}
+          {pathname === "/" && (
+            <nav className="hidden md:flex flex-1 items-center justify-center gap-2">
+              <a
+                href="#upcoming-events"
+                className="relative inline-flex items-center h-9 px-2 text-sm font-medium text-gray-700 hover:text-(--aau-blue) transition-colors after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-0.5 after:h-[2px] after:bg-(--aau-blue) after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100"
+              >
+                Upcoming Events
+              </a>
+              <a
+                href="#past-events"
+                className="relative inline-flex items-center h-9 px-2 text-sm font-medium text-gray-700 hover:text-(--aau-blue) transition-colors after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-0.5 after:h-[2px] after:bg-(--aau-blue) after:origin-left after:scale-x-0 after:transition-transform after:duration-200 hover:after:scale-x-100"
+              >
+                Past Events
+              </a>
+            </nav>
+          )}
 
+          {/* Spacer when CTAs are hidden (keeps account aligned right) */}
+          {pathname !== "/" && <div className="flex-1" />}
+
+          {/* Right: Account (only show if logged in) */}
+          <div className="flex items-center gap-2 justify-end">
             {isAuthed && (
               <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="secondary"
-                    className="hidden md:inline-flex h-9 w-9 p-0 bg-transparent text-white hover:bg-white/10"
+                    className="hidden md:inline-flex h-9 px-3 gap-2 bg-white hover:bg-white text-gray-700"
                     aria-label="Open account settings"
                   >
-                    <Settings className="h-5 w-5" />
+                    <Settings className="h-4 w-4" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="fixed right-4 top-16 left-auto bottom-auto w-[18rem] max-w-[calc(100%-2rem)] translate-x-0 translate-y-0 rounded-none p-0">
                   <div className="flex flex-col">
-                    <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
+                    <div
+                      className="px-5 py-4 text-white"
+                      style={{ backgroundColor: "var(--aau-blue)" }}
+                    >
                       <DialogTitle className="text-sm font-semibold tracking-wide">
                         Account
                       </DialogTitle>
-                      <div className="mt-1 text-xs text-white/70 truncate">
+                      <div className="mt-1.5 text-xs text-white/70 truncate">
                         {currentSessionEmail}
                       </div>
                     </div>
-
-                    <div className="border-t border-border p-3">
+                    <div className="p-3 bg-white">
                       <Button
                         onClick={() => {
                           setAccountOpen(false);
                           handleSignOut();
                         }}
-                        className="h-10 w-full rounded-none"
+                        variant="outline"
+                        className="h-10 w-full rounded-md gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                       >
                         Sign out
                       </Button>
@@ -126,85 +126,6 @@ export function LandingHeader({ userEmail }: { userEmail: string }) {
                 </DialogContent>
               </Dialog>
             )}
-            <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="secondary"
-                  className="md:hidden h-9 w-9 p-0 bg-white text-slate-900 hover:bg-white/90"
-                  aria-label="Open landing menu"
-                >
-                  <MenuIcon className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="fixed right-0 top-0 left-auto bottom-0 h-dvh w-[20rem] max-w-[calc(100%-3rem)] translate-x-0 translate-y-0 rounded-none p-0 sm:max-w-[20rem]">
-                <div className="flex h-full flex-col">
-                  <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
-                    <DialogTitle className="text-sm font-semibold tracking-wide">
-                      Landing Menu
-                    </DialogTitle>
-                    {isAuthed && (
-                      <div className="mt-1 text-xs text-white/70 truncate">
-                        {currentSessionEmail}
-                      </div>
-                    )}
-                  </div>
-
-                  <nav aria-label="Landing navigation" className="flex-1 p-2">
-                    {!isAuthed && (
-                      <>
-                        <Link
-                          href="/login"
-                          onClick={() => setMenuOpen(false)}
-                          className="block"
-                        >
-                          <Button
-                            variant={
-                              isActive(pathname, "/login") ? "default" : "ghost"
-                            }
-                            className="h-10 w-full justify-start rounded-none"
-                          >
-                            Sign In
-                          </Button>
-                        </Link>
-                        <Link
-                          href="/sign-up"
-                          onClick={() => setMenuOpen(false)}
-                          className="block"
-                        >
-                          <Button
-                            variant={
-                              isActive(pathname, "/sign-up")
-                                ? "default"
-                                : "ghost"
-                            }
-                            className="h-10 w-full justify-start rounded-none"
-                          >
-                            Create Account
-                          </Button>
-                        </Link>
-                      </>
-                    )}
-
-                    {isAuthed && (
-                      <div className="grid gap-2">
-                        <div className="rounded border border-border bg-muted/40 px-3 py-2 text-xs text-foreground/70 truncate">
-                          {currentSessionEmail}
-                        </div>
-                        <Button
-                          onClick={() => {
-                            setMenuOpen(false);
-                            handleSignOut();
-                          }}
-                          className="h-10 w-full rounded-none"
-                        >
-                          Sign out
-                        </Button>
-                      </div>
-                    )}
-                  </nav>
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </div>

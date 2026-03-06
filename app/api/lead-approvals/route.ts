@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (!user.emailVerified) {
     return NextResponse.json(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -25,7 +25,49 @@ export async function POST(request: Request) {
     if (!proposalId || typeof approved !== "boolean" || !leadRole) {
       return NextResponse.json(
         { message: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    // Verify that the leadRole is valid (VP or SECRETARY only)
+    const validRoles = ["VP", "SECRETARY"];
+    if (!validRoles.includes(leadRole)) {
+      console.error("[lead-approvals] Invalid leadRole:", leadRole);
+      return NextResponse.json(
+        { message: `Invalid lead role: ${leadRole}. Must be VP or SECRETARY` },
+        { status: 400 },
+      );
+    }
+
+    // Debug: Log the incoming request details
+    console.log("[lead-approvals] Processing approval request:", {
+      userEmail: user.email.toLowerCase(),
+      proposalId,
+      leadRole,
+      approved,
+    });
+
+    // Verify that the user has the correct role for this proposal
+    // The leadRole in the request must match the user's actual role in the club
+    const userRoleGrants = await prisma.clubRoleGrant.findMany({
+      where: {
+        email: user.email.toLowerCase(),
+      },
+      select: {
+        role: true,
+        clubId: true,
+      },
+    });
+
+    // Find the user's role for this specific club
+    const userRoleForClub = userRoleGrants.find(
+      (grant) => grant.role === leadRole,
+    );
+
+    if (!userRoleForClub) {
+      return NextResponse.json(
+        { message: `You do not have the role of ${leadRole} in any club` },
+        { status: 403 },
       );
     }
 
@@ -43,7 +85,7 @@ export async function POST(request: Request) {
     if (!leadGrant) {
       return NextResponse.json(
         { message: "You are not authorized to approve this proposal" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -69,14 +111,38 @@ export async function POST(request: Request) {
       },
     });
 
+    // Debug: Log the result of the upsert
+    console.log("[lead-approvals] Upsert result:", {
+      id: leadApproval.id,
+      proposalId: leadApproval.proposalId,
+      leadRole: leadApproval.leadRole,
+      leadEmail: leadApproval.leadEmail,
+      approved: leadApproval.approved,
+    });
+
     // Check if all leads have approved
     const allApprovals = await prisma.proposalLeadApproval.findMany({
       where: { proposalId },
     });
 
+    // Get the proposal's club so we know how many leads are expected
+    const proposal = await prisma.proposal.findUnique({
+      where: { id: proposalId },
+      select: { clubId: true },
+    });
+
+    const expectedLeadsCount = proposal
+      ? await prisma.clubRoleGrant.count({
+          where: {
+            clubId: proposal.clubId,
+            role: { in: ["VP", "SECRETARY"] },
+          },
+        })
+      : 2;
+
     const allApproved = allApprovals.every((approval) => approval.approved);
     const anyRejected = allApprovals.some(
-      (approval) => !approval.approved && approval.comments
+      (approval) => !approval.approved && approval.comments,
     );
 
     // Update proposal status based on lead approvals
@@ -92,7 +158,7 @@ export async function POST(request: Request) {
       | "RESUBMISSION_REQUIRED";
     if (anyRejected) {
       newStatus = "LEAD_REJECTED";
-    } else if (allApproved && allApprovals.length >= 2) {
+    } else if (allApproved && allApprovals.length >= expectedLeadsCount) {
       newStatus = "PENDING"; // Move to Student Union review
     } else {
       newStatus = "LEAD_REVIEW"; // Still waiting for other leads
@@ -134,16 +200,57 @@ export async function POST(request: Request) {
       }
     }
 
+    // When all leads approve → notify Student Union members
+    if (newStatus === "PENDING") {
+      const proposal = await prisma.proposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          event: { select: { title: true } },
+        },
+      });
+
+      const suGrants = await prisma.systemRoleGrant.findMany({
+        where: { role: "STUDENT_UNION" },
+        select: { email: true },
+      });
+
+      if (suGrants.length > 0) {
+        const eventTitle = proposal?.event?.title || "Untitled Event";
+        await Promise.all(
+          suGrants.map((grant) =>
+            sendProposalStatusEmail({
+              to: grant.email,
+              proposalId,
+              eventTitle,
+              subject: "EventGate: Proposal awaiting Student Union review",
+              heading: "Proposal Ready for Review",
+              message:
+                "A proposal has been approved by the club leads and is now awaiting Student Union review.",
+              actionLabel: "Review Proposal",
+              actionPath: "/student-union",
+            }),
+          ),
+        );
+      }
+    }
+
     return NextResponse.json({
       message: `Proposal ${approved ? "approved" : "rejected"} by ${leadRole}`,
       leadApproval,
       newStatus,
+      allApprovals: allApprovals.map((a) => ({
+        id: a.id,
+        leadRole: a.leadRole,
+        leadEmail: a.leadEmail,
+        approved: a.approved,
+      })),
     });
   } catch (error) {
     console.error("Lead approval error:", error);
     return NextResponse.json(
       { message: "Failed to process approval" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -159,7 +266,7 @@ export async function GET(request: Request) {
   if (!user.emailVerified) {
     return NextResponse.json(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -222,7 +329,7 @@ export async function GET(request: Request) {
             in: userRoleGrants.map((g) => g.clubId),
           },
           status: {
-            in: ["LEAD_REVIEW", "LEAD_APPROVED"],
+            in: ["LEAD_REVIEW", "LEAD_APPROVED", "LEAD_REJECTED"],
           },
         },
         include: {
@@ -242,7 +349,11 @@ export async function GET(request: Request) {
               name: true,
             },
           },
-          leadApprovals: true,
+          leadApprovals: {
+            orderBy: {
+              leadRole: "asc",
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -255,7 +366,7 @@ export async function GET(request: Request) {
     console.error("Get lead approvals error:", error);
     return NextResponse.json(
       { message: "Failed to fetch approvals" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

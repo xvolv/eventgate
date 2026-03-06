@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 type HomeActionsProps = {
   isAuthed: boolean;
@@ -14,45 +13,36 @@ export function HomeActions({
   userEmail,
   dashboardHref,
 }: HomeActionsProps) {
-  if (isAuthed && !isVerified) {
-    return (
-      <div className="flex gap-3 mb-12">
-        <Link href={"/verify?email=" + encodeURIComponent(userEmail || "")}>
-          <Button size="lg" className="rounded-none hover:cursor-pointer">
-            Verify Email
-          </Button>
-        </Link>
-      </div>
-    );
+  // If not logged in, show nothing (public page - no auth buttons)
+  if (!isAuthed) {
+    return null;
   }
 
-  if (isAuthed && isVerified) {
+  // If logged in but email not verified
+  if (!isVerified) {
     return (
-      <div className="flex gap-3 mb-12">
-        <Link href={dashboardHref}>
-          <Button size="lg" className="rounded-none hover:cursor-pointer">
-            Go to Dashboard
-          </Button>
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex gap-3 mb-12">
-      <Link href="/sign-up">
-        <Button size="lg" className="rounded-none hover:cursor-pointer">
-          Create Account
-        </Button>
-      </Link>
-      <Link href="/login">
-        <Button
-          size="lg"
-          variant="outline"
-          className="rounded-none hover:cursor-pointer"
+      <div className="flex flex-wrap gap-3">
+        <a
+          href={"/verify?email=" + encodeURIComponent(userEmail || "")}
+          className="inline-flex items-center justify-center rounded-md font-semibold text-white px-8 py-3 cursor-pointer shadow-md hover:shadow-lg transition-all text-sm"
+          style={{ backgroundColor: "var(--aau-blue)" }}
         >
-          Sign In
-        </Button>
+          Verify Email
+        </a>
+      </div>
+    );
+  }
+
+  // If logged in and verified, show dashboard button
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Link
+        href={dashboardHref}
+        prefetch
+        className="inline-flex items-center justify-center rounded-md font-semibold text-white px-8 py-3 cursor-pointer shadow-md hover:shadow-lg transition-all"
+        style={{ backgroundColor: "var(--aau-blue)" }}
+      >
+        Go to Dashboard
       </Link>
     </div>
   );

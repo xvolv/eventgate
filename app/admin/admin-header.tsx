@@ -26,7 +26,7 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
 
@@ -35,15 +35,16 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
     if (pathname === "/admin/clubs/new") return "Add Club";
     if (pathname === "/admin/system-roles") return "System Roles";
     if (pathname === "/admin/users") return "Users";
+    if (pathname === "/admin/locations") return "Locations";
     return "Admin";
   })();
 
-  // If session is null (signed out), redirect to home immediately
+  // If session is null (signed out) AND not still loading, redirect to home
   React.useEffect(() => {
-    if (session === null) {
+    if (!isPending && session === null) {
       router.push("/");
     }
-  }, [session, router]);
+  }, [session, isPending, router]);
 
   const handleSignOut = async () => {
     try {
@@ -201,6 +202,22 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                         Users
                       </Button>
                     </Link>
+                    <Link
+                      href="/admin/locations"
+                      onClick={() => setMenuOpen(false)}
+                      className="block"
+                    >
+                      <Button
+                        variant={
+                          isActive(pathname, "/admin/locations")
+                            ? "default"
+                            : "ghost"
+                        }
+                        className="h-10 w-full justify-start rounded-none"
+                      >
+                        Locations
+                      </Button>
+                    </Link>
                   </nav>
 
                   <div className="border-t border-border p-3">
@@ -274,6 +291,18 @@ export function AdminHeader({ userEmail }: { userEmail: string }) {
                   className="h-9 w-full justify-start md:w-auto  border-none "
                 >
                   Users
+                </Button>
+              </Link>
+              <Link href="/admin/locations" onClick={() => setMenuOpen(false)}>
+                <Button
+                  variant={
+                    isActive(pathname, "/admin/locations")
+                      ? "default"
+                      : "outline"
+                  }
+                  className="h-9 w-full justify-start md:w-auto  border-none "
+                >
+                  Locations
                 </Button>
               </Link>
             </div>

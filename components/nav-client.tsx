@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MenuIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export default function NavClient({
   userEmail,
 }: NavClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -36,8 +37,13 @@ export default function NavClient({
     setMounted(true);
   }, []);
 
+  // On auth pages (/login, /sign-up), keep showing unauthenticated header
+  // so it doesn't flash to authenticated state before redirect completes
+  const isAuthPage = pathname === "/login" || pathname === "/sign-up";
+
   // Use session data if available, otherwise fall back to props
-  const currentIsAuthed = session?.user ? true : isAuthed;
+  const rawIsAuthed = session?.user ? true : isAuthed;
+  const currentIsAuthed = isAuthPage ? false : rawIsAuthed;
   const currentIsVerified = session?.user?.emailVerified ? true : isVerified;
   const currentUserEmail = session?.user?.email || userEmail;
 

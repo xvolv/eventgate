@@ -20,6 +20,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<"club_lead" | "reviewer">("club_lead");
@@ -33,7 +34,7 @@ export default function SignUpPage() {
   const signupContact = rawSignupContact
     ? rawSignupContact
         .replace(/\r?\n/g, " ")
-        .replace(/^\s*['\"]|['\"]\s*$/g, "")
+        .replace(/^\s*['"]|['"]\s*$/g, "")
         .trim()
     : "";
   const passwordsMatch = password.length > 0 && password === repeatPassword;
@@ -106,6 +107,7 @@ export default function SignUpPage() {
           ? {
               clubId: selectedClubId,
               clubRole: selectedRole,
+              phoneNumber: phoneNumber || undefined,
             }
           : {}),
       });
@@ -115,11 +117,11 @@ export default function SignUpPage() {
         const errorMessage = result.error.message || "Something went wrong";
         if (
           /restricted|not registered|not allowed|club leads must select|does not match|select their club/i.test(
-            errorMessage
+            errorMessage,
           )
         ) {
           setError(
-            signupContact ? `${errorMessage} ${signupContact}` : errorMessage
+            signupContact ? `${errorMessage} ${signupContact}` : errorMessage,
           );
           return;
         }
@@ -142,7 +144,7 @@ export default function SignUpPage() {
 
           // User exists and is verified
           setError(
-            "An account with this email already exists. Please sign in instead."
+            "An account with this email already exists. Please login instead.",
           );
           return;
         }
@@ -172,7 +174,7 @@ export default function SignUpPage() {
         err?.data?.message || err?.message || "Something went wrong";
       if (
         /restricted|not registered|not allowed|club leads must select|does not match|select their club/i.test(
-          message
+          message,
         )
       ) {
         setError(signupContact ? `${message} ${signupContact}` : message);
@@ -196,7 +198,7 @@ export default function SignUpPage() {
         } catch {}
 
         setError(
-          "An account with this email already exists. Please sign in instead."
+          "An account with this email already exists. Please login instead.",
         );
       } else {
         setError(message);
@@ -206,175 +208,223 @@ export default function SignUpPage() {
     }
   };
 
+  /* ---- shared form fields ---- */
+  const sharedFields = (
+    <>
+      <div className="grid gap-2">
+        <Label htmlFor={`fullName-${mode}`}>Full Name</Label>
+        <Input
+          id={`fullName-${mode}`}
+          type="text"
+          placeholder="Name"
+          required
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="focus-visible:ring-0 rounded-none shadow-none"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`email-${mode}`}>Email</Label>
+        <Input
+          id={`email-${mode}`}
+          type="email"
+          placeholder="Email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="focus-visible:ring-0 rounded-none shadow-none"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`password-${mode}`}>Password</Label>
+        <Input
+          id={`password-${mode}`}
+          type="password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="focus-visible:ring-0 rounded-none shadow-none"
+        />
+        {passwordTooShort && (
+          <p className="text-xs text-destructive">
+            Password must be at least 8 characters.
+          </p>
+        )}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`repeat-password-${mode}`}>Confirm Password</Label>
+        <Input
+          id={`repeat-password-${mode}`}
+          type="password"
+          required
+          value={repeatPassword}
+          onChange={(e) => setRepeatPassword(e.target.value)}
+          className="focus-visible:ring-0 rounded-none shadow-none"
+        />
+        {showMismatch && (
+          <p className="text-xs text-destructive">Passwords do not match.</p>
+        )}
+        {passwordsMatch && repeatPassword.length > 0 && (
+          <p className="text-xs text-emerald-600"></p>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <Card className="rounded-none shadow-none">
-          <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Name"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="focus-visible:ring-0 rounded-none shadow-none"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="focus-visible:ring-0 rounded-none shadow-none"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="focus-visible:ring-0 rounded-none shadow-none"
-                />
-                {passwordTooShort && (
-                  <p className="text-xs text-destructive">
-                    Password must be at least 8 characters.
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="repeat-password">Confirm Password</Label>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                  className="focus-visible:ring-0 rounded-none shadow-none"
-                />
-                {showMismatch && (
-                  <p className="text-xs text-destructive">
-                    Passwords do not match.
-                  </p>
-                )}
-                {passwordsMatch && repeatPassword.length > 0 && (
-                  <p className="text-xs text-emerald-600"></p>
-                )}
-              </div>
+      <div className="w-full max-w-3xl">
+        {/* Mode selector tabs at the top */}
+        <div className="grid grid-cols-2 mb-6">
+          <button
+            type="button"
+            onClick={() => setMode("club_lead")}
+            className={
+              mode === "club_lead"
+                ? "h-10 text-sm font-medium text-foreground border-b-2 border-foreground"
+                : "h-10 text-sm text-muted-foreground border-b border-border"
+            }
+          >
+            Club Lead
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("reviewer")}
+            className={
+              mode === "reviewer"
+                ? "h-10 text-sm font-medium text-foreground border-b-2 border-foreground"
+                : "h-10 text-sm text-muted-foreground border-b border-border"
+            }
+          >
+            Reviewer
+          </button>
+        </div>
 
-              <div className="grid gap-3">
-                <div className="grid grid-cols-2 border-b border-border">
-                  <button
-                    type="button"
-                    onClick={() => setMode("club_lead")}
-                    className={
-                      mode === "club_lead"
-                        ? "h-10 text-sm font-medium text-foreground border-b-2 border-foreground"
-                        : "h-10 text-sm text-muted-foreground"
-                    }
-                  >
-                    Club Lead
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode("reviewer")}
-                    className={
-                      mode === "reviewer"
-                        ? "h-10 text-sm font-medium text-foreground border-b-2 border-foreground"
-                        : "h-10 text-sm text-muted-foreground"
-                    }
-                  >
-                    Reviewer
-                  </button>
+        {/* Club Lead Card */}
+        {mode === "club_lead" && (
+          <Card className="rounded-none shadow-none">
+            <CardContent>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <div className="grid gap-1">
+                  <CardTitle className="text-lg">Club Lead Sign Up</CardTitle>
+                  <CardDescription className="text-xs">
+                    Register as a club president, vice president, or secretary.
+                  </CardDescription>
                 </div>
 
-                <div className="min-h-[5.25rem]">
-                  <div
-                    className={mode === "club_lead" ? "grid gap-3" : "hidden"}
+                {sharedFields}
+
+                {/* Phone Number — club leads only */}
+                <div className="grid gap-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="+251 9XX XXX XXX"
+                    required
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="focus-visible:ring-0 rounded-none shadow-none"
+                  />
+                </div>
+
+                {/* Club selection */}
+                <div className="grid gap-2">
+                  <Label htmlFor="clubId">Club</Label>
+                  <select
+                    id="clubId"
+                    required
+                    value={selectedClubId}
+                    onChange={(e) => setSelectedClubId(e.target.value)}
+                    className="h-9 w-full border border-border bg-background px-3 text-sm rounded-none focus-visible:outline-none focus-visible:ring-0"
                   >
-                    <div className="grid gap-2">
-                      <Label htmlFor="clubId">Club</Label>
-                      <select
-                        id="clubId"
-                        required={mode === "club_lead"}
-                        disabled={mode !== "club_lead"}
-                        value={selectedClubId}
-                        onChange={(e) => setSelectedClubId(e.target.value)}
-                        className="h-9 w-full border border-border bg-background px-3 text-sm rounded-none focus-visible:outline-none focus-visible:ring-0"
-                      >
-                        {clubs.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {clubs.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                    <div className="grid gap-2">
-                      <Label htmlFor="clubRole">Role</Label>
-                      <select
-                        id="clubRole"
-                        required={mode === "club_lead"}
-                        disabled={mode !== "club_lead"}
-                        value={selectedRole}
-                        onChange={(e) =>
-                          setSelectedRole(e.target.value as typeof selectedRole)
-                        }
-                        className="h-9 w-full border border-border bg-background px-3 text-sm rounded-none focus-visible:outline-none focus-visible:ring-0"
-                      >
-                        <option value="PRESIDENT">President</option>
-                        <option value="VP">Vice President</option>
-                        <option value="SECRETARY">Secretary</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div
-                    className={
-                      mode === "reviewer"
-                        ? "text-xs text-muted-foreground"
-                        : "hidden"
+                {/* Role selection */}
+                <div className="grid gap-2">
+                  <Label htmlFor="clubRole">Role</Label>
+                  <select
+                    id="clubRole"
+                    required
+                    value={selectedRole}
+                    onChange={(e) =>
+                      setSelectedRole(e.target.value as typeof selectedRole)
                     }
+                    className="h-9 w-full border border-border bg-background px-3 text-sm rounded-none focus-visible:outline-none focus-visible:ring-0"
                   >
+                    <option value="PRESIDENT">President</option>
+                    <option value="VP">Vice President</option>
+                    <option value="SECRETARY">Secretary</option>
+                  </select>
+                </div>
+
+                {error && <p className="text-sm text-destructive">{error}</p>}
+
+                <Button
+                  type="submit"
+                  className="w-full cursor-pointer"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Creating account..." : "Create Account"}
+                </Button>
+                <div className="text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Reviewer Card */}
+        {mode === "reviewer" && (
+          <Card className="rounded-none shadow-none">
+            <CardContent>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <div className="grid gap-1">
+                  <CardTitle className="text-lg">Reviewer Sign Up</CardTitle>
+                  <CardDescription className="text-xs">
                     If you are student union or Director assigned by the admin
                     you can create your account.
-                  </div>
+                  </CardDescription>
                 </div>
-              </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+                {sharedFields}
 
-              <Button
-                type="submit"
-                className="w-full cursor-pointer"
-                disabled={isLoading}
-              >
-                {isLoading ? "Creating account..." : "Create Account"}
-              </Button>
-              <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="underline underline-offset-4 hover:text-foreground"
+                {error && <p className="text-sm text-destructive">{error}</p>}
+
+                <Button
+                  type="submit"
+                  className="w-full cursor-pointer"
+                  disabled={isLoading}
                 >
-                  Sign in
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                  {isLoading ? "Creating account..." : "Create Account"}
+                </Button>
+                <div className="text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

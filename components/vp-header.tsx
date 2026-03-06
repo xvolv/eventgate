@@ -26,13 +26,6 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
   const { data: session, isPending } = useSession();
 
   const currentSessionEmail = session?.user?.email || userEmail;
-  const isAuthed = Boolean(currentSessionEmail);
-
-  const currentSection = (() => {
-    if (pathname === "/vp") return "Review Dashboard";
-    if (pathname === "/vp/approved") return "History";
-    return "VP Dashboard";
-  })();
 
   // If session is null (signed out), redirect to home immediately
   React.useEffect(() => {
@@ -51,104 +44,121 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
   };
 
   return (
-    <header
-      className="sticky top-0 z-30 w-full border-b border-border bg-background"
-      role="banner"
-    >
-      <div className="w-full bg-slate-900 text-white">
-        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="font-semibold tracking-wide"></Link>
-            <div className="hidden sm:block h-5 w-px bg-white/20" />
-            <div className="min-w-0">
-              <div className="text-sm font-medium leading-5">
-                VP Review Portal
+    <header role="banner" className="sticky top-0 z-30 w-full">
+      {/* Main header bar - white like landing page */}
+      <div className="w-full text-gray-900 bg-white border-b border-gray-200">
+        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-2 lg:px-8">
+          {/* Left: Logo + Title */}
+          <div className="flex items-center min-w-0">
+            <Link href="/vp" className="flex items-center gap-3 group min-w-0">
+              <img
+                src="/aauLogo.png"
+                alt="AAU Logo"
+                className="h-12 w-auto object-contain"
+              />
+              <div className="h-10 w-0.5 mx-1 bg-cyan-700" />
+              <div className="min-w-0">
+                <div className="font-bold text-lg sm:text-xl tracking-wide leading-tight">
+                  EventGate
+                </div>
+                <div className="text-[11px] sm:text-xs text-gray-500 tracking-wider uppercase">
+                  Addis Ababa University
+                </div>
               </div>
-              <div className="hidden md:block text-xs text-white/70 truncate">
-                {currentSection}
-              </div>
-            </div>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-2">
-              <Link href="/vp" onClick={() => setMenuOpen(false)}>
-                <Button
-                  variant={isActive(pathname, "/vp") ? "default" : "outline"}
-                  className="h-9 bg-white text-slate-900 hover:bg-white/90"
-                >
-                  Review Dashboard
-                </Button>
-              </Link>
-              <Link href="/vp/approved" onClick={() => setMenuOpen(false)}>
-                <Button
-                  variant={
-                    isActive(pathname, "/vp/approved") ? "default" : "outline"
-                  }
-                  className="h-9 bg-white text-slate-900 hover:bg-white/90"
-                >
-                  Approved
-                </Button>
-              </Link>
-            </div>
-            {isAuthed && (
-              <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="hidden md:inline-flex h-9 w-9 p-0 bg-transparent text-white hover:bg-white/10"
-                    aria-label="Open account settings"
-                  >
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="fixed right-4 top-16 left-auto bottom-auto w-[18rem] max-w-[calc(100%-2rem)] translate-x-0 translate-y-0 rounded-none p-0">
-                  <div className="flex flex-col">
-                    <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
-                      <DialogTitle className="text-sm font-semibold tracking-wide">
-                        Account
-                      </DialogTitle>
-                      <div className="mt-1 text-xs text-white/70 truncate">
-                        {currentSessionEmail}
-                      </div>
-                    </div>
+          {/* Center: Navigation Links */}
+          <nav className="hidden md:flex flex-1 items-center justify-center gap-2">
+            <Link
+              href="/vp"
+              className={`relative inline-flex items-center h-9 px-3 text-sm font-medium transition-colors ${
+                isActive(pathname, "/vp")
+                  ? "text-[var(--aau-blue)]"
+                  : "text-gray-700 hover:text-[var(--aau-blue)]"
+              }`}
+            >
+              Review Dashboard
+              {isActive(pathname, "/vp") && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[2px] bg-[var(--aau-blue)]" />
+              )}
+            </Link>
+            <Link
+              href="/vp/approved"
+              className={`relative inline-flex items-center h-9 px-3 text-sm font-medium transition-colors ${
+                isActive(pathname, "/vp/approved")
+                  ? "text-[var(--aau-blue)]"
+                  : "text-gray-700 hover:text-[var(--aau-blue)]"
+              }`}
+            >
+              History
+              {isActive(pathname, "/vp/approved") && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[2px] bg-[var(--aau-blue)]" />
+              )}
+            </Link>
+          </nav>
 
-                    <div className="border-t border-border p-3">
-                      <Button
-                        onClick={() => {
-                          setAccountOpen(false);
-                          handleSignOut();
-                        }}
-                        className="h-10 w-full rounded-none"
-                      >
-                        Sign out
-                      </Button>
+          {/* Right: Account and actions */}
+          <div className="flex items-center gap-2 justify-end">
+            <Dialog open={accountOpen} onOpenChange={setAccountOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="secondary"
+                  className="hidden md:inline-flex h-9 px-3 gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md border border-gray-200"
+                  aria-label="Open account settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="fixed right-4 top-16 left-auto bottom-auto w-[18rem] max-w-[calc(100%-2rem)] translate-x-0 translate-y-0 rounded-none p-0">
+                <div className="flex flex-col">
+                  <div
+                    className="px-5 py-4 text-white"
+                    style={{ backgroundColor: "var(--aau-blue)" }}
+                  >
+                    <DialogTitle className="text-sm font-semibold tracking-wide">
+                      Account
+                    </DialogTitle>
+                    <div className="mt-1.5 text-xs text-white/70 truncate">
+                      {currentSessionEmail}
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  <div className="border-t border-border p-2">
+                    <Button
+                      onClick={() => {
+                        setAccountOpen(false);
+                        handleSignOut();
+                      }}
+                      variant="outline"
+                      className="h-10 w-full rounded-none gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    >
+                      Sign out
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Mobile menu */}
             <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="md:hidden h-9 w-9 p-0 bg-white text-slate-900 hover:bg-white/90"
-                  aria-label="Open VP menu"
+                  className="md:hidden h-9 w-9 p-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  aria-label="Open menu"
                 >
                   <MenuIcon className="h-5 w-5" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="fixed right-0 top-0 left-auto bottom-0 h-dvh w-[20rem] max-w-[calc(100%-3rem)] translate-x-0 translate-y-0 rounded-none p-0 sm:max-w-[20rem]">
                 <div className="flex h-full flex-col">
-                  <div className="border-b border-border bg-slate-900 px-4 py-4 text-white">
+                  <div className="border-b border-gray-200 bg-white px-4 py-4 text-gray-900">
                     <DialogTitle className="text-sm font-semibold tracking-wide">
-                      VP Menu
+                      Menu
                     </DialogTitle>
-                    {isAuthed && (
-                      <div className="mt-1 text-xs text-white/70 truncate">
-                        {currentSessionEmail}
-                      </div>
-                    )}
+                    <div className="mt-1 text-xs text-gray-500 truncate">
+                      {currentSessionEmail}
+                    </div>
                   </div>
 
                   <nav aria-label="VP navigation" className="flex-1 p-2">
@@ -179,26 +189,23 @@ export function VPHeader({ userEmail }: { userEmail: string }) {
                         }
                         className="h-10 w-full justify-start rounded-none"
                       >
-                        Approved Proposals
+                        History
                       </Button>
                     </Link>
                   </nav>
-                  {isAuthed && (
-                    <div className="border-t border-border p-3">
-                      <div className="rounded border border-border bg-muted/40 px-3 py-2 text-xs text-foreground/70 truncate mb-2">
-                        {currentSessionEmail}
-                      </div>
-                      <Button
-                        onClick={() => {
-                          setMenuOpen(false);
-                          handleSignOut();
-                        }}
-                        className="h-10 w-full rounded-none"
-                      >
-                        Sign out
-                      </Button>
-                    </div>
-                  )}
+
+                  <div className="border-t border-gray-200 p-3">
+                    <Button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      variant="outline"
+                      className="h-10 w-full rounded-none gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    >
+                      Sign out
+                    </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>

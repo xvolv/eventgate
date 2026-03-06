@@ -89,6 +89,7 @@ export function CollaboratorModal({
             type="button"
             onClick={handleAddCollaborator}
             className="w-full rounded-none"
+            style={{ backgroundColor: "var(--aau-blue)" }}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Collaborator

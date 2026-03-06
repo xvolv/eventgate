@@ -21,8 +21,11 @@ export default async function AdminLayout({
     redirect("/verify?email=" + encodeURIComponent(user.email || ""));
   }
 
-  const admin = await prisma.systemRoleGrant.findUnique({
-    where: { email_role: { email: user.email.toLowerCase(), role: "ADMIN" } },
+  const admin = await prisma.systemRoleGrant.findFirst({
+    where: {
+      email: { equals: user.email, mode: "insensitive" },
+      role: "ADMIN",
+    },
   });
 
   if (!admin) {

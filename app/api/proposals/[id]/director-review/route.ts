@@ -51,11 +51,11 @@ export async function POST(
     if (
       directorApproval === undefined ||
       directorApproval === null ||
-      !directorComments
+      (directorApproval === "Rejected" && !directorComments)
     ) {
       return NextResponse.json(
         {
-          message: "Approval decision and comments are required",
+          message: "Rejection must include comments explaining the reason",
         },
         { status: 400 }
       );

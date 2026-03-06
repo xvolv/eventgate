@@ -4,6 +4,16 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HomeActions } from "./home-actions";
 import { LandingHeader } from "@/components/landing-header";
+import { PublicEvents } from "@/components/public-events";
+import {
+  CalendarCheck,
+  ShieldCheck,
+  ArrowRight,
+  ArrowUpRight,
+} from "lucide-react";
+
+// Cache the homepage for 60 seconds - events will be cached
+export const revalidate = 60;
 
 async function getDashboardHref(email: string | null | undefined) {
   const safeEmail = (email || "").trim();
@@ -36,6 +46,78 @@ async function getDashboardHref(email: string | null | undefined) {
             : "/president";
 }
 
+async function getPublicEvents() {
+  const now = new Date();
+
+  const [upcomingEvents, passedEvents] = await Promise.all([
+    prisma.event.findMany({
+      where: {
+        proposal: {
+          status: "DIRECTOR_APPROVED",
+        },
+        startTime: {
+          gt: now,
+        },
+      },
+      orderBy: {
+        startTime: "asc",
+      },
+      include: {
+        proposal: {
+          select: {
+            id: true,
+            club: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.event.findMany({
+      where: {
+        proposal: {
+          status: "DIRECTOR_APPROVED",
+        },
+        endTime: {
+          lt: now,
+        },
+      },
+      orderBy: {
+        startTime: "desc",
+      },
+      include: {
+        proposal: {
+          select: {
+            id: true,
+            club: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const formatEvent = (event: any) => ({
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    location: event.location,
+    startTime: event.startTime.toISOString(),
+    endTime: event.endTime.toISOString(),
+    clubName: event.proposal.club.name,
+  });
+
+  return {
+    upcomingEvents: upcomingEvents.map(formatEvent),
+    passedEvents: passedEvents.map(formatEvent),
+  };
+}
+
 export default async function HomePage() {
   const hdrs = await headers();
   const session = await auth.api.getSession({ headers: hdrs });
@@ -52,80 +134,131 @@ export default async function HomePage() {
       ? await getDashboardHref(session?.user?.email)
       : "/president";
 
+  const { upcomingEvents, passedEvents } = await getPublicEvents();
+
   return (
-    <div className="min-h-svh bg-background">
+    <div className="min-h-svh bg-white">
       <LandingHeader userEmail={userEmail} />
-      <main className="container mx-auto px-4 py-16 max-w-4xl">
-        <div className="max-w-2xl">
-          <h2 className="text-4xl font-semibold mb-4 text-balance">
-            Streamline Your Event Approval Process
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 text-pretty">
-            EventGate is a professional event proposal and approval system
-            designed for governmental and organizational event management.
-            Submit proposals, track status, and manage approvals all in one
-            place.
-          </p>
 
-          <HomeActions
-            isAuthed={isAuthed}
-            isVerified={isVerified}
-            userEmail={userEmail}
-            dashboardHref={dashboardHref}
-          />
+      {/* ===== HERO SECTION ===== */}
+      <section className="relative overflow-hidden">
+        {/* {image on the left section} */}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">For Requesters</h3>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li>Submit event proposals with detailed information</li>
-                <li>Track proposal status in real-time</li>
-                <li>Receive notifications on approvals</li>
-                <li>Maintain audit trail of all actions</li>
-              </ul>
+        <div className="container mx-auto px-12">
+          <div className="flex flex-col justify-center py-12 lg:py-20">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold leading-tight text-gray-900">
+              AAU Campus{" "}
+              <span style={{ color: "var(--aau-blue)" }}>Events</span>
+            </h1>
+
+            {/* Dual-color underline */}
+            <div className="flex gap-0 mt-4 mb-6">
+              <div
+                className="h-1 w-12 rounded-full"
+                style={{ backgroundColor: "var(--aau-red)" }}
+              />
+              <div
+                className="h-1 w-20 rounded-full ml-1"
+                style={{ backgroundColor: "var(--aau-blue)" }}
+              />
             </div>
-            <div>
-              <h3 className="font-semibold text-lg mb-2">For Approvers</h3>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li>Review all event proposals systematically</li>
-                <li>Approve or reject with detailed feedback</li>
-                <li>View approval history and audit trails</li>
-                <li>Access system-wide statistics and insights</li>
-              </ul>
-            </div>
+
+            <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
+              Discover upcoming events happening across Addis Ababa University
+              campus. Stay informed about clubs, activities, and campus life.
+            </p>
+
+            <HomeActions
+              isAuthed={isAuthed}
+              isVerified={isVerified}
+              userEmail={userEmail}
+              dashboardHref={dashboardHref}
+            />
           </div>
+        </div>
+      </section>
 
-          <div className="border-t border-border mt-12 pt-12">
-            <h3 className="font-semibold text-lg mb-4">Core Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-              <div>
-                <p className="font-medium mb-2">7-Day Advance Submission</p>
-                <p className="text-muted-foreground">
-                  All events must be submitted at least 7 days in advance
-                </p>
+      {/* ===== EVENTS SECTION ===== */}
+      <section id="events" className="py-16 lg:py-20">
+        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
+          <PublicEvents
+            initialUpcomingEvents={upcomingEvents}
+            initialPassedEvents={passedEvents}
+          />
+        </div>
+      </section>
+
+      {/* ===== FOOTER ===== */}
+      <footer
+        id="about"
+        className="text-white"
+        style={{ backgroundColor: "var(--aau-blue-dark)" }}
+      >
+        <div className="container mx-auto px-4 lg:px-8 py-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Column 1: Brand */}
+            <div className="sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <img
+                  src="logoWhite.svg"
+                  alt="AAU Logo"
+                  className="h-40 w-auto object-contain"
+                />
               </div>
-              <div>
-                <p className="font-medium mb-2">Role-Based Access</p>
-                <p className="text-muted-foreground">
-                  Different views and permissions for requesters and approvers
-                </p>
+            </div>
+
+            {/* Column 3: Resources */}
+
+            <div>
+              <h4 className="font-semibold text-sm mb-4 tracking-wider uppercase">
+                Resources
+              </h4>
+              <div className="flex gap-0 mb-4">
+                <div
+                  className="h-0.5 w-6 rounded-full"
+                  style={{ backgroundColor: "var(--aau-red)" }}
+                />
+                <div
+                  className="h-0.5 w-10 rounded-full ml-0.5"
+                  style={{ backgroundColor: "var(--aau-blue-light)" }}
+                />
               </div>
-              <div>
-                <p className="font-medium mb-2">Complete Audit Trail</p>
-                <p className="text-muted-foreground">
-                  Track every submission, approval, and modification
-                </p>
-              </div>
+              <ul className="space-y-2.5 text-sm text-white/60">
+                <li>
+                  <a
+                    href="https://www.aau.edu.et/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors flex items-center gap-2"
+                  >
+                    <ArrowRight className="h-4 w-4" /> AAU Website
+                  </a>
+                </li>
+                <li>
+                  {" "}
+                  {!isAuthed && (
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_APP_URL}/login`}
+                      className="inline-flex items-center gap-1 text-sm text-white/60  transition-colors"
+                    >
+                      <ArrowRight className="h-4 w-4 mr-1" />{" "}
+                      <span className="hover:text-white flex">
+                        Login <ArrowUpRight className="h-3 w-3" />{" "}
+                      </span>
+                    </a>
+                  )}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
-      </main>
 
-      <footer className="border-t border-border mt-16 py-6 text-center text-sm text-muted-foreground">
-        <p>EventGate – Clubs Administration System</p>
-        <p className="mt-1">
-          © 2026 Addis Ababa University. All rights reserved.
-        </p>
+        {/* Copyright bar */}
+        <div className="border-t border-white/10">
+          <div className="container mx-auto px-4 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
+            <p>© 2026 Addis Ababa University. All rights reserved.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );

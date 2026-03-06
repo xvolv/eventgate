@@ -66,6 +66,7 @@ export default function DirectorPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [acting, setActing] = useState<{
     proposalId: string;
     action: "approve" | "reject";
@@ -75,10 +76,13 @@ export default function DirectorPage() {
     null,
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showRejectReason, setShowRejectReason] = useState(false);
 
   const openDetails = (proposal: Proposal) => {
     setSelectedProposal(proposal);
     setDetailsOpen(true);
+    setShowRejectReason(false);
+    setValidationError(null);
   };
 
   const fetchProposals = async () => {
@@ -112,7 +116,7 @@ export default function DirectorPage() {
             directorApproval: approve ? "Approved" : "Rejected",
             directorComments: comments[proposalId] || "",
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -123,14 +127,31 @@ export default function DirectorPage() {
       setComments((prev) => ({ ...prev, [proposalId]: "" }));
       setDetailsOpen(false);
       setSelectedProposal(null);
+      setShowRejectReason(false);
       await fetchProposals();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to submit decision"
+        err instanceof Error ? err.message : "Failed to submit decision",
       );
     } finally {
       setActing(null);
     }
+  };
+
+  const handleReject = (proposalId: string) => {
+    // First step: show the rejection reason textarea
+    if (!showRejectReason) {
+      setShowRejectReason(true);
+      return;
+    }
+    // Second step: validate and submit
+    const reason = (comments[proposalId] || "").trim();
+    if (!reason) {
+      setValidationError("Please add a rejection reason before submitting.");
+      return;
+    }
+    setValidationError(null);
+    handleDecision(proposalId, false);
   };
 
   useEffect(() => {
@@ -430,28 +451,54 @@ export default function DirectorPage() {
 
                 {selectedProposal.status === "SU_APPROVED" && (
                   <section className="space-y-4 border-t border-border pt-4">
-                    <div>
-                      <Label htmlFor={`comments-${selectedProposal.id}`}>
-                        Director Comments
-                      </Label>
-                      <Textarea
-                        id={`comments-${selectedProposal.id}`}
-                        placeholder="Add decision notes..."
-                        value={comments[selectedProposal.id] || ""}
-                        onChange={(e) =>
-                          setComments((prev) => ({
-                            ...prev,
-                            [selectedProposal.id]: e.target.value,
-                          }))
-                        }
-                        className="mt-2"
-                      />
-                    </div>
+                    {showRejectReason ? (
+                      <div>
+                        <Label htmlFor={`comments-${selectedProposal.id}`}>
+                          Why are you rejecting this proposal?
+                        </Label>
+                        <Textarea
+                          id={`comments-${selectedProposal.id}`}
+                          placeholder="Add a clear reason so the club president understands the rejection."
+                          value={comments[selectedProposal.id] || ""}
+                          onChange={(e) =>
+                            setComments((prev) => ({
+                              ...prev,
+                              [selectedProposal.id]: e.target.value,
+                            }))
+                          }
+                          className="mt-2"
+                          required
+                        />
+                        {validationError && (
+                          <p className="text-sm text-destructive mt-1">
+                            {validationError}
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                     <div className="flex flex-wrap gap-3">
                       <Button
-                        onClick={() =>
-                          handleDecision(selectedProposal.id, true)
-                        }
+                        onClick={() => {
+                          // If rejection reason is being written, warn user that approving will discard it
+                          if (
+                            showRejectReason &&
+                            comments[selectedProposal.id]?.trim()
+                          ) {
+                            if (
+                              !confirm(
+                                "Are you sure you want to approve? This will discard your rejection reason.",
+                              )
+                            ) {
+                              return;
+                            }
+                            setShowRejectReason(false);
+                            setComments((prev) => ({
+                              ...prev,
+                              [selectedProposal.id]: "",
+                            }));
+                          }
+                          handleDecision(selectedProposal.id, true);
+                        }}
                         disabled={acting?.proposalId === selectedProposal.id}
                         className="rounded-none"
                       >
@@ -461,9 +508,7 @@ export default function DirectorPage() {
                           : "Approve"}
                       </Button>
                       <Button
-                        onClick={() =>
-                          handleDecision(selectedProposal.id, false)
-                        }
+                        onClick={() => handleReject(selectedProposal.id)}
                         disabled={acting?.proposalId === selectedProposal.id}
                         variant="destructive"
                         className="rounded-none"
@@ -471,7 +516,9 @@ export default function DirectorPage() {
                         {acting?.proposalId === selectedProposal.id &&
                         acting.action === "reject"
                           ? "Rejecting..."
-                          : "Reject"}
+                          : showRejectReason
+                            ? "Submit Rejection"
+                            : "Reject"}
                       </Button>
                     </div>
                   </section>

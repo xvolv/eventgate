@@ -65,21 +65,42 @@ interface Proposal {
   }>;
 }
 
+type ProposalPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+const PROPOSALS_CACHE_TTL_MS = 15 * 1000;
+const DEFAULT_PAGE = 1;
+
+const proposalsCacheByPage = new Map<
+  number,
+  {
+    proposals: Proposal[];
+    pagination: ProposalPagination | null;
+    cachedAt: number;
+  }
+>();
+
+let clubNameCache: { value: string; cachedAt: number } | null = null;
+
 export default function ProposalsPage() {
-  const { data, isPending } = useSession();
+  const { isPending } = useSession();
   const router = useRouter();
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialPageCache = proposalsCacheByPage.get(DEFAULT_PAGE);
+  const [proposals, setProposals] = useState<Proposal[]>(
+    initialPageCache?.proposals ?? [],
+  );
+  const [loading, setLoading] = useState(!initialPageCache);
   const [error, setError] = useState<string | null>(null);
   const [resubmittingId, setResubmittingId] = useState<string | null>(null);
   const [archivingId, setArchivingId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null>(null);
+  const [page, setPage] = useState(DEFAULT_PAGE);
+  const [pagination, setPagination] = useState<ProposalPagination | null>(
+    initialPageCache?.pagination ?? null,
+  );
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
     null,
   );
@@ -89,9 +110,13 @@ export default function ProposalsPage() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [contributorsPage, setContributorsPage] = useState(1);
   const [guestsPage, setGuestsPage] = useState(1);
-  const [clubName, setClubName] = useState("");
+  const [clubName, setClubName] = useState(clubNameCache?.value ?? "");
 
-  const fetchProposals = async (nextPage: number) => {
+  const fetchProposals = async (
+    nextPage: number,
+    options?: { applyState?: boolean },
+  ) => {
+    const applyState = options?.applyState ?? true;
     const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`, {
       cache: "no-store",
     });
@@ -104,12 +129,31 @@ export default function ProposalsPage() {
       throw new Error(message);
     }
     const resp = await response.json();
-    setProposals(resp.proposals);
-    setPagination(resp.pagination || null);
+    const nextProposals = (resp.proposals || []) as Proposal[];
+    const nextPagination = (resp.pagination || null) as ProposalPagination | null;
+
+    proposalsCacheByPage.set(nextPage, {
+      proposals: nextProposals,
+      pagination: nextPagination,
+      cachedAt: Date.now(),
+    });
+
+    if (applyState) {
+      setProposals(nextProposals);
+      setPagination(nextPagination);
+    }
   };
 
   useEffect(() => {
-    //fetch the club info
+    if (isPending) return;
+    const cacheIsFresh =
+      clubNameCache &&
+      Date.now() - clubNameCache.cachedAt < PROPOSALS_CACHE_TTL_MS;
+    if (cacheIsFresh && clubNameCache?.value) {
+      setClubName(clubNameCache.value);
+      return;
+    }
+
     const fetchClubInfo = async () => {
       try {
         const clubResponse = await fetch("/api/club", {
@@ -121,23 +165,47 @@ export default function ProposalsPage() {
         const clubData = await clubResponse.json();
         const clubLabel = clubData?.club?.name;
         if (clubLabel) {
-          setClubName(String(clubLabel.toUpperCase()));
+          const nextClubName = String(clubLabel.toUpperCase());
+          clubNameCache = { value: nextClubName, cachedAt: Date.now() };
+          setClubName(nextClubName);
         }
       } catch {
         setError("Failed to fetch club info");
       }
     };
 
+    fetchClubInfo();
+  }, [isPending]);
+
+  useEffect(() => {
     if (isPending) return;
+    const cachedPage = proposalsCacheByPage.get(page);
+    const hasCachedPage = Boolean(cachedPage);
+    const cacheIsFresh =
+      hasCachedPage &&
+      Date.now() - (cachedPage?.cachedAt || 0) < PROPOSALS_CACHE_TTL_MS;
+
+    if (cachedPage) {
+      setProposals(cachedPage.proposals);
+      setPagination(cachedPage.pagination);
+      setLoading(false);
+    }
+
+    if (cacheIsFresh) {
+      return;
+    }
 
     const run = async () => {
       try {
-        await fetchClubInfo();
+        setError(null);
+        if (!hasCachedPage) setLoading(true);
         await fetchProposals(page);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch proposals",
-        );
+        if (!hasCachedPage) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch proposals",
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -233,28 +301,47 @@ export default function ProposalsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-10 max-w-5xl">
-        <div className="space-y-4">
-          <Card className="shadow-none rounded-none">
+      <div className="min-h-svh bg-white">
+        <main className="container mx-auto px-4 py-10 max-w-5xl">
+          <Card className=" border-0 rounded-xl mb-6">
             <CardHeader>
-              <CardTitle className="text-xl">My Proposals</CardTitle>
+              <div className="flex items-center gap-3 mb-2">
+                <div
+                  className="h-1 w-8 rounded-full"
+                  style={{ backgroundColor: "var(--aau-red)" }}
+                ></div>
+                <div
+                  className="h-1 w-12 rounded-full"
+                  style={{ backgroundColor: "var(--aau-blue)" }}
+                ></div>
+              </div>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                My Proposals
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                View and manage your event proposals
+              </CardDescription>
             </CardHeader>
           </Card>
           {Array.from({ length: 5 }).map((_, index) => (
             <SkeletonProposalCard key={index} />
           ))}
-        </div>
+        </main>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-svh flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-svh bg-white flex items-center justify-center">
+        <Card className="w-full max-w-md shadow-lg rounded-xl">
           <CardContent className="p-6">
-            <p className="text-center text-destructive">{error}</p>
-            <Button onClick={() => window.location.reload()} className="mt-4">
+            <p className="text-center text-red-600 mb-4">{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="w-full rounded-none"
+              style={{ backgroundColor: "var(--aau-blue)" }}
+            >
               Try Again
             </Button>
           </CardContent>
@@ -264,26 +351,59 @@ export default function ProposalsPage() {
   }
 
   return (
-    <div className="min-h-svh bg-background rounded-none  ">
-      <div className="absolute top-22 left-20 font-serif text-slate-900 flex">
-        <div>
-          <span>{clubName ? `${clubName} ` : ""}</span>
-          <div className="text-[10px] font-sans text-gray-600 absolute left-22 top-5">
-            <span>Proposals</span>
-          </div>
-        </div>
-      </div>
-      <main className="container mx-auto px-4 py-10 max-w-5xl rounded-none">
+    <div className="min-h-svh bg-white">
+      <main className="container mx-auto px-4 py-10 max-w-5xl">
+        <Card className="border border-gray-200 rounded-none mb-6">
+          <CardHeader className="pb-6">
+            {/* Club name in caps */}
+            {clubName && (
+              <p className="text-sm font-semibold text-gray-500 tracking-widest uppercase mb-2">
+                {clubName}
+              </p>
+            )}
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className="h-1 w-8 rounded-full"
+                style={{ backgroundColor: "var(--aau-red)" }}
+              ></div>
+              <div
+                className="h-1 w-12 rounded-full"
+                style={{ backgroundColor: "var(--aau-blue)" }}
+              ></div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-bold text-gray-900">
+                  My Proposals
+                </CardTitle>
+                <CardDescription className="text-gray-600">
+                  View and manage your event proposals
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => router.push("/president/new")}
+                className="rounded-none text-white"
+                style={{ backgroundColor: "var(--aau-blue)" }}
+              >
+                + New Proposal
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
         {proposals.length === 0 ? (
-          <Card className="shadow-none rounded-none">
+          <Card className="border border-gray-200 rounded-none">
             <CardContent className="p-12 text-center">
-              <h3 className="text-lg font-medium mb-4">No Proposals Yet</h3>
-              <p className="text-muted-foreground mb-6">
+              <h3 className="text-lg font-medium mb-4 text-gray-900">
+                No Proposals Yet
+              </h3>
+              <p className="text-gray-600 mb-6">
                 You haven't submitted any event proposals yet.
               </p>
               <Button
                 onClick={() => router.push("/president/new")}
                 className="rounded-none"
+                style={{ backgroundColor: "var(--aau-blue)" }}
               >
                 Create Your First Proposal
               </Button>
@@ -291,7 +411,7 @@ export default function ProposalsPage() {
           </Card>
         ) : (
           <>
-            <div className="space-y-2 rounded-none">
+            <div className="space-y-4">
               {proposals.map((proposal) => {
                 const { western, ethiopian } = formatDualTimeRange(
                   proposal.event?.startTime,
@@ -300,8 +420,11 @@ export default function ProposalsPage() {
                 const daysLeft = formatDaysLeft(proposal.event?.startTime);
 
                 return (
-                  <Card key={proposal.id} className="shadow-none rounded-none">
-                    <CardContent className="p-0 rounded-none">
+                  <Card
+                    key={proposal.id}
+                    className="border border-gray-200 rounded-none  transition-shadow"
+                  >
+                    <CardContent className="p-0">
                       <div
                         role="button"
                         tabIndex={0}
@@ -312,27 +435,27 @@ export default function ProposalsPage() {
                             openDetails(proposal);
                           }
                         }}
-                        className="relative flex items-center gap-3 px-4 py-3 cursor-pointer rounded-none overflow-hidden group"
+                        className="relative flex items-center gap-3 px-4 py-3 cursor-pointer group"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-muted/70 text-xs font-medium text-foreground/80 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100 w-xl">
+                        <div className="pointer-events-none absolute inset-0 bg-gray-100/70 text-xs font-medium text-gray-700 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                           Click to see details
                         </div>
-                        <div className="min-w-0 flex-1 rounded-none">
-                          <div className="flex items-center justify-between gap-3 rounded-none">
-                            <div className="min-w-0 rounded-none">
-                              <div className="font-medium truncate rounded-none">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="font-medium truncate">
                                 {proposal.event?.title || "Untitled Proposal"}
                               </div>
-                              <div className="text-xs text-muted-foreground truncate">
+                              <div className="text-xs text-gray-500 truncate">
                                 {daysLeft ? `${daysLeft} • ` : ""}
                                 {ethiopian
                                   ? `Time: ${western} | LT: [${ethiopian}]`
                                   : `Time: ${western}`}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 rounded-none">
+                            <div className="flex items-center gap-2">
                               <Badge
-                                className={`rounded-none ${
+                                className={`rounded-full ${
                                   statusColors[
                                     proposal.status as keyof typeof statusColors
                                   ]
@@ -349,7 +472,7 @@ export default function ProposalsPage() {
                         </div>
 
                         <div
-                          className="flex items-center gap-2 rounded-none"
+                          className="flex items-center gap-2"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
@@ -427,7 +550,7 @@ export default function ProposalsPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3 pt-6">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-gray-600">
                 {pagination
                   ? `Page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total)`
                   : null}
