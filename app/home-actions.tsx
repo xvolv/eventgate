@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type HomeActionsProps = {
   isAuthed: boolean;
   isVerified: boolean;
@@ -34,13 +36,14 @@ export function HomeActions({
   // If logged in and verified, show dashboard button
   return (
     <div className="flex flex-wrap gap-3">
-      <a
+      <Link
         href={dashboardHref}
+        prefetch
         className="inline-flex items-center justify-center rounded-md font-semibold text-white px-8 py-3 cursor-pointer shadow-md hover:shadow-lg transition-all"
         style={{ backgroundColor: "var(--aau-blue)" }}
       >
         Go to Dashboard
-      </a>
+      </Link>
     </div>
   );
 }

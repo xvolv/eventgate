@@ -3,7 +3,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendProposalStatusEmail } from "@/lib/email";
 
-export const dynamic = "force-dynamic";
+// Cache for 60 seconds - use revalidate to refresh
+export const revalidate = 60;
+
+// Note: dynamic = force-dynamic was removed to allow caching
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;

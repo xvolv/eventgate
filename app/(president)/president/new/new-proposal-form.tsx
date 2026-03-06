@@ -18,11 +18,46 @@ import { Label } from "@/components/ui/label";
 import { GuestModal } from "@/components/guest-modal";
 import { CollaboratorModal } from "@/components/collaborator-modal";
 
+type ClubInfo = { id: string; name: string };
+type Officers = {
+  president: { email: string; name: string | null } | null;
+  vicePresident: { email: string; name: string | null } | null;
+  secretary: { email: string; name: string | null } | null;
+};
+type LocationItem = { id: string; name: string };
+
+const EMPTY_OFFICERS: Officers = {
+  president: null,
+  vicePresident: null,
+  secretary: null,
+};
+
+const NEW_PROPOSAL_CACHE_TTL_MS = 60 * 1000;
+
+let newProposalReferenceCache: {
+  clubInfo: ClubInfo | null;
+  officers: Officers;
+  locations: LocationItem[];
+  locationsLoaded: boolean;
+  cachedAt: number;
+} = {
+  clubInfo: null,
+  officers: EMPTY_OFFICERS,
+  locations: [],
+  locationsLoaded: false,
+  cachedAt: 0,
+};
+
 export default function NewProposalForm({ userEmail }: { userEmail: string }) {
   const { data } = useSession();
   const router = useRouter();
 
   const minDateTimeValue = new Date().toISOString().slice(0, 16);
+  const cacheIsFresh =
+    Date.now() - newProposalReferenceCache.cachedAt < NEW_PROPOSAL_CACHE_TTL_MS;
+  const hasCachedReferenceData =
+    Boolean(newProposalReferenceCache.clubInfo) &&
+    newProposalReferenceCache.locationsLoaded;
 
   type EventOccurrenceForm = {
     startDateTime: string;
@@ -30,18 +65,12 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
     location: string;
   };
 
-  const [clubInfo, setClubInfo] = useState<{ id: string; name: string } | null>(
-    null,
+  const [clubInfo, setClubInfo] = useState<ClubInfo | null>(
+    cacheIsFresh ? newProposalReferenceCache.clubInfo : null,
   );
-  const [officers, setOfficers] = useState<{
-    president: { email: string; name: string | null } | null;
-    vicePresident: { email: string; name: string | null } | null;
-    secretary: { email: string; name: string | null } | null;
-  }>({
-    president: null,
-    vicePresident: null,
-    secretary: null,
-  });
+  const [officers, setOfficers] = useState<Officers>(
+    cacheIsFresh ? newProposalReferenceCache.officers : EMPTY_OFFICERS,
+  );
   const [title, setTitle] = useState("");
   const [occurrences, setOccurrences] = useState<EventOccurrenceForm[]>([
     { startDateTime: "", endDateTime: "", location: "" },
@@ -62,34 +91,82 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Locations for dropdown
-  const [locations, setLocations] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
-  const [locationsLoading, setLocationsLoading] = useState(true);
+  const [locations, setLocations] = useState<LocationItem[]>(
+    cacheIsFresh ? newProposalReferenceCache.locations : [],
+  );
+  const [locationsLoading, setLocationsLoading] = useState(
+    !(cacheIsFresh && hasCachedReferenceData),
+  );
 
   useEffect(() => {
+    if (cacheIsFresh) {
+      if (newProposalReferenceCache.clubInfo) {
+        setClubInfo(newProposalReferenceCache.clubInfo);
+      }
+      setOfficers(newProposalReferenceCache.officers);
+      if (newProposalReferenceCache.officers.president?.name) {
+        const cachedPresidentName = newProposalReferenceCache.officers.president.name;
+        setPresidentName((prev) =>
+          prev.trim() ? prev : cachedPresidentName,
+        );
+      }
+      if (newProposalReferenceCache.officers.vicePresident?.name) {
+        const cachedVpName = newProposalReferenceCache.officers.vicePresident.name;
+        setVpName((prev) =>
+          prev.trim() ? prev : cachedVpName,
+        );
+      }
+      if (newProposalReferenceCache.officers.secretary?.name) {
+        const cachedSecretaryName = newProposalReferenceCache.officers.secretary.name;
+        setSecretaryName((prev) =>
+          prev.trim() ? prev : cachedSecretaryName,
+        );
+      }
+      if (newProposalReferenceCache.locationsLoaded) {
+        setLocations(newProposalReferenceCache.locations);
+        setLocationsLoading(false);
+      }
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchClubInfo = async () => {
       try {
         const response = await fetch("/api/club", { cache: "no-store" });
         if (response.ok) {
           const data = await response.json();
-          setClubInfo(data.club);
-          const safeOfficers = data.officers || {
-            president: null,
-            vicePresident: null,
-            secretary: null,
-          };
+          if (cancelled) return;
+          const nextClubInfo = (data.club || null) as ClubInfo | null;
+          const safeOfficers = (data.officers || EMPTY_OFFICERS) as Officers;
+          setClubInfo(nextClubInfo);
           setOfficers(safeOfficers);
 
           if (safeOfficers.president?.name) {
-            setPresidentName(safeOfficers.president.name);
+            const presidentOfficerName = safeOfficers.president.name;
+            setPresidentName((prev) =>
+              prev.trim() ? prev : presidentOfficerName,
+            );
           }
           if (safeOfficers.vicePresident?.name) {
-            setVpName(safeOfficers.vicePresident.name);
+            const vicePresidentOfficerName = safeOfficers.vicePresident.name;
+            setVpName((prev) =>
+              prev.trim() ? prev : vicePresidentOfficerName,
+            );
           }
           if (safeOfficers.secretary?.name) {
-            setSecretaryName(safeOfficers.secretary.name);
+            const secretaryOfficerName = safeOfficers.secretary.name;
+            setSecretaryName((prev) =>
+              prev.trim() ? prev : secretaryOfficerName,
+            );
           }
+
+          newProposalReferenceCache = {
+            ...newProposalReferenceCache,
+            clubInfo: nextClubInfo,
+            officers: safeOfficers,
+            cachedAt: Date.now(),
+          };
         }
       } catch (error) {
         console.error("Failed to fetch club info:", error);
@@ -103,15 +180,29 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
         const response = await fetch("/api/locations", { cache: "no-store" });
         if (response.ok) {
           const data = await response.json();
-          setLocations(data.locations || []);
+          if (cancelled) return;
+          const nextLocations = (data.locations || []) as LocationItem[];
+          setLocations(nextLocations);
+          newProposalReferenceCache = {
+            ...newProposalReferenceCache,
+            locations: nextLocations,
+            locationsLoaded: true,
+            cachedAt: Date.now(),
+          };
         }
       } catch (error) {
         console.error("Failed to fetch locations:", error);
       } finally {
-        setLocationsLoading(false);
+        if (!cancelled) {
+          setLocationsLoading(false);
+        }
       }
     };
     fetchLocations();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const validate = () => {

@@ -12,6 +12,9 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
+// Cache the homepage for 60 seconds - events will be cached
+export const revalidate = 60;
+
 async function getDashboardHref(email: string | null | undefined) {
   const safeEmail = (email || "").trim();
   if (!safeEmail) return "/president";

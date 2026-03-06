@@ -65,21 +65,42 @@ interface Proposal {
   }>;
 }
 
+type ProposalPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+const PROPOSALS_CACHE_TTL_MS = 15 * 1000;
+const DEFAULT_PAGE = 1;
+
+const proposalsCacheByPage = new Map<
+  number,
+  {
+    proposals: Proposal[];
+    pagination: ProposalPagination | null;
+    cachedAt: number;
+  }
+>();
+
+let clubNameCache: { value: string; cachedAt: number } | null = null;
+
 export default function ProposalsPage() {
-  const { data, isPending } = useSession();
+  const { isPending } = useSession();
   const router = useRouter();
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialPageCache = proposalsCacheByPage.get(DEFAULT_PAGE);
+  const [proposals, setProposals] = useState<Proposal[]>(
+    initialPageCache?.proposals ?? [],
+  );
+  const [loading, setLoading] = useState(!initialPageCache);
   const [error, setError] = useState<string | null>(null);
   const [resubmittingId, setResubmittingId] = useState<string | null>(null);
   const [archivingId, setArchivingId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null>(null);
+  const [page, setPage] = useState(DEFAULT_PAGE);
+  const [pagination, setPagination] = useState<ProposalPagination | null>(
+    initialPageCache?.pagination ?? null,
+  );
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
     null,
   );
@@ -89,9 +110,13 @@ export default function ProposalsPage() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [contributorsPage, setContributorsPage] = useState(1);
   const [guestsPage, setGuestsPage] = useState(1);
-  const [clubName, setClubName] = useState("");
+  const [clubName, setClubName] = useState(clubNameCache?.value ?? "");
 
-  const fetchProposals = async (nextPage: number) => {
+  const fetchProposals = async (
+    nextPage: number,
+    options?: { applyState?: boolean },
+  ) => {
+    const applyState = options?.applyState ?? true;
     const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`, {
       cache: "no-store",
     });
@@ -104,12 +129,31 @@ export default function ProposalsPage() {
       throw new Error(message);
     }
     const resp = await response.json();
-    setProposals(resp.proposals);
-    setPagination(resp.pagination || null);
+    const nextProposals = (resp.proposals || []) as Proposal[];
+    const nextPagination = (resp.pagination || null) as ProposalPagination | null;
+
+    proposalsCacheByPage.set(nextPage, {
+      proposals: nextProposals,
+      pagination: nextPagination,
+      cachedAt: Date.now(),
+    });
+
+    if (applyState) {
+      setProposals(nextProposals);
+      setPagination(nextPagination);
+    }
   };
 
   useEffect(() => {
-    //fetch the club info
+    if (isPending) return;
+    const cacheIsFresh =
+      clubNameCache &&
+      Date.now() - clubNameCache.cachedAt < PROPOSALS_CACHE_TTL_MS;
+    if (cacheIsFresh && clubNameCache?.value) {
+      setClubName(clubNameCache.value);
+      return;
+    }
+
     const fetchClubInfo = async () => {
       try {
         const clubResponse = await fetch("/api/club", {
@@ -121,23 +165,47 @@ export default function ProposalsPage() {
         const clubData = await clubResponse.json();
         const clubLabel = clubData?.club?.name;
         if (clubLabel) {
-          setClubName(String(clubLabel.toUpperCase()));
+          const nextClubName = String(clubLabel.toUpperCase());
+          clubNameCache = { value: nextClubName, cachedAt: Date.now() };
+          setClubName(nextClubName);
         }
       } catch {
         setError("Failed to fetch club info");
       }
     };
 
+    fetchClubInfo();
+  }, [isPending]);
+
+  useEffect(() => {
     if (isPending) return;
+    const cachedPage = proposalsCacheByPage.get(page);
+    const hasCachedPage = Boolean(cachedPage);
+    const cacheIsFresh =
+      hasCachedPage &&
+      Date.now() - (cachedPage?.cachedAt || 0) < PROPOSALS_CACHE_TTL_MS;
+
+    if (cachedPage) {
+      setProposals(cachedPage.proposals);
+      setPagination(cachedPage.pagination);
+      setLoading(false);
+    }
+
+    if (cacheIsFresh) {
+      return;
+    }
 
     const run = async () => {
       try {
-        await fetchClubInfo();
+        setError(null);
+        if (!hasCachedPage) setLoading(true);
         await fetchProposals(page);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch proposals",
-        );
+        if (!hasCachedPage) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch proposals",
+          );
+        }
       } finally {
         setLoading(false);
       }
