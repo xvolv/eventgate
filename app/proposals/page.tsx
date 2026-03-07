@@ -28,6 +28,7 @@ import {
 import { formatDualTimeRange } from "@/lib/utils";
 import { statusColors, statusLabels } from "@/lib/proposal-status";
 import { Trash } from "lucide-react";
+import { Edit } from "lucide-react";
 
 interface Proposal {
   id: string;
@@ -72,24 +73,67 @@ type ProposalPagination = {
   totalPages: number;
 };
 
+type ProposalsCacheEntry = {
+  proposals: Proposal[];
+  pagination: ProposalPagination | null;
+  cachedAt: number;
+};
+
+type ClubNameCacheEntry = {
+  clubName: string;
+  cachedAt: number;
+};
+
 const PROPOSALS_CACHE_TTL_MS = 15 * 1000;
+const PROPOSALS_CACHE_KEY_PREFIX = "eventgate:president:proposals:page:";
+const CLUB_CACHE_KEY = "eventgate:president:club-name";
 const DEFAULT_PAGE = 1;
 
-const proposalsCacheByPage = new Map<
-  number,
-  {
-    proposals: Proposal[];
-    pagination: ProposalPagination | null;
-    cachedAt: number;
+function getProposalsCache(page: number): ProposalsCacheEntry | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(
+      `${PROPOSALS_CACHE_KEY_PREFIX}${page}`,
+    );
+    if (!raw) return null;
+    return JSON.parse(raw) as ProposalsCacheEntry;
+  } catch {
+    return null;
   }
->();
+}
 
-let clubNameCache: { value: string; cachedAt: number } | null = null;
+function setProposalsCache(page: number, value: ProposalsCacheEntry) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(
+      `${PROPOSALS_CACHE_KEY_PREFIX}${page}`,
+      JSON.stringify(value),
+    );
+  } catch {}
+}
+
+function getClubNameCache(): ClubNameCacheEntry | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(CLUB_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ClubNameCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function setClubNameCache(value: ClubNameCacheEntry) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(CLUB_CACHE_KEY, JSON.stringify(value));
+  } catch {}
+}
 
 export default function ProposalsPage() {
   const { isPending } = useSession();
   const router = useRouter();
-  const initialPageCache = proposalsCacheByPage.get(DEFAULT_PAGE);
+  const initialPageCache = getProposalsCache(DEFAULT_PAGE);
   const [proposals, setProposals] = useState<Proposal[]>(
     initialPageCache?.proposals ?? [],
   );
@@ -110,13 +154,10 @@ export default function ProposalsPage() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [contributorsPage, setContributorsPage] = useState(1);
   const [guestsPage, setGuestsPage] = useState(1);
-  const [clubName, setClubName] = useState(clubNameCache?.value ?? "");
+  const initialClubCache = getClubNameCache();
+  const [clubName, setClubName] = useState(initialClubCache?.clubName ?? "");
 
-  const fetchProposals = async (
-    nextPage: number,
-    options?: { applyState?: boolean },
-  ) => {
-    const applyState = options?.applyState ?? true;
+  const fetchProposals = async (nextPage: number) => {
     const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`, {
       cache: "no-store",
     });
@@ -131,26 +172,24 @@ export default function ProposalsPage() {
     const resp = await response.json();
     const nextProposals = (resp.proposals || []) as Proposal[];
     const nextPagination = (resp.pagination || null) as ProposalPagination | null;
-
-    proposalsCacheByPage.set(nextPage, {
+    setProposals(nextProposals);
+    setPagination(nextPagination);
+    setProposalsCache(nextPage, {
       proposals: nextProposals,
       pagination: nextPagination,
       cachedAt: Date.now(),
     });
-
-    if (applyState) {
-      setProposals(nextProposals);
-      setPagination(nextPagination);
-    }
   };
 
   useEffect(() => {
     if (isPending) return;
-    const cacheIsFresh =
-      clubNameCache &&
-      Date.now() - clubNameCache.cachedAt < PROPOSALS_CACHE_TTL_MS;
-    if (cacheIsFresh && clubNameCache?.value) {
-      setClubName(clubNameCache.value);
+    const cachedClub = getClubNameCache();
+    const hasFreshCachedClub =
+      Boolean(cachedClub?.clubName) &&
+      Date.now() - (cachedClub?.cachedAt || 0) < PROPOSALS_CACHE_TTL_MS;
+
+    if (hasFreshCachedClub && cachedClub?.clubName) {
+      setClubName(cachedClub.clubName);
       return;
     }
 
@@ -166,8 +205,8 @@ export default function ProposalsPage() {
         const clubLabel = clubData?.club?.name;
         if (clubLabel) {
           const nextClubName = String(clubLabel.toUpperCase());
-          clubNameCache = { value: nextClubName, cachedAt: Date.now() };
           setClubName(nextClubName);
+          setClubNameCache({ clubName: nextClubName, cachedAt: Date.now() });
         }
       } catch {
         setError("Failed to fetch club info");
@@ -179,7 +218,7 @@ export default function ProposalsPage() {
 
   useEffect(() => {
     if (isPending) return;
-    const cachedPage = proposalsCacheByPage.get(page);
+    const cachedPage = getProposalsCache(page);
     const hasCachedPage = Boolean(cachedPage);
     const cacheIsFresh =
       hasCachedPage &&
@@ -435,11 +474,8 @@ export default function ProposalsPage() {
                             openDetails(proposal);
                           }
                         }}
-                        className="relative flex items-center gap-3 px-4 py-3 cursor-pointer group"
+                        className="relative flex items-center gap-3 px-4 py-3 cursor-pointer"
                       >
-                        <div className="pointer-events-none absolute inset-0 bg-gray-100/70 text-xs font-medium text-gray-700 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                          Click to see details
-                        </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
@@ -453,7 +489,7 @@ export default function ProposalsPage() {
                                   : `Time: ${western}`}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 ">
                               <Badge
                                 className={`rounded-full ${
                                   statusColors[
@@ -472,7 +508,7 @@ export default function ProposalsPage() {
                         </div>
 
                         <div
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 "
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
@@ -487,6 +523,7 @@ export default function ProposalsPage() {
                               className="rounded-none h-8"
                             >
                               Edit
+                              <Edit className="h-4 w-4" />
                             </Button>
                           )}
                           <AlertDialog>
@@ -500,10 +537,10 @@ export default function ProposalsPage() {
                                   archivingId === proposal.id ||
                                   resubmittingId === proposal.id
                                 }
-                                className="rounded-none h-8 w-8 p-0"
+                                className="rounded-none h-8 w-8 p-0 bg-white hover:bg-white"
                                 aria-label="Archive"
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash className="h-4 w-4 text-red-500" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="rounded-none sm:rounded-none">
