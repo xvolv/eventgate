@@ -535,12 +535,22 @@ export default function SecretaryPage() {
                             <Button
                               onClick={() => {
                                 // If rejection reason is being written, warn user that approving will discard it
-                                if (showRejectReason && comments[selectedProposal.id]?.trim()) {
-                                  if (!confirm("Are you sure you want to approve? This will discard your rejection reason.")) {
+                                if (
+                                  showRejectReason &&
+                                  comments[selectedProposal.id]?.trim()
+                                ) {
+                                  if (
+                                    !confirm(
+                                      "Are you sure you want to approve? This will discard your rejection reason.",
+                                    )
+                                  ) {
                                     return;
                                   }
                                   setShowRejectReason(false);
-                                  setComments((prev) => ({ ...prev, [selectedProposal.id]: "" }));
+                                  setComments((prev) => ({
+                                    ...prev,
+                                    [selectedProposal.id]: "",
+                                  }));
                                 }
                                 handleApproval(selectedProposal.id, true);
                               }}

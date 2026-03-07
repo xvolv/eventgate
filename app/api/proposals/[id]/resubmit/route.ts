@@ -12,7 +12,7 @@ const RESUBMITTABLE_STATUSES = new Set([
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: proposalId } = await params;
   const session = await auth.api.getSession({ headers: request.headers });
@@ -21,7 +21,7 @@ export async function POST(
   if (!proposalId) {
     return NextResponse.json(
       { message: "Missing proposal id" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -32,7 +32,7 @@ export async function POST(
   if (!user.emailVerified) {
     return NextResponse.json(
       { message: "Email verification required" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -47,7 +47,7 @@ export async function POST(
   if (!presidentGrant) {
     return NextResponse.json(
       { message: "Only club presidents can resubmit proposals" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -65,14 +65,14 @@ export async function POST(
   if (!proposal) {
     return NextResponse.json(
       { message: "Proposal not found" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
   if (!RESUBMITTABLE_STATUSES.has(proposal.status)) {
     return NextResponse.json(
       { message: "This proposal cannot be resubmitted at its current stage" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -134,8 +134,8 @@ export async function POST(
             "A proposal you previously reviewed has been updated and resubmitted. Please review the changes.",
           actionLabel: "Review Proposal",
           actionPath: grant.role === "VP" ? "/vp" : "/secretary",
-        })
-      )
+        }),
+      ),
     );
 
     return NextResponse.json({
@@ -147,7 +147,7 @@ export async function POST(
     const detail = error instanceof Error ? error.message : undefined;
     return NextResponse.json(
       { message: detail || "Failed to resubmit proposal" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
