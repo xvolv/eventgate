@@ -311,7 +311,7 @@ export default function AdminLocationsPage() {
               {activeLocations.map((location) => (
                 <div
                   key={location.id}
-                  className="p-4 border border-gray-200 bg-white rounded-none hover:shadow-md transition-shadow"
+                  className="p-4 border border-gray-200 bg-white rounded-none "
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
