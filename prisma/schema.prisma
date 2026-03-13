@@ -147,6 +147,8 @@ model Event {
   title             String
   description       String
   location          String
+  locationId        String?
+  locationRef       Location? @relation("LocationEvents", fields: [locationId], references: [id])
   startTime         DateTime
   endTime           DateTime
 
@@ -164,11 +166,14 @@ model EventOccurrence {
   startTime DateTime
   endTime   DateTime
   location  String
+  locationId String?
+  locationRef Location? @relation("LocationOccurrences", fields: [locationId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([eventId, startTime])
+  @@index([locationId, startTime, endTime])
 }
 
 // Contact information - extracted from Proposal
@@ -311,4 +316,7 @@ model Location {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  events       Event[]           @relation("LocationEvents")
+  occurrences  EventOccurrence[] @relation("LocationOccurrences")
 }

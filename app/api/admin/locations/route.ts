@@ -9,10 +9,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Forbidden" }, { status: gate.status });
     }
 
+    const includeBookings =
+      request.nextUrl.searchParams.get("includeBookings") === "1";
+
+    const now = new Date();
+
     const locations = await prisma.location.findMany({
-      orderBy: {
-        name: "asc",
-      },
+      orderBy: { name: "asc" },
+      include: includeBookings
+        ? {
+            occurrences: {
+              where: { startTime: { gte: now } },
+              orderBy: { startTime: "asc" },
+              take: 5,
+              include: {
+                event: {
+                  select: {
+                    title: true,
+                    proposal: { select: { status: true } },
+                  },
+                },
+              },
+            },
+          }
+        : undefined,
     });
 
     return NextResponse.json({ locations });

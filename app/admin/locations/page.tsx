@@ -23,6 +23,16 @@ type Location = {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  occurrences?: Array<{
+    id: string;
+    startTime: string;
+    endTime: string;
+    location: string;
+    event?: {
+      title: string;
+      proposal?: { status: string } | null;
+    } | null;
+  }>;
 };
 
 const LOCATIONS_CACHE_TTL_MS = 60_000;
@@ -58,7 +68,7 @@ export default function AdminLocationsPage() {
       return;
     }
 
-    const locationsRes = await fetch("/api/admin/locations");
+    const locationsRes = await fetch("/api/admin/locations?includeBookings=1");
     if (!locationsRes.ok) throw new Error("Failed to load locations");
     const locationsJson = await locationsRes.json();
     const nextLocations = locationsJson.locations || [];
@@ -125,6 +135,7 @@ export default function AdminLocationsPage() {
     setLocationActive(location.isActive);
     setIsDialogOpen(true);
   };
+
 
   const saveLocation = async () => {
     setDialogError(null);
@@ -356,6 +367,40 @@ export default function AdminLocationsPage() {
                   >
                     Deactivate
                   </Button>
+
+                  <div className="mt-3 border-t border-dashed border-gray-200 pt-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <MapPin className="h-4 w-4" />
+                      <span>Upcoming bookings</span>
+                    </div>
+                    {location.occurrences && location.occurrences.length > 0 ? (
+                      <div className="space-y-2">
+                        {location.occurrences.map((occ) => (
+                          <div
+                            key={occ.id}
+                            className="flex items-start justify-between gap-3 bg-gray-50 p-3 rounded"
+                          >
+                            <div className="text-sm text-gray-800 min-w-0">
+                              <div className="font-medium truncate">
+                                {occ.event?.title || "Untitled event"}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {new Date(occ.startTime).toLocaleString()} —{" "}
+                                {new Date(occ.endTime).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="text-xs px-2 py-1 border rounded uppercase tracking-wide">
+                              {occ.event?.proposal?.status || "PENDING"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        No upcoming bookings for this location.
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -420,6 +465,40 @@ export default function AdminLocationsPage() {
                   >
                     Activate
                   </Button>
+
+                  <div className="mt-3 border-t border-dashed border-gray-200 pt-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <MapPin className="h-4 w-4" />
+                      <span>Upcoming bookings</span>
+                    </div>
+                    {location.occurrences && location.occurrences.length > 0 ? (
+                      <div className="space-y-2">
+                        {location.occurrences.map((occ) => (
+                          <div
+                            key={occ.id}
+                            className="flex items-start justify-between gap-3 bg-gray-50 p-3 rounded"
+                          >
+                            <div className="text-sm text-gray-800 min-w-0">
+                              <div className="font-medium truncate">
+                                {occ.event?.title || "Untitled event"}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {new Date(occ.startTime).toLocaleString()} —{" "}
+                                {new Date(occ.endTime).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="text-xs px-2 py-1 border rounded uppercase tracking-wide">
+                              {occ.event?.proposal?.status || "PENDING"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        No upcoming bookings for this location.
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

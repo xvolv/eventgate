@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Info, Trash2 } from "lucide-react";
+import { Info, Trash2, Users,User } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import {
   Card,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { GuestModal } from "@/components/guest-modal";
 import { CollaboratorModal } from "@/components/collaborator-modal";
+
 
 type ClubInfo = { id: string; name: string };
 type Officers = {
@@ -63,6 +64,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
     startDateTime: string;
     endDateTime: string;
     location: string;
+    locationId: string;
   };
 
   const [clubInfo, setClubInfo] = useState<ClubInfo | null>(
@@ -73,7 +75,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
   );
   const [title, setTitle] = useState("");
   const [occurrences, setOccurrences] = useState<EventOccurrenceForm[]>([
-    { startDateTime: "", endDateTime: "", location: "" },
+    { startDateTime: "", endDateTime: "", location: "", locationId: "" },
   ]);
   const [description, setDescription] = useState("");
   const [presidentName, setPresidentName] = useState("");
@@ -89,6 +91,18 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: "error" | "success";
+  } | null>(null);
+
+  // Keep error toasts persistent; auto-dismiss only successes.
+  useEffect(() => {
+    if (!toast) return;
+    if (toast.tone === "error") return;
+    const handle = window.setTimeout(() => setToast(null), 4500);
+    return () => window.clearTimeout(handle);
+  }, [toast]);
 
   // Locations for dropdown
   const [locations, setLocations] = useState<LocationItem[]>(
@@ -298,10 +312,12 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
           eventTitle: title.trim(),
           eventDescription: description.trim(),
           eventLocation: String(occurrences?.[0]?.location || "").trim(),
+          eventLocationId: String(occurrences?.[0]?.locationId || ""),
           eventOccurrences: occurrences.map((o) => ({
             startTime: o.startDateTime,
             endTime: o.endDateTime,
             location: o.location,
+            locationId: o.locationId,
           })),
           presidentName: presidentName.trim(),
           vpName: vpName.trim(),
@@ -315,15 +331,33 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to submit proposal");
+        const errMsg = data.message || "Failed to submit proposal";
+        const conflictMsg =
+          response.status === 409 && data?.conflict
+            ? `${errMsg}: ${data.conflict.location} is booked from ${new Date(
+                data.conflict.startTime,
+              ).toLocaleString()} to ${new Date(
+                data.conflict.endTime,
+              ).toLocaleString()}`
+            : errMsg;
+        setToast({ message: conflictMsg, tone: "error" });
+        throw new Error(conflictMsg);
       }
 
       setMessage(
         "Proposal submitted successfully and sent to club leads for review!",
       );
+      setToast({
+        message:
+          "Proposal submitted and sent to leads. You’ll be redirected shortly.",
+        tone: "success",
+      });
 
       setTitle("");
-      setOccurrences([{ startDateTime: "", endDateTime: "", location: "" }]);
+      setOccurrences([{
+        startDateTime: "", endDateTime: "", location: "",
+        locationId: ""
+      }]);
       setDescription("");
       setPresidentName("");
       setVpName("");
@@ -369,6 +403,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
           startDateTime: "",
           endDateTime: "",
           location: String(last?.location || "").trim(),
+          locationId: String(last?.locationId || ""),
         },
       ];
     });
@@ -524,7 +559,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                 }`}
                               />
                               {!o.startDateTime && (
-                                <div className="pointer-events-none absolute inset-0 flex items-center px-3 text-sm text-gray-400">
+                                <div className="pointer-events-none absolute inset-0 flex items-center px-3 text-sm text-black">
                                   Select date & time
                                 </div>
                               )}
@@ -562,14 +597,14 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                     }));
                                   }
                                 }}
-                                className={`rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] ${
+                                className={`rounded-none border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue) ${
                                   !o.endDateTime
                                     ? "text-transparent [&::-webkit-datetime-edit]:text-transparent [&::-webkit-datetime-edit-fields-wrapper]:text-transparent [&::-webkit-datetime-edit-ampm-field]:text-transparent [&::-webkit-datetime-edit-hour-field]:text-transparent [&::-webkit-datetime-edit-minute-field]:text-transparent [&::-webkit-datetime-edit-day-field]:text-transparent [&::-webkit-datetime-edit-month-field]:text-transparent [&::-webkit-datetime-edit-year-field]:text-transparent"
                                     : ""
                                 }`}
                               />
                               {!o.endDateTime && (
-                                <div className="pointer-events-none absolute inset-0 flex items-center px-3 text-sm text-gray-400">
+                                <div className="pointer-events-none absolute inset-0 flex items-center px-3 text-sm text-black">
                                   Select date & time
                                 </div>
                               )}
@@ -601,10 +636,15 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                           ) : locations.length > 0 ? (
                             <select
                               id={`location-${idx}`}
-                              value={o.location}
+                              value={o.locationId}
                               onChange={(e) => {
+                                const nextId = e.target.value;
+                                const nextLoc = locations.find(
+                                  (loc) => loc.id === nextId,
+                                );
                                 updateOccurrence(idx, {
-                                  location: e.target.value,
+                                  locationId: nextId,
+                                  location: nextLoc?.name || "",
                                 });
                                 if (errors[locationKey]) {
                                   setErrors((prev) => ({
@@ -613,11 +653,11 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                   }));
                                 }
                               }}
-                              className="w-full h-10 rounded-none border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[var(--aau-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--aau-blue)]"
+                              className="w-full h-10 rounded-none border border-gray-200 bg-white px-3 py-2 text-sm focus:border-(--aau-blue) focus:outline-none focus:ring-1 focus:ring-(--aau-blue)"
                             >
                               <option value="">Select a location</option>
                               {locations.map((loc) => (
-                                <option key={loc.id} value={loc.name}>
+                                <option key={loc.id} value={loc.id}>
                                   {loc.name}
                                 </option>
                               ))}
@@ -631,6 +671,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                               onChange={(e) => {
                                 updateOccurrence(idx, {
                                   location: e.target.value,
+                                  locationId: "",
                                 });
                                 if (errors[locationKey]) {
                                   setErrors((prev) => ({
@@ -639,7 +680,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                   }));
                                 }
                               }}
-                              className="rounded-lg border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
+                              className="rounded-lg border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue)"
                             />
                           )}
                           {errors[locationKey] && (
@@ -714,7 +755,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                       placeholder="Jane Smith"
                       value={vpName}
                       onChange={(e) => setVpName(e.target.value)}
-                      className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
+                      className="rounded-none border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue) pr-10"
                     />
                     {officers.vicePresident && (
                       <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -758,7 +799,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                       placeholder="Bob Johnson"
                       value={secretaryName}
                       onChange={(e) => setSecretaryName(e.target.value)}
-                      className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)] pr-10"
+                      className="rounded-none border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue) pr-10"
                     />
                     {officers.secretary && (
                       <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -830,6 +871,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     className="rounded-none border-gray-300 text-gray-700 hover:bg-gray-100"
                   >
                     + Collaborators
+                    <Users  className="h-5 w-5"/>
                   </Button>
                 </div>
                 {collaborators.length > 0 ? (
@@ -850,8 +892,8 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    No collaborators added yet
+                  <p className="text-sm w-0 text-gray-500 italic">
+                  
                   </p>
                 )}
               </div>
@@ -870,6 +912,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     className="rounded-none border-gray-300 text-gray-700 hover:bg-gray-100"
                   >
                     + Guests
+                    <User className="w-5 h-5"/>
                   </Button>
                 </div>
                 {guests.length > 0 ? (
@@ -900,8 +943,8 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    No guests added yet
+                  <p className="text-sm w-0 text-gray-500 italic">
+                    
                   </p>
                 )}
               </div>
@@ -940,6 +983,41 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
         collaborators={collaborators}
         onSave={setCollaborators}
       />
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
+          <div
+            className={`border p-4 shadow-sm rounded-none ${
+              toast.tone === "error"
+                ? "border-red-300 bg-white"
+                : "border-gray-200 bg-white"
+            }`}
+          >
+            <div className="flex justify-between items-start gap-3">
+              <div className="min-w-0">
+                <div
+                  className={`text-sm font-semibold ${
+                    toast.tone === "error" ? "text-red-600" : "text-gray-900"
+                  }`}
+                >
+                  {toast.tone === "error" ? "Action needed" : "Success"}
+                </div>
+                <div className="text-sm text-gray-700 mt-1 break-words">
+                  {toast.message}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setToast(null)}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

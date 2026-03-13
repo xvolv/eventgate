@@ -67,6 +67,7 @@ type EventOccurrenceInput = {
   startTime: string;
   endTime: string;
   location?: string;
+  locationId?: string | null;
 };
 
 function parseOccurrences(body: any) {
@@ -78,18 +79,21 @@ function parseOccurrences(body: any) {
     startTime: Date;
     endTime: Date;
     location: string;
+    locationId: string | null;
   }> =
     raw && raw.length > 0
       ? raw.map((o: EventOccurrenceInput) => ({
           startTime: new Date(String(o?.startTime ?? "")),
           endTime: new Date(String(o?.endTime ?? "")),
           location: String(o?.location ?? body?.eventLocation ?? "").trim(),
+          locationId: o?.locationId ? String(o.locationId) : body?.eventLocationId ? String(body.eventLocationId) : null,
         }))
       : [
           {
             startTime: new Date(String(body?.eventStartTime ?? "")),
             endTime: new Date(String(body?.eventEndTime ?? "")),
             location: String(body?.eventLocation ?? "").trim(),
+            locationId: body?.eventLocationId ? String(body.eventLocationId) : null,
           },
         ];
 
@@ -97,7 +101,12 @@ function parseOccurrences(body: any) {
 }
 
 function validateOccurrences(
-  occurrences: Array<{ startTime: Date; endTime: Date; location: string }>,
+  occurrences: Array<{
+    startTime: Date;
+    endTime: Date;
+    location: string;
+    locationId: string | null;
+  }>,
 ) {
   if (!occurrences || occurrences.length === 0) {
     return "At least one event date/time is required";
@@ -130,6 +139,59 @@ function validateOccurrences(
     }
   }
 
+  return null;
+}
+
+async function findLocationConflict(
+  occurrences: Array<{
+    startTime: Date;
+    endTime: Date;
+    location: string;
+    locationId: string | null;
+  }>,
+) {
+  for (const o of occurrences) {
+    const conflict = await prisma.eventOccurrence.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              o.locationId
+                ? { locationId: o.locationId }
+                : null,
+              { location: { equals: o.location, mode: "insensitive" } },
+            ].filter(Boolean) as any[],
+          },
+          { startTime: { lt: o.endTime } },
+          { endTime: { gt: o.startTime } },
+        ],
+      },
+      include: {
+        event: {
+          select: {
+            title: true,
+            proposalId: true,
+            proposal: {
+              select: {
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (conflict) {
+      return {
+        location: conflict.location,
+        startTime: conflict.startTime,
+        endTime: conflict.endTime,
+        proposalId: conflict.event?.proposalId,
+        proposalStatus: conflict.event?.proposal?.status,
+        eventTitle: conflict.event?.title,
+      };
+    }
+  }
   return null;
 }
 
@@ -183,6 +245,18 @@ export async function POST(request: Request) {
       return jsonNoStore({ message: occurrencesError }, { status: 400 });
     }
 
+    const conflict = await findLocationConflict(occurrences);
+    if (conflict) {
+      return jsonNoStore(
+        {
+          message:
+            "That time slot is already booked for this location. Please choose another time or venue.",
+          conflict,
+        },
+        { status: 409 },
+      );
+    }
+
     const summaryStart = new Date(
       Math.min(...occurrences.map((o) => o.startTime.getTime())),
     );
@@ -192,6 +266,7 @@ export async function POST(request: Request) {
     const summaryLocation = String(
       body?.eventLocation ?? occurrences[0]?.location ?? "",
     ).trim();
+    const summaryLocationId = occurrences[0]?.locationId ?? null;
 
     // Create the proposal first
     const proposal = await prisma.proposal.create({
@@ -216,6 +291,7 @@ export async function POST(request: Request) {
         title: body.eventTitle,
         description: body.eventDescription,
         location: summaryLocation,
+        locationId: summaryLocationId,
         startTime: summaryStart,
         endTime: summaryEnd,
         occurrences: {
@@ -223,6 +299,7 @@ export async function POST(request: Request) {
             startTime: o.startTime,
             endTime: o.endTime,
             location: o.location,
+            locationId: o.locationId,
           })),
         },
       },
