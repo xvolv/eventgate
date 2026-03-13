@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { X, Plus, Pencil, Trash2, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,10 @@ export default function AdminLocationsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
+  const [pageByLocation, setPageByLocation] = useState<Record<string, number>>(
+    {},
+  );
+  const PAGE_SIZE = 2;
 
   // Add/Edit dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -65,6 +69,8 @@ export default function AdminLocationsPage() {
   const refresh = async (opts?: { force?: boolean }) => {
     if (!opts?.force && isLocationsCacheFresh() && locationsCache) {
       setLocations(locationsCache);
+      // Reset pages when pulling from cache to keep bounds valid
+      setPageByLocation({});
       return;
     }
 
@@ -221,6 +227,13 @@ export default function AdminLocationsPage() {
     }
   };
 
+  const changePage = (locationId: string, delta: number, totalPages: number) =>
+    setPageByLocation((prev) => {
+      const current = prev[locationId] ?? 1;
+      const next = Math.min(Math.max(current + delta, 1), totalPages);
+      return { ...prev, [locationId]: next };
+    });
+
   const toggleLocationStatus = async (location: Location) => {
     setMessage(null);
     setError(null);
@@ -322,7 +335,7 @@ export default function AdminLocationsPage() {
               {activeLocations.map((location) => (
                 <div
                   key={location.id}
-                  className="p-4 border border-gray-200 bg-white rounded-none "
+                  className="p-4 border border-gray-200  rounded-none  bg-gray-200 "
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -374,27 +387,74 @@ export default function AdminLocationsPage() {
                       <span>Upcoming bookings</span>
                     </div>
                     {location.occurrences && location.occurrences.length > 0 ? (
-                      <div className="space-y-2">
-                        {location.occurrences.map((occ) => (
-                          <div
-                            key={occ.id}
-                            className="flex items-start justify-between gap-3 bg-gray-50 p-3 rounded"
-                          >
-                            <div className="text-sm text-gray-800 min-w-0">
-                              <div className="font-medium truncate">
-                                {occ.event?.title || "Untitled event"}
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {new Date(occ.startTime).toLocaleString()} —{" "}
-                                {new Date(occ.endTime).toLocaleString()}
-                              </div>
+                      (() => {
+                        const occurrences = location.occurrences || [];
+                        const currentPage = pageByLocation[location.id] ?? 1;
+                        const totalPages = Math.max(
+                          1,
+                          Math.ceil(occurrences.length / PAGE_SIZE),
+                        );
+                        const slice = occurrences.slice(
+                          (currentPage - 1) * PAGE_SIZE,
+                          currentPage * PAGE_SIZE,
+                        );
+                        return (
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              {slice.map((occ) => (
+                                <div
+                                  key={occ.id}
+                                  className="flex items-start justify-between gap-3 bg-gray-50 p-3 rounded"
+                                >
+                                  <div className="text-sm text-gray-800 min-w-0">
+                                    <div className="font-medium truncate">
+                                      {occ.event?.title || "Untitled event"}
+                                    </div>
+                                    <div className="text-xs text-gray-600">
+                                      {new Date(occ.startTime).toLocaleString()} —{" "}
+                                      {new Date(occ.endTime).toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs px-2 py-1 border rounded uppercase tracking-wide">
+                                    {occ.event?.proposal?.status || "PENDING"}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="text-xs px-2 py-1 border rounded uppercase tracking-wide">
-                              {occ.event?.proposal?.status || "PENDING"}
-                            </div>
+                            {totalPages > 1 && (
+                              <div className="flex items-center justify-between text-xs text-gray-600">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-none"
+                                  onClick={() =>
+                                    changePage(location.id, -1, totalPages)
+                                  }
+                                  disabled={currentPage <= 1}
+                                >
+                                  <ChevronLeft className="h-4 w-4 mr-1" />
+                                  Prev
+                                </Button>
+                                <span>
+                                  Page {currentPage} of {totalPages}
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-none"
+                                  onClick={() =>
+                                    changePage(location.id, 1, totalPages)
+                                  }
+                                  disabled={currentPage >= totalPages}
+                                >
+                                  Next
+                                  <ChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })()
                     ) : (
                       <p className="text-sm text-gray-500">
                         No upcoming bookings for this location.

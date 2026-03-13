@@ -16,23 +16,23 @@ export async function GET(request: NextRequest) {
 
     const locations = await prisma.location.findMany({
       orderBy: { name: "asc" },
-      include: includeBookings
-        ? {
-            occurrences: {
-              where: { startTime: { gte: now } },
-              orderBy: { startTime: "asc" },
-              take: 5,
-              include: {
-                event: {
-                  select: {
-                    title: true,
-                    proposal: { select: { status: true } },
+          include: includeBookings
+            ? {
+                occurrences: {
+                  where: { startTime: { gte: now } },
+                  orderBy: { startTime: "asc" },
+                  take: 50,
+                  include: {
+                    event: {
+                      select: {
+                        title: true,
+                        proposal: { select: { status: true } },
+                      },
+                    },
                   },
                 },
-              },
-            },
-          }
-        : undefined,
+              }
+            : undefined,
     });
 
     return NextResponse.json({ locations });
