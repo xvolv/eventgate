@@ -298,6 +298,13 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
 
     if (Object.keys(nextErrors).length > 0) {
       setFormError("Please fix the highlighted fields.");
+      const firstErrorMsg =
+        nextErrors.occurrences ||
+        nextErrors.title ||
+        Object.values(nextErrors)[0];
+      if (firstErrorMsg) {
+        setToast({ message: firstErrorMsg, tone: "error" });
+      }
       return;
     }
 

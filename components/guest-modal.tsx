@@ -31,7 +31,6 @@ export function GuestModal({
     expertise: "",
     reason: "",
   });
-  const [tempGuests, setTempGuests] = useState<Guest[]>(guests);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateCurrentGuest = () => {
@@ -59,23 +58,17 @@ export function GuestModal({
         reason: currentGuest.reason.trim(),
       };
 
-      setTempGuests([...tempGuests, newGuest]);
+      onSave([...(guests || []), newGuest]);
       setCurrentGuest({ name: "", expertise: "", reason: "" });
       setErrors({});
     }
   };
 
   const handleRemoveGuest = (index: number) => {
-    setTempGuests(tempGuests.filter((_, i) => i !== index));
-  };
-
-  const handleSaveAndClose = () => {
-    onSave(tempGuests);
-    onClose();
+    onSave(guests.filter((_, i) => i !== index));
   };
 
   const handleClose = () => {
-    setTempGuests(guests);
     setCurrentGuest({ name: "", expertise: "", reason: "" });
     setErrors({});
     onClose();
@@ -155,11 +148,11 @@ export function GuestModal({
         </div>
 
         {/* Added Guests Stack */}
-        {tempGuests.length > 0 && (
+        {guests.length > 0 && (
           <div className="space-y-4">
-            <h3 className="font-medium">Added Guests ({tempGuests.length})</h3>
+            <h3 className="font-medium">Added Guests ({guests.length})</h3>
             <div className="space-y-3">
-              {tempGuests.map((guest, index) => (
+              {guests.map((guest, index) => (
                 <div
                   key={index}
                   className="p-4 border border-border bg-background space-y-2"
@@ -199,14 +192,6 @@ export function GuestModal({
             className="rounded-none"
           >
             Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSaveAndClose}
-            className="rounded-none"
-            style={{ backgroundColor: "var(--aau-blue)" }}
-          >
-            Done ({tempGuests.length} guests)
           </Button>
         </div>
       </div>
