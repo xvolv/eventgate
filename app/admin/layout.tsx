@@ -35,7 +35,7 @@ export default async function AdminLayout({
   return (
     <>
       <AdminHeader userEmail={user.email} />
-      <main className="w-full">{children}</main>
+      <main className="w-full min-h-screen overflow-y-scroll">{children}</main>
     </>
   );
 }

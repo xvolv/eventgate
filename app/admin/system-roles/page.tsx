@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useConfirmation } from "@/components/ui/confirmation-card";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Prisma } from "@prisma/client";
 
 type SystemRole = "ADMIN" | "DIRECTOR" | "STUDENT_UNION";
 
@@ -56,7 +58,12 @@ const formatRole = (role: SystemRole) =>
       : "Student Union";
 
 export default function AdminSystemRolesPage() {
-  const [loading, setLoading] = useState(!Boolean(getFreshCache(1, "")));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const initialPage = Number.parseInt(searchParams.get("page") || "1", 10) || 1;
+  const initialQuery = searchParams.get("q") || "";
+
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
@@ -67,8 +74,8 @@ export default function AdminSystemRolesPage() {
     [],
   );
 
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState(initialQuery);
+  const [page, setPage] = useState(initialPage);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
   const [initialLoaded, setInitialLoaded] = useState(false);
@@ -192,7 +199,6 @@ export default function AdminSystemRolesPage() {
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
       setError(null);
       try {
         const cached = getFreshCache(1, "");
@@ -208,8 +214,6 @@ export default function AdminSystemRolesPage() {
         if (!isAbortError(e)) {
           setError(e?.message || "Failed to load system roles");
         }
-      } finally {
-        setLoading(false);
       }
     })();
 
@@ -225,8 +229,18 @@ export default function AdminSystemRolesPage() {
       setIsRefetching(true);
       setMessage(null);
       setError(null);
+
+      // Update URL without full navigation
+      const params = new URLSearchParams();
+      if (query) params.set("q", query);
+      if (page > 1) params.set("page", page.toString());
+      const newUrl = params.toString()
+        ? `/admin/system-roles?${params.toString()}`
+        : "/admin/system-roles";
+      router.replace(newUrl, { scroll: false });
+
       try {
-        await refresh(1, query);
+        await refresh(page, query);
       } catch (e: any) {
         if (!isAbortError(e)) {
           setError(e?.message || "Failed to load system roles");
@@ -237,7 +251,7 @@ export default function AdminSystemRolesPage() {
     }, 300);
 
     return () => clearTimeout(handle);
-  }, [query, initialLoaded]);
+  }, [query, page, initialLoaded, router]);
 
   useEffect(() => {
     if (!message && !error) return;
@@ -351,38 +365,6 @@ export default function AdminSystemRolesPage() {
       setIsRefetching(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 grid gap-8 animate-pulse">
-        <Card className="border-border/60 bg-muted/40 rounded-none">
-          <CardHeader className="space-y-2">
-            <div className="h-5 w-44 bg-gray-200 rounded" />
-            <div className="h-4 w-80 bg-gray-100 rounded" />
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-[2fr_1fr_auto]">
-              <div className="h-11 bg-gray-200 rounded" />
-              <div className="h-11 bg-gray-200 rounded" />
-              <div className="h-11 w-24 bg-gray-200 rounded" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-none">
-          <CardHeader className="space-y-2">
-            <div className="h-5 w-56 bg-gray-200 rounded" />
-            <div className="h-10 w-72 bg-gray-100 rounded" />
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={`roles-skeleton-${idx}`} className="h-12 bg-gray-100 rounded" />
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 grid gap-8">
@@ -498,7 +480,6 @@ export default function AdminSystemRolesPage() {
                             onChange={(e) =>
                               setEditingGrantEmail(e.target.value)
                             }
-                            placeholder="user@school.edu"
                             className="py-2"
                           />
                         ) : (
@@ -508,13 +489,18 @@ export default function AdminSystemRolesPage() {
                       <td className="px-4 py-2 align-middle">
                         {editingGrantId === g.id ? (
                           <div className="flex gap-2">
-                            <Button size="sm" onClick={saveGrant}>
+                            <Button
+                              size="sm"
+                              onClick={saveGrant}
+                              className="h-8 px-3"
+                            >
                               Save
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={cancelEditGrant}
+                              className="h-8 px-3"
                             >
                               Cancel
                             </Button>
@@ -523,18 +509,18 @@ export default function AdminSystemRolesPage() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="ghost"
                               onClick={() => startEditGrant(g)}
+                              className="h-8 px-2"
                             >
                               Edit
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-destructive"
-                              aria-label={`Delete ${g.email}`}
-                              title={`Delete ${g.email}`}
                               onClick={() => deleteGrant(g)}
+                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={isRefetching}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -548,30 +534,32 @@ export default function AdminSystemRolesPage() {
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border/60 pt-3 md:flex-row md:items-center md:justify-between">
-            <div className="text-xs text-muted-foreground">
-              Showing {systemRoleGrants.length ? (page - 1) * pageSize + 1 : 0}-
-              {(page - 1) * pageSize + systemRoleGrants.length} of {total}
+          {total > pageSize && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {(page - 1) * pageSize + 1} to{" "}
+                {Math.min(page * pageSize, total)} of {total} results
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1 || isRefetching}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page * pageSize >= total || isRefetching}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => goToPage(Math.max(1, page - 1))}
-                disabled={page <= 1}
-              >
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => goToPage(page + 1)}
-                disabled={
-                  (page - 1) * pageSize + systemRoleGrants.length >= total
-                }
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

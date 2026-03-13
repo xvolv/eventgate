@@ -80,11 +80,11 @@
 
   /* AAU Brand Colors */
   --aau-blue: #005691;
-  --aau-blue-dark: #003A5C;
-  --aau-blue-light: #0077C8;
-  --aau-red: #C8102E;
-  --aau-red-dark: #A00D24;
-  --aau-gold: #D4A843;
+  --aau-blue-dark: #003a5c;
+  --aau-blue-light: #0077c8;
+  --aau-red: #c8102e;
+  --aau-red-dark: #a00d24;
+  --aau-gold: #d4a843;
 }
 
 .dark {
@@ -124,6 +124,10 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html {
+    /* Always reserve space for vertical scrollbar to prevent layout shift */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground;
@@ -167,5 +171,3 @@
 [data-slot="dialog-content"]::-webkit-scrollbar-thumb:hover {
   background: var(--ring);
 }
-
-

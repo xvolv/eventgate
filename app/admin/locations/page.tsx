@@ -255,7 +255,7 @@ export default function AdminLocationsPage() {
             </div>
             <Button
               onClick={openAddDialog}
-              className="bg-[var(--aau-blue)] hover:bg-[var(--aau-blue)]/90 rounded-none"
+              className="bg-(--aau-blue) hover:bg-(--aau-blue)/90 rounded-none"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Location
@@ -333,7 +333,7 @@ export default function AdminLocationsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-gray-500 hover:text-[var(--aau-blue)] rounded-none"
+                        className="h-8 w-8 text-gray-500 hover:text-(--aau-blue) rounded-none"
                         onClick={() => openEditDialog(location)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -397,7 +397,7 @@ export default function AdminLocationsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-gray-500 hover:text-[var(--aau-blue)] rounded-none"
+                        className="h-8 w-8 text-gray-500 hover:text-(--aau-blue) rounded-none"
                         onClick={() => openEditDialog(location)}
                       >
                         <Pencil className="h-4 w-4" />
