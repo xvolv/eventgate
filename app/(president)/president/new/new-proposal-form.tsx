@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Info, Trash2 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import {
   Card,
@@ -105,22 +105,19 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
       }
       setOfficers(newProposalReferenceCache.officers);
       if (newProposalReferenceCache.officers.president?.name) {
-        const cachedPresidentName = newProposalReferenceCache.officers.president.name;
-        setPresidentName((prev) =>
-          prev.trim() ? prev : cachedPresidentName,
-        );
+        const cachedPresidentName =
+          newProposalReferenceCache.officers.president.name;
+        setPresidentName((prev) => (prev.trim() ? prev : cachedPresidentName));
       }
       if (newProposalReferenceCache.officers.vicePresident?.name) {
-        const cachedVpName = newProposalReferenceCache.officers.vicePresident.name;
-        setVpName((prev) =>
-          prev.trim() ? prev : cachedVpName,
-        );
+        const cachedVpName =
+          newProposalReferenceCache.officers.vicePresident.name;
+        setVpName((prev) => (prev.trim() ? prev : cachedVpName));
       }
       if (newProposalReferenceCache.officers.secretary?.name) {
-        const cachedSecretaryName = newProposalReferenceCache.officers.secretary.name;
-        setSecretaryName((prev) =>
-          prev.trim() ? prev : cachedSecretaryName,
-        );
+        const cachedSecretaryName =
+          newProposalReferenceCache.officers.secretary.name;
+        setSecretaryName((prev) => (prev.trim() ? prev : cachedSecretaryName));
       }
       if (newProposalReferenceCache.locationsLoaded) {
         setLocations(newProposalReferenceCache.locations);
@@ -408,7 +405,8 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
             <CardTitle className="text-2xl font-bold text-gray-900">
               Submit New Event Proposal
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-gray-600 flex items-center gap-1">
+              <Info className="w-5 h-5" />
               Fill out the information below to submit your event for approval.
             </CardDescription>
           </CardHeader>
@@ -421,36 +419,6 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
               )}
 
               {/* Club Information Display */}
-              <div className="grid gap-2">
-                <Label className="text-gray-700 font-medium">Club</Label>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                  {clubInfo ? (
-                    <>
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: "var(--aau-blue)" }}
-                      ></div>
-                      <span className="font-semibold text-gray-900">
-                        {clubInfo.name.toUpperCase()}
-                      </span>
-                      <span className="text-sm text-gray-500 inline-flex items-center gap-1">
-                        <img
-                          src="/verified.png"
-                          alt="Verified president"
-                          width={14}
-                          height={14}
-                          className="h-3.5 w-3.5"
-                          loading="lazy"
-                        />
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-gray-500">
-                      Loading club information...
-                    </span>
-                  )}
-                </div>
-              </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="title" className="text-gray-700 font-medium">
@@ -459,14 +427,14 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                 <Input
                   id="title"
                   required
-                  placeholder="Annual Budget Review Summit"
+                  placeholder="Machine learning intro to get you started"
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
                     if (errors.title)
                       setErrors((prev) => ({ ...prev, title: "" }));
                   }}
-                  className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
+                  className="rounded-none border-gray-200 focus:border-none focus:ring-(--aau-blue)"
                 />
                 {errors.title && (
                   <p className="text-xs text-red-600">{errors.title}</p>
@@ -476,15 +444,15 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <Label className="text-gray-700 font-medium">
-                    Event Sessions
+                    Event days
                   </Label>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={addOccurrence}
-                    className="rounded-none border-(--aau-blue) text-(--aau-blue) hover:bg-(--aau-blue) hover:text-white"
+                    className="rounded-none border-(--aau-blue) text-(--aau-blue) "
                   >
-                    + Add Another Day/Session
+                    + Add Another Day
                   </Button>
                 </div>
 
@@ -505,10 +473,10 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="font-semibold text-gray-800 flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-[var(--aau-blue)] text-white text-sm flex items-center justify-center">
+                            <span className="w-6 h-6 rounded-full bg-(--aau-blue) text-white text-sm flex items-center justify-center">
                               {idx + 1}
                             </span>
-                            Session {idx + 1}
+                            day {idx + 1}
                           </div>
                           <Button
                             type="button"
@@ -516,9 +484,9 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                             size="sm"
                             onClick={() => removeOccurrence(idx)}
                             disabled={occurrences.length <= 1}
-                            className="rounded-lg border-gray-200 text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+                            className="border-none rounded-none bg-gray-50 hover:bg-gray-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
 
@@ -645,7 +613,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                                   }));
                                 }
                               }}
-                              className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[var(--aau-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--aau-blue)]"
+                              className="w-full h-10 rounded-none border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[var(--aau-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--aau-blue)]"
                             >
                               <option value="">Select a location</option>
                               {locations.map((loc) => (
@@ -841,7 +809,7 @@ export default function NewProposalForm({ userEmail }: { userEmail: string }) {
                     if (errors.description)
                       setErrors((prev) => ({ ...prev, description: "" }));
                   }}
-                  className="rounded-none border-gray-200 focus:border-[var(--aau-blue)] focus:ring-[var(--aau-blue)]"
+                  className="rounded-none border-gray-200 focus:border-(--aau-blue) focus:ring-(--aau-blue) h-52"
                 />
                 {errors.description && (
                   <p className="text-xs text-red-600">{errors.description}</p>

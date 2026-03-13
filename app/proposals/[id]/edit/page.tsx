@@ -467,7 +467,7 @@ export default function ProposalEditPage() {
                     disabled={!canEdit}
                     className="rounded-none"
                   >
-                    Add another day/session
+                    Add another day
                   </Button>
                 </div>
 

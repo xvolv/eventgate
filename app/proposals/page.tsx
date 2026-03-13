@@ -85,7 +85,8 @@ type ClubNameCacheEntry = {
   cachedAt: number;
 };
 
-const PROPOSALS_CACHE_TTL_MS = 15 * 1000;
+const PROPOSALS_CACHE_TTL_MS = 60 * 1000; // proposals list changes infrequently; keep for 1 minute
+const CLUB_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // club name is stable; keep for 6h
 const PROPOSALS_CACHE_KEY_PREFIX = "eventgate:president:proposals:page:";
 const CLUB_CACHE_KEY = "eventgate:president:club-name";
 const DEFAULT_PAGE = 1;
@@ -134,12 +135,21 @@ function setClubNameCache(value: ClubNameCacheEntry) {
 export default function ProposalsPage() {
   const { isPending } = useSession();
   const router = useRouter();
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Prime UI with any cached data synchronously to avoid empty flashes
+  const initialClubCache = getClubNameCache();
+  const initialProposalsCache = getProposalsCache(DEFAULT_PAGE);
+
+  const [proposals, setProposals] = useState<Proposal[]>(
+    initialProposalsCache?.proposals || [],
+  );
+  const [loading, setLoading] = useState(!initialProposalsCache);
   const [error, setError] = useState<string | null>(null);
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [page, setPage] = useState(DEFAULT_PAGE);
-  const [pagination, setPagination] = useState<ProposalPagination | null>(null);
+  const [pagination, setPagination] = useState<ProposalPagination | null>(
+    initialProposalsCache?.pagination || null,
+  );
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
     null,
   );
@@ -149,7 +159,9 @@ export default function ProposalsPage() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [contributorsPage, setContributorsPage] = useState(1);
   const [guestsPage, setGuestsPage] = useState(1);
-  const [clubName, setClubName] = useState("");
+  const [clubName, setClubName] = useState(
+    initialClubCache?.clubName || "",
+  );
 
   const fetchProposals = async (nextPage: number) => {
     const response = await fetch(`/api/proposals?page=${nextPage}&limit=10`, {
@@ -178,14 +190,15 @@ export default function ProposalsPage() {
   useEffect(() => {
     if (isPending) return;
     const cachedClub = getClubNameCache();
-    const hasFreshCachedClub =
-      Boolean(cachedClub?.clubName) &&
-      Date.now() - (cachedClub?.cachedAt || 0) < PROPOSALS_CACHE_TTL_MS;
-
-    if (hasFreshCachedClub && cachedClub?.clubName) {
+    if (cachedClub?.clubName) {
       setClubName(cachedClub.clubName);
-      return;
     }
+
+    const cacheIsStale =
+      !cachedClub ||
+      Date.now() - (cachedClub?.cachedAt || 0) > CLUB_CACHE_TTL_MS;
+
+    if (!cacheIsStale) return;
 
     const fetchClubInfo = async () => {
       try {
